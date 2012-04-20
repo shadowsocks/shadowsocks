@@ -47,13 +47,18 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 class Socks5Server(SocketServer.StreamRequestHandler):
     def handle_tcp(self, sock, remote):
-        fdset = [sock, remote]
-        while True:
-            r, w, e = select.select(fdset, [], [])
-            if sock in r:
-                if remote.send(self.decrypt(sock.recv(4096))) <= 0: break
-            if remote in r:
-                if sock.send(self.encrypt(remote.recv(4096))) <= 0: break
+        try:
+            fdset = [sock, remote]
+            while True:
+                r, w, e = select.select(fdset, [], [])
+                if sock in r:
+                    if remote.send(self.decrypt(sock.recv(4096))) <= 0:
+                        break
+                if remote in r:
+                    if sock.send(self.encrypt(remote.recv(4096))) <= 0:
+                        break
+        finally:
+            remote.close()
 
     def encrypt(self, data):
         return data.translate(encrypt_table)
