@@ -31,7 +31,7 @@ import string
 import hashlib
 
 def get_table(key):
-    m = hashlib.md5.new()
+    m = hashlib.md5()
     m.update(key)
     s = m.digest()
     (a, b) = struct.unpack('<QQ', s)
@@ -76,7 +76,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             if addrtype == 1:
                 addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
             elif addrtype == 3:
-                addr = self.decrypt(self.rfile.read(ord(self.decrypt(sock.recv(1)))))
+                addr = self.decrypt(
+                    self.rfile.read(ord(self.decrypt(sock.recv(1)))))
             else:
                 # not support
                 return
@@ -87,7 +88,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     remote.connect((addr, port[0]))
                     local = remote.getsockname()
-                    reply += socket.inet_aton(local[0]) + struct.pack(">H", local[1])
+                    reply += socket.inet_aton(local[0]) + struct.pack(">H",
+                        local[1])
                     print 'Tcp connect to', addr, port[0]
                 else:
                     reply = "\x05\x07\x00\x01" # Command not supported
