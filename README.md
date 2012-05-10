@@ -15,7 +15,7 @@ Run `python server.py` on your server. To run it in the background, run `setsid 
 
 Put `local.py` on your client machine. Edit `local.py`, change these values:
 
-    SERVER  your  your server ip or hostname
+    SERVER        your server ip or hostname
     REMOTE_PORT   server port
     PORT          local port
     KEY           a password, it must be the same as the password of your server
