@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SERVER = 'myserver_ip_or_hostname'
+SERVER = '::1'
 REMOTE_PORT = 8499
 PORT = 1080
 KEY = "foobar!"
@@ -95,11 +95,11 @@ class Socks5Server(SocketServer.StreamRequestHandler):
     def handle(self):
         try:
             sock = self.connection
-            remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             remote.connect((SERVER, REMOTE_PORT))
             self.handle_tcp(sock, remote)
-        except socket.error:
-            lock_print('socket error')
+        except socket.error as e:
+            lock_print('socket error: ' + str(e))
 
 
 def main():

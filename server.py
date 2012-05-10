@@ -42,7 +42,7 @@ def get_table(key):
 
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    pass
+    address_family = socket.AF_INET6
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
