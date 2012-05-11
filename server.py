@@ -37,6 +37,9 @@ import string
 import hashlib
 import sys
 
+#disable ThreadingTCPServer dns revsere lookup, sometimes it will be slow
+socket.getfqdn = lambda x:x
+
 def socket_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                       source_address=None):
     """python 2.7 socket.create_connection"""
@@ -61,7 +64,7 @@ def socket_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     if err is not None:
         raise err
     else:
-        raise error("getaddrinfo returns an empty list")
+        raise socket.error("getaddrinfo returns an empty list")
 
 def get_table(key):
     m = hashlib.md5()
