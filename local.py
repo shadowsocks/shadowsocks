@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SERVER = 'my_server_ip_or_host'
+SERVER = 'my server ip'
 REMOTE_PORT = 8499
 PORT = 1080
 KEY = "foobar!"
@@ -33,35 +33,6 @@ import hashlib
 import threading
 import time
 import SocketServer
-
-#disable ThreadingTCPServer dns revsere lookup, sometimes it will be slow
-socket.getfqdn = lambda x:x
-
-def socket_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None):
-    """python 2.7 socket.create_connection"""
-    host, port = address
-    err = None
-    for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
-        af, socktype, proto, canonname, sa = res
-        sock = None
-        try:
-            sock = socket.socket(af, socktype, proto)
-            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
-                sock.settimeout(timeout)
-            if source_address:
-                sock.bind(source_address)
-            sock.connect(sa)
-            return sock
-
-        except socket.error as _:
-            err = _
-            if sock is not None:
-                sock.close()
-    if err is not None:
-        raise err
-    else:
-        raise socket.error("getaddrinfo returns an empty list")
 
 def get_table(key):
     m = hashlib.md5()
@@ -124,7 +95,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
     def handle(self):
         try:
             sock = self.connection
-            remote = socket_create_connection((SERVER, REMOTE_PORT))
+            remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            remote.connect((SERVER, REMOTE_PORT))
             self.handle_tcp(sock, remote)
         except socket.error as e:
             lock_print('socket error: %s' % str(e))

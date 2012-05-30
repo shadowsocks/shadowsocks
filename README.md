@@ -13,8 +13,6 @@ Put `server.py` on your server. Edit `server.py`, change the following values:
 
 Run `python server.py` on your server. To run it in the background, run `setsid python server.py`.
 
-If you want to listen to IPv6 port, run `python server.py -6`.
-
 Put `local.py` on your client machine. Edit `local.py`, change these values:
 
     SERVER        your server ip or hostname
