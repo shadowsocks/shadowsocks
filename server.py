@@ -62,13 +62,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             remote.close()
 
     def encrypt(self, data):
-      return data.translate(encrypt_table)
+        return data.translate(encrypt_table)
 
     def decrypt(self, data):
-      return data.translate(decrypt_table)
+        return data.translate(decrypt_table)
 
     def send_encrpyt(self, sock, data):
-      sock.send(self.encrypt(data))
+        sock.send(self.encrypt(data))
 
     def handle(self):
         try:
@@ -86,10 +86,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
+                print 'Tcp connecting to', addr, port[0]
                 remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 remote.connect((addr, port[0]))
                 local = remote.getsockname()
-                print 'Tcp connect to', addr, port[0]
             except socket.error:
                 # Connection refused
                 return

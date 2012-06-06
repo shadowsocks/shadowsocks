@@ -64,13 +64,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             remote.close()
 
     def encrypt(self, data):
-      return data.translate(encrypt_table)
+        return data.translate(encrypt_table)
 
     def decrypt(self, data):
-      return data.translate(decrypt_table)
+        return data.translate(decrypt_table)
 
     def send_encrpyt(self, sock, data):
-      sock.send(self.encrypt(data))
+        sock.send(self.encrypt(data))
 
     def handle(self):
         try:
@@ -81,8 +81,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             data = self.rfile.read(4)
             mode = ord(data[1])
             if mode != 1:
-              print 'mode != 1'
-              return
+                print 'mode != 1'
+                return
             addrtype = ord(data[3])
             addr_to_send = data[3]
             if addrtype == 1:
@@ -94,9 +94,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = self.rfile.read(ord(addr_len))
                 addr_to_send += addr_len + addr
             else:
-              print 'not support'
+                print 'not support'
                 # not support
-              return
+                return
             addr_port = self.rfile.read(2)
             addr_to_send += addr_port
             port = struct.unpack('>H', addr_port)
