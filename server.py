@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-PORT = 8499
-KEY = "foobar!"
+PORT = 8388
+KEY = "barfoo!"
 
 import socket
 import select
@@ -74,11 +74,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         try:
             print 'socks connection from ', self.client_address
             sock = self.connection
-            sock.recv(262)
-            self.send_encrpyt(sock, "\x05\x00")
-            data = self.decrypt(self.rfile.read(4))
-            mode = ord(data[1])
-            addrtype = ord(data[3])
+            addrtype = ord(self.decrypt(sock.recv(1)))
             if addrtype == 1:
                 addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
             elif addrtype == 3:
@@ -86,32 +82,25 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     self.rfile.read(ord(self.decrypt(sock.recv(1)))))
             else:
                 # not support
+                print 'server: not support'
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
-            reply = "\x05\x00\x00\x01"
             try:
-                if mode == 1:
-                    remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    remote.connect((addr, port[0]))
-                    local = remote.getsockname()
-                    reply += socket.inet_aton(local[0]) + struct.pack(">H",
-                        local[1])
-                    print 'Tcp connect to', addr, port[0]
-                else:
-                    reply = "\x05\x07\x00\x01" # Command not supported
-                    print 'command not supported'
+                print 'Tcp connecting to', addr, port[0]
+                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                remote.connect((addr, port[0]))
+                local = remote.getsockname()
             except socket.error:
                 # Connection refused
-                reply = '\x05\x05\x00\x01\x00\x00\x00\x00\x00\x00'
-            self.send_encrpyt(sock, reply)
-            if reply[1] == '\x00':
-                if mode == 1:
-                    self.handle_tcp(sock, remote)
+                return
+            self.handle_tcp(sock, remote)
         except socket.error as e:
             print 'socket error'
 
 
 def main():
+    if '-6' in sys.argv[1:]:
+        ThreadingTCPServer.address_family = socket.AF_INET6
     server = ThreadingTCPServer(('', PORT), Socks5Server)
     server.allow_reuse_address = True
     print "starting server at port %d ..." % PORT

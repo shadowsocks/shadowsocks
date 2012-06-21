@@ -20,19 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SERVER = 'my server ip'
-REMOTE_PORT = 8499
+SERVER = '127.0.0.1'
+REMOTE_PORT = 8388
 PORT = 1080
-KEY = "foobar!"
+KEY = "barfoo!"
 
 import socket
 import select
-import string
-import struct
-import hashlib
-import threading
-import time
 import SocketServer
+import struct
+import string
+import hashlib
+import sys
 
 def get_table(key):
     m = hashlib.md5()
@@ -44,47 +43,19 @@ def get_table(key):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
 
-encrypt_table = ''.join(get_table(KEY))
-decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
-
-my_lock = threading.Lock()
-
-def lock_print(msg):
-    my_lock.acquire()
-    try:
-        print "[%s] %s" % (time.ctime(), msg)
-    finally:
-        my_lock.release()
-
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
-    def encrypt(self, data):
-        return data.translate(encrypt_table)
-
-    def decrypt(self, data):
-        return data.translate(decrypt_table)
-
     def handle_tcp(self, sock, remote):
         try:
             fdset = [sock, remote]
-            counter = 0
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    r_data = sock.recv(4096)
-                    if counter == 1:
-                        try:
-                            lock_print(
-                                "Connecting " + r_data[5:5 + ord(r_data[4])])
-                        except Exception:
-                            pass
-                    if counter < 2:
-                        counter += 1
-                    if remote.send(self.encrypt(r_data)) <= 0:
+                    if remote.send(self.encrypt(sock.recv(4096))) <= 0:
                         break
                 if remote in r:
                     if sock.send(self.decrypt(remote.recv(4096))) <= 0:
@@ -92,20 +63,73 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         finally:
             remote.close()
 
+    def encrypt(self, data):
+        return data.translate(encrypt_table)
+
+    def decrypt(self, data):
+        return data.translate(decrypt_table)
+
+    def send_encrpyt(self, sock, data):
+        sock.send(self.encrypt(data))
+
     def handle(self):
         try:
+            print 'socks connection from ', self.client_address
             sock = self.connection
-            remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            remote.connect((SERVER, REMOTE_PORT))
+            sock.recv(262)
+            sock.send("\x05\x00")
+            data = self.rfile.read(4)
+            mode = ord(data[1])
+            if mode != 1:
+                print 'mode != 1'
+                return
+            addrtype = ord(data[3])
+            addr_to_send = data[3]
+            if addrtype == 1:
+                addr_ip = self.rfile.read(4)
+                addr = socket.inet_ntoa(addr_ip)
+                addr_to_send += addr_ip
+            elif addrtype == 3:
+                addr_len = sock.recv(1)
+                addr = self.rfile.read(ord(addr_len))
+                addr_to_send += addr_len + addr
+            else:
+                print 'not support'
+                # not support
+                return
+            addr_port = self.rfile.read(2)
+            addr_to_send += addr_port
+            port = struct.unpack('>H', addr_port)
+            try:
+                if mode == 1:
+                    reply = "\x05\x00\x00\x01"
+                    reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
+                    sock.send(reply)
+                    # reply immediately
+                    remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    remote.connect((SERVER, REMOTE_PORT))
+                    self.send_encrpyt(remote, addr_to_send)
+                    print 'Tcp connect to', addr, port[0]
+                else:
+                    print 'command not supported'
+                    return
+            except socket.error as e:
+                print 'socket error ' + str(e)
+                return
             self.handle_tcp(sock, remote)
         except socket.error as e:
-            lock_print('socket error: %s' % str(e))
+            print 'socket error ' + str(e)
 
 
 def main():
-    print 'Starting proxy at port %d' % PORT
+    if '-6' in sys.argv[1:]:
+        ThreadingTCPServer.address_family = socket.AF_INET6
     server = ThreadingTCPServer(('', PORT), Socks5Server)
+    server.allow_reuse_address = True
+    print "starting server at port %d ..." % PORT
     server.serve_forever()
 
 if __name__ == '__main__':
+    encrypt_table = ''.join(get_table(KEY))
+    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     main()
