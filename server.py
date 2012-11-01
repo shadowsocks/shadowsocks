@@ -67,9 +67,6 @@ class Socks5Server(SocketServer.StreamRequestHandler):
     def decrypt(self, data):
         return data.translate(decrypt_table)
 
-    def send_encrpyt(self, sock, data):
-        sock.send(self.encrypt(data))
-
     def handle(self):
         try:
             print 'socks connection from ', self.client_address
