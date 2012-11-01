@@ -69,7 +69,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
     def decrypt(self, data):
         return data.translate(decrypt_table)
 
-    def send_encrpyt(self, sock, data):
+    def send_encrypt(self, sock, data):
         sock.send(self.encrypt(data))
 
     def handle(self):
@@ -108,7 +108,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     # reply immediately
                     remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     remote.connect((SERVER, REMOTE_PORT))
-                    self.send_encrpyt(remote, addr_to_send)
+                    self.send_encrypt(remote, addr_to_send)
                     print 'Tcp connect to', addr, port[0]
                 else:
                     print 'command not supported'
