@@ -20,8 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-PORT = 8388
-KEY = "barfoo!"
 
 import socket
 import select
@@ -30,6 +28,8 @@ import struct
 import string
 import hashlib
 import sys
+import json
+import logging
 
 def get_table(key):
     m = hashlib.md5()
@@ -69,7 +69,6 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            print 'socks connection from ', self.client_address
             sock = self.connection
             addrtype = ord(self.decrypt(sock.recv(1)))
             if addrtype == 1:
@@ -79,31 +78,37 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     self.rfile.read(ord(self.decrypt(sock.recv(1)))))
             else:
                 # not support
-                print 'server: not support'
+                logging.warn('addr_type not support')
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
-                print 'Tcp connecting to', addr, port[0]
+                logging.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 remote.connect((addr, port[0]))
-                local = remote.getsockname()
-            except socket.error:
+            except socket.error as e:
                 # Connection refused
+                logging.warn('socket error ' + str(e))
                 return
             self.handle_tcp(sock, remote)
         except socket.error as e:
-            print 'socket error'
+            logging.warn('socket error ' + str(e))
 
+if __name__ == '__main__':
+    with open('config.json', 'rb') as f:
+        config = json.load(f)
+    SERVER = config['server']
+    PORT = config['server_port']
+    KEY = config['password']
 
-def main():
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+
+    encrypt_table = ''.join(get_table(KEY))
+    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     if '-6' in sys.argv[1:]:
         ThreadingTCPServer.address_family = socket.AF_INET6
     server = ThreadingTCPServer(('', PORT), Socks5Server)
     server.allow_reuse_address = True
-    print "starting server at port %d ..." % PORT
+    logging.info("starting server at port %d ..." % PORT)
     server.serve_forever()
 
-if __name__ == '__main__':
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
-    main()
