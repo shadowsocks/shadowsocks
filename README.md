@@ -6,23 +6,18 @@ shadowsocks is a lightweight tunnel proxy which can help you get through firewal
 usage
 -----------
 
-Put `server.py` on your server. Edit `server.py`, change the following values:
+Edit `config.json`, change the following values:
 
-    PORT          server port
-    KEY           a password to identify clients
+    server          your server ip or hostname
+    server_port     server port
+    local_port      local port
+    password        a password used to encrypt transfer
 
-Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
+Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
-Put `local.py` on your client machine. Edit `local.py`, change these values:
-
-    SERVER        your server ip or hostname
-    REMOTE_PORT   server port
-    PORT          local port
-    KEY           a password, it must be the same as the password of your server
-
-Run `python local.py` on your client machine.
+Put all the files on your client machine. Run `python local.py` on your client machine.
 
 Change proxy settings of your browser into
 
-    SOCKS5 127.0.0.1:PORT
+    SOCKS5 127.0.0.1:local_port
 

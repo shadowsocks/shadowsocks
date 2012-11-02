@@ -28,6 +28,7 @@ import struct
 import string
 import hashlib
 import sys
+import os
 import json
 import logging
 
@@ -59,6 +60,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     if sock.send(self.decrypt(remote.recv(4096))) <= 0:
                         break
         finally:
+            sock.close()
             remote.close()
 
     def encrypt(self, data):
@@ -115,6 +117,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(__file__) or '.')
+
     with open('config.json', 'rb') as f:
         config = json.load(f)
     SERVER = config['server']
