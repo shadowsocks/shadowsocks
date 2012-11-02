@@ -11,7 +11,7 @@ Put `server.py` on your server. Edit `server.py`, change the following values:
     PORT          server port
     KEY           a password to identify clients
 
-Run `python server.py` on your server. To run it in the background, run `setsid python server.py`.
+Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
 Put `local.py` on your client machine. Edit `local.py`, change these values:
 
