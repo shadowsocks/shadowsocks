@@ -104,7 +104,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 sock.send(reply)
                 # reply immediately
-                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                if '-6' in sys.argv[1:]:
+                    remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+                else:
+                    remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 remote.connect((SERVER, REMOTE_PORT))
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
@@ -131,8 +134,6 @@ if __name__ == '__main__':
 
     encrypt_table = ''.join(get_table(KEY))
     decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
-    if '-6' in sys.argv[1:]:
-        ThreadingTCPServer.address_family = socket.AF_INET6
     server = ThreadingTCPServer(('', PORT), Socks5Server)
     server.allow_reuse_address = True
     logging.info("starting server at port %d ..." % PORT)
