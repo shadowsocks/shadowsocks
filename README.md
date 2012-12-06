@@ -21,3 +21,10 @@ Change proxy settings of your browser into
 
     SOCKS5 127.0.0.1:local_port
 
+advanced
+------------
+
+You can use args to override settings from `config.json`.
+
+    python local.py -s server_name -p server_port -l local_port -k password
+    python server.py -p server_port -k password

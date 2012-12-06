@@ -31,6 +31,7 @@ import sys
 import os
 import json
 import logging
+import getopt
 
 def get_table(key):
     m = hashlib.md5()
@@ -87,22 +88,30 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 logging.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 remote.connect((addr, port[0]))
-            except socket.error as e:
+            except socket.error, e:
                 # Connection refused
-                logging.warn('socket error ' + str(e))
+                logging.warn(e)
                 return
             self.handle_tcp(sock, remote)
-        except socket.error as e:
-            logging.warn('socket error ' + str(e))
+        except socket.error, e:
+            logging.warn(e)
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
+
     SERVER = config['server']
     PORT = config['server_port']
     KEY = config['password']
+
+    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
+    for key, value in optlist:
+        if key == '-p':
+            PORT = int(value)
+        elif key == '-k':
+            KEY = value
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -111,8 +120,11 @@ if __name__ == '__main__':
     decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     if '-6' in sys.argv[1:]:
         ThreadingTCPServer.address_family = socket.AF_INET6
-    server = ThreadingTCPServer(('', PORT), Socks5Server)
-    server.allow_reuse_address = True
-    logging.info("starting server at port %d ..." % PORT)
-    server.serve_forever()
+    try:
+        server = ThreadingTCPServer(('', PORT), Socks5Server)
+        server.allow_reuse_address = True
+        logging.info("starting server at port %d ..." % PORT)
+        server.serve_forever()
+    except socket.error, e:
+        logging.error(e)
 

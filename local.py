@@ -31,6 +31,7 @@ import sys
 import os
 import json
 import logging
+import getopt
 
 def get_table(key):
     m = hashlib.md5()
@@ -111,12 +112,12 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 remote.connect((SERVER, REMOTE_PORT))
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
-            except socket.error as e:
-                logging.warn('socket error ' + str(e))
+            except socket.error, e:
+                logging.warn(e)
                 return
             self.handle_tcp(sock, remote)
-        except socket.error as e:
-            logging.warn('socket error ' + str(e))
+        except socket.error, e:
+            logging.warn(e)
 
 
 if __name__ == '__main__':
@@ -129,13 +130,27 @@ if __name__ == '__main__':
     PORT = config['local_port']
     KEY = config['password']
 
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:l:')
+    for key, value in optlist:
+        if key == '-p':
+            REMOTE_PORT = int(value)
+        elif key == '-k':
+            KEY = value
+        elif key == '-l':
+            PORT = int(value)
+        elif key == '-s':
+            SERVER = value
+
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt_table = ''.join(get_table(KEY))
     decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
-    server = ThreadingTCPServer(('', PORT), Socks5Server)
-    server.allow_reuse_address = True
-    logging.info("starting server at port %d ..." % PORT)
-    server.serve_forever()
+    try:
+        server = ThreadingTCPServer(('', PORT), Socks5Server)
+        server.allow_reuse_address = True
+        logging.info("starting server at port %d ..." % PORT)
+        server.serve_forever()
+    except socket.error, e:
+        logging.error(e)
 
