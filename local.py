@@ -75,9 +75,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            sock = self.connection
-            sock.recv(262)
-            sock.send("\x05\x00")
+            data = self.rfile.read(2)
+            self.rfile.read(ord(data[1]))
+            self.wfile.write("\x05\x00")
             data = self.rfile.read(4)
             mode = ord(data[1])
             if mode != 1:
@@ -90,7 +90,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = socket.inet_ntoa(addr_ip)
                 addr_to_send += addr_ip
             elif addrtype == 3:
-                addr_len = sock.recv(1)
+                addr_len = self.rfile.read(1)
                 addr = self.rfile.read(ord(addr_len))
                 addr_to_send += addr_len + addr
             else:
@@ -102,8 +102,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             port = struct.unpack('>H', addr_port)
             try:
                 reply = "\x05\x00\x00\x01"
-                reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
-                sock.send(reply)
+                reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 0)
+                self.wfile.write(reply)
                 # reply immediately
                 if '-6' in sys.argv[1:]:
                     remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
@@ -115,7 +115,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             except socket.error, e:
                 logging.warn(e)
                 return
-            self.handle_tcp(sock, remote)
+            self.handle_tcp(self.connection, remote)
         except socket.error, e:
             logging.warn(e)
 
