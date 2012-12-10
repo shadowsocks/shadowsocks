@@ -6,7 +6,12 @@ shadowsocks is a lightweight tunnel proxy which can help you get through firewal
 usage
 -----------
 
-Edit `config.json`, change the following values:
+First, make sure you have Python 2.6 or 2.7.
+
+    $ python --version
+    Python 2.6.8
+
+Then edit `config.json`, change the following values:
 
     server          your server ip or hostname
     server_port     server port
