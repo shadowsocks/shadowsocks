@@ -123,9 +123,6 @@ if __name__ == '__main__':
     if args.port:
         PORT = args.port
 
-    print(KEY, PORT)
-    sys.exit(0)
-
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
