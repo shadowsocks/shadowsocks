@@ -31,7 +31,7 @@ import sys
 import os
 import json
 import logging
-import getopt
+import argparse
 
 def get_table(key):
     m = hashlib.md5()
@@ -106,12 +106,22 @@ if __name__ == '__main__':
     PORT = config['server_port']
     KEY = config['password']
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
-    for key, value in optlist:
-        if key == '-p':
-            PORT = int(value)
-        elif key == '-k':
-            KEY = value
+    parser = argparse.ArgumentParser(
+        description='ShadowSocks Server'
+    )
+    parser.add_argument('-p', '--port', action='store', help='port', type=int)
+    parser.add_argument('-k', '--key', action='store', help='password', type=unicode)
+    if not len(sys.argv):
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    if args.key:
+        KEY = args.key
+
+    if args.port:
+        PORT = args.port
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -127,4 +137,3 @@ if __name__ == '__main__':
         server.serve_forever()
     except socket.error, e:
         logging.error(e)
-

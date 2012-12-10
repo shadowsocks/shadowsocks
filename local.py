@@ -31,7 +31,7 @@ import sys
 import os
 import json
 import logging
-import getopt
+import argparse
 
 def get_table(key):
     m = hashlib.md5()
@@ -130,16 +130,27 @@ if __name__ == '__main__':
     PORT = config['local_port']
     KEY = config['password']
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:l:')
-    for key, value in optlist:
-        if key == '-p':
-            REMOTE_PORT = int(value)
-        elif key == '-k':
-            KEY = value
-        elif key == '-l':
-            PORT = int(value)
-        elif key == '-s':
-            SERVER = value
+    parser = argparse.ArgumentParser(
+        description='ShadowSocks Client'
+    )
+    parser.add_argument('-p', '--port', action='store', help='remote port', type=int)
+    parser.add_argument('-k', '--key', action='store', help='password', type=unicode)
+    parser.add_argument('-l', '--localport', action='store', help='local port', type=int)
+    parser.add_argument('-s', '--server', action='store', help='server ip address', type=unicode)
+    if not len(sys.argv):
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    if args.server:
+        SERVER = args.server
+    if args.port:
+        REMOTE_PORT = args.port
+    if args.key:
+        KEY = args.key
+    if args.localport:
+        PORT = args.localport
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
