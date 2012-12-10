@@ -125,10 +125,6 @@ if __name__ == '__main__':
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
-    SERVER = config['server']
-    REMOTE_PORT = config['server_port']
-    PORT = config['local_port']
-    KEY = config['password']
 
     parser = argparse.ArgumentParser(
         description='ShadowSocks Client'
@@ -142,15 +138,14 @@ if __name__ == '__main__':
         sys.exit(1)
 
     args = parser.parse_args()
+    d = vars(args)
+    _config = dict((k,d[k]) for k in d if d[k])
+    config.update(_config)
 
-    if args.server:
-        SERVER = args.server
-    if args.port:
-        REMOTE_PORT = args.port
-    if args.key:
-        KEY = args.key
-    if args.localport:
-        PORT = args.localport
+    SERVER = config['server']
+    REMOTE_PORT = config['port']
+    PORT = config['localport']
+    KEY = config['password']
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
