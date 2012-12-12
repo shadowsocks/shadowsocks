@@ -26,6 +26,7 @@ Change proxy settings of your browser into
 
     SOCKS5 127.0.0.1:local_port
 
+
 advanced
 ------------
 
@@ -33,3 +34,20 @@ You can use args to override settings from `config.json`.
 
     python local.py -s server_name -p server_port -l local_port -k password
     python server.py -p server_port -k password
+    
+    
+troubleshooting
+---------------
+
+* I can only load some websites  
+   Check the logs of local.py. If you see only IPs, not hostnames, your may got DNS poisoned, but your browser hasn't 
+    been configured to let the proxy resolve DNS.  
+   To set proper DNS config, you can simply install FoxyProxy / Autoproxy for Firefox, or ProxySwitchy / SwitchySharp for 
+   Chrome. They will set the config in your browser automatically.  
+   Or you can change network.proxy.socks_remote_dns into true in about:config page if you use Firefox.
+* I can't load any websites and the log prints mode != 1  
+    Make sure proxy protocol is set to Socks5, not Socks4 or HTTP.
+* I use IE and I can't get my proxy to work    
+    Since you can't specify Socks4 or Socks5 in IE settings, you may want to use a PAC(Proxy auto-config) script, or 
+    just use Firefox instead.
+
