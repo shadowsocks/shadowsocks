@@ -55,10 +55,16 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    if remote.send(self.encrypt(sock.recv(4096))) <= 0:
+                    data = sock.recv(4096)
+                    if data <= 0:
+                        break
+                    if remote.sendall(self.encrypt(data)) is not None:
                         break
                 if remote in r:
-                    if sock.send(self.decrypt(remote.recv(4096))) <= 0:
+                    data = remote.recv(4096)
+                    if data <= 0:
+                        break
+                    if sock.sendall(self.decrypt(data)) is not None:
                         break
         finally:
             sock.close()
