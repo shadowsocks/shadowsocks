@@ -1,6 +1,8 @@
 shadowsocks
 ===========
 
+Current version: 0.9
+
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
 usage
@@ -10,6 +12,7 @@ First, make sure you have Python 2.6 or 2.7.
 
     $ python --version
     Python 2.6.8
+
 
 Then edit `config.json`, change the following values:
 
@@ -34,8 +37,15 @@ You can use args to override settings from `config.json`.
 
     python local.py -s server_name -p server_port -l local_port -k password
     python server.py -p server_port -k password
-    
-    
+
+You may want to install gevent for better performance.
+
+    $ apt-get install python-gevent
+
+Or:
+
+    $ sudo easy_install gevent
+
 troubleshooting
 ---------------
 

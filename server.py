@@ -20,6 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
+
+try:
+    import gevent, gevent.monkey
+    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
+except ImportError:
+    gevent = None
+    print >>sys.stderr, 'warning: gevent not found, using threading instead'
 
 import socket
 import select
@@ -27,7 +35,6 @@ import SocketServer
 import struct
 import string
 import hashlib
-import sys
 import os
 import json
 import logging
@@ -43,9 +50,18 @@ def get_table(key):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
 
+def send_all(sock, data):
+    bytes_sent = 0
+    while True:
+        r = sock.send(data[bytes_sent:])
+        if r < 0:
+            return r
+        bytes_sent += r
+        if bytes_sent == len(data):
+            return bytes_sent
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    pass
+    allow_reuse_address = True
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
@@ -55,11 +71,20 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    if remote.send(self.decrypt(sock.recv(4096))) <= 0:
+                    data = sock.recv(4096)
+                    if len(data) <= 0:
                         break
+                    result = send_all(remote, self.decrypt(data))
+                    if result < len(data):
+                        raise Exception('failed to send all data')
                 if remote in r:
-                    if sock.send(self.encrypt(remote.recv(4096))) <= 0:
+                    data = remote.recv(4096)
+                    if len(data) <= 0:
                         break
+                    result = send_all(sock, self.encrypt(data))
+                    if result < len(data):
+                        raise Exception('failed to send all data')
+
         finally:
             sock.close()
             remote.close()
@@ -87,6 +112,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             try:
                 logging.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 remote.connect((addr, port[0]))
             except socket.error, e:
                 # Connection refused
@@ -98,6 +124,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
+
+    print 'shadowsocks v0.9'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
@@ -122,7 +150,6 @@ if __name__ == '__main__':
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)
-        server.allow_reuse_address = True
         logging.info("starting server at port %d ..." % PORT)
         server.serve_forever()
     except socket.error, e:
