@@ -50,6 +50,15 @@ def get_table(key):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
 
+def send_all(sock, data):
+    bytes_sent = 0
+    while True:
+        r = sock.send(data[bytes_sent:])
+        if r < 0:
+            return r
+        bytes_sent += r
+        if bytes_sent == len(data):
+            return bytes_sent
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -65,13 +74,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     data = sock.recv(4096)
                     if data <= 0:
                         break
-                    remote.sendall(self.encrypt(data))
+                    send_all(remote, self.encrypt(data))
 
                 if remote in r:
                     data = remote.recv(4096)
                     if data <= 0:
                         break
-                    sock.sendall(self.decrypt(data))
+                    send_all(sock, self.decrypt(data))
         finally:
             sock.close()
             remote.close()
