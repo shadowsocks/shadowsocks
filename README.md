@@ -40,8 +40,12 @@ You can use args to override settings from `config.json`.
 
 You may want to install gevent for better performance.
 
+    $ apt-get install python-gevent
+
+Or:
+
     $ sudo easy_install gevent
-    
+
 troubleshooting
 ---------------
 

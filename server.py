@@ -52,7 +52,7 @@ def get_table(key):
 
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    pass
+    allow_reuse_address = True
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
@@ -65,14 +65,12 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     data = sock.recv(4096)
                     if data <= 0:
                         break
-                    if remote.send(self.decrypt(data)) <= 0:
-                        break
+                    remote.sendall(self.decrypt(data))
                 if remote in r:
                     data = remote.recv(4096)
                     if data <= 0:
                         break
-                    if sock.send(self.encrypt(data)) <= 0:
-                        break
+                    sock.send(self.encrypt(data))
         finally:
             sock.close()
             remote.close()
@@ -137,7 +135,6 @@ if __name__ == '__main__':
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)
-        server.allow_reuse_address = True
         logging.info("starting server at port %d ..." % PORT)
         server.serve_forever()
     except socket.error, e:
