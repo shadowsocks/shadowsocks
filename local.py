@@ -134,6 +134,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
                 else:
                     remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 remote.connect((SERVER, REMOTE_PORT))
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
