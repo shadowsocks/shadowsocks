@@ -100,9 +100,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            data = self.rfile.read(2)
-            self.rfile.read(ord(data[1]))
-            self.wfile.write("\x05\x00")
+            sock = self.connection
+            sock.recv(262)
+            sock.send("\x05\x00")
             data = self.rfile.read(4)
             mode = ord(data[1])
             if mode != 1:
@@ -127,7 +127,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             port = struct.unpack('>H', addr_port)
             try:
                 reply = "\x05\x00\x00\x01"
-                reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 0)
+                reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 self.wfile.write(reply)
                 # reply immediately
                 if '-6' in sys.argv[1:]:
@@ -141,7 +141,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             except socket.error, e:
                 logging.warn(e)
                 return
-            self.handle_tcp(self.connection, remote)
+            self.handle_tcp(sock, remote)
         except socket.error, e:
             logging.warn(e)
 
