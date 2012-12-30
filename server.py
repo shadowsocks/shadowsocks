@@ -60,7 +60,6 @@ def send_all(sock, data):
         if bytes_sent == len(data):
             return bytes_sent
 
-
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
@@ -73,14 +72,19 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
                     data = sock.recv(4096)
-                    if data <= 0:
+                    if len(data) <= 0:
                         break
-                    send_all(remote, self.decrypt(data))
+                    result = send_all(remote, self.decrypt(data))
+                    if result < len(data):
+                        raise Exception('failed to send all data')
                 if remote in r:
                     data = remote.recv(4096)
-                    if data <= 0:
+                    if len(data) <= 0:
                         break
-                    send_all(sock, self.encrypt(data))
+                    result = send_all(sock, self.encrypt(data))
+                    if result < len(data):
+                        raise Exception('failed to send all data')
+
         finally:
             sock.close()
             remote.close()
