@@ -20,6 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
+
+try:
+    import gevent, gevent.monkey
+    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
+except ImportError:
+    gevent = None
+    print >>sys.stderr, 'warning: gevent not found, using threading instead'
 
 import socket
 import select
@@ -27,7 +35,6 @@ import SocketServer
 import struct
 import string
 import hashlib
-import sys
 import os
 import json
 import logging
@@ -58,13 +65,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     data = sock.recv(4096)
                     if data <= 0:
                         break
-                    if remote.sendall(self.decrypt(data)) is not None:
+                    if remote.send(self.decrypt(data)) <= 0:
                         break
                 if remote in r:
                     data = remote.recv(4096)
                     if data <= 0:
                         break
-                    if sock.sendall(self.encrypt(data)) is not None:
+                    if sock.send(self.encrypt(data)) <= 0:
                         break
         finally:
             sock.close()
