@@ -105,10 +105,14 @@ try:
         if ready_count == 2 and p3 is None:
             p3 = Popen(['curl', 'http://www.google.com/', '-v', '-L',
                         '--socks5-hostname', '127.0.0.1:1080'], shell=False,
-                        bufsize=0, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
-                        close_fds=True)
-            fdset.append(p3.stdout)
-            fdset.append(p3.stderr)
+                        bufsize=0,  close_fds=True)
+            break
+            
+    if p3 is not None:
+        r = p3.wait()
+        if r == 0:
+            print 'test passed'
+        sys.exit(r)
     
 finally:
     for p in [p1, p2]:
@@ -116,11 +120,5 @@ finally:
             p.kill()
         except OSError:
             pass
-
-if p3 is not None:
-    r = p3.wait()
-    if r == 0:
-        print 'test passed'
-    sys.exit(r)
-    
+   
 sys.exit(-1)
