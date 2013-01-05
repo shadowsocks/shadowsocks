@@ -2,7 +2,7 @@ shadowsocks
 ===========
 
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)  
-Current version: 0.9
+Current version: 0.9.1
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
@@ -43,11 +43,12 @@ You can use args to override settings from `config.json`.
 
 You may want to install gevent for better performance.
 
-    $ apt-get install python-gevent
+    $ sudo apt-get install python-gevent
 
 Or:
 
-    $ sudo easy_install gevent
+    $ sudo apt-get install libevent-dev python-pip
+    $ sudo pip install gevent
 
 troubleshooting
 ---------------
