@@ -125,7 +125,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
 
-    print 'shadowsocks v0.9.1'
+    print 'shadowsocks v0.9.2'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
