@@ -103,7 +103,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             sock = self.connection
             sock.recv(262)
             sock.send("\x05\x00")
-            data = self.rfile.read(4)
+            data = self.rfile.read(4) or '\x00' * 4
             mode = ord(data[1])
             if mode != 1:
                 logging.warn('mode != 1')
