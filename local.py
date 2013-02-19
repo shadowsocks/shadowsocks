@@ -37,7 +37,6 @@ import struct
 import string
 import hashlib
 import os
-import json
 import logging
 import getopt
 
