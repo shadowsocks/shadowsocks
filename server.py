@@ -66,7 +66,10 @@ class PairedStream(iostream.IOStream):
     def on_close(self):
         remote = getattr(self, "remote")
         if isinstance(remote, PairedStream) and not remote.closed():
-            remote.close()
+            if remote.writing():
+                remote.write("", callback=remote.close())
+            else:
+                remote.close()
 
 
 class ConnHandler(PairedStream):
