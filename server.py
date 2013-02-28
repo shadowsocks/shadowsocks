@@ -44,14 +44,14 @@ class Crypto(object):
         table = list(trans)
         for i in xrange(1, 1024):
             table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-        self._encrypt_table = ''.join(table)
-        self._decrypt_table = string.maketrans(self._encrypt_table, trans)
+        self.encrypt_table = ''.join(table)
+        self.decrypt_table = string.maketrans(self.encrypt_table, trans)
 
     def encrypt(self, data):
-        return data.translate(self._encrypt_table)
+        return data.translate(self.encrypt_table)
 
     def decrypt(self, data):
-        return data.translate(self._decrypt_table)
+        return data.translate(self.decrypt_table)
 
 
 class Socks5Server(netutil.TCPServer):
@@ -62,8 +62,12 @@ class Socks5Server(netutil.TCPServer):
 
 
 class PairedStream(iostream.IOStream):
+    def __init__(self, soc):
+        super(PairedStream, self).__init__(soc)
+        self.remote = None
+
     def on_close(self):
-        remote = getattr(self, "remote")
+        remote = self.remote
         if isinstance(remote, PairedStream) and not remote.closed():
             if remote.writing():
                 remote.write("", callback=remote.close())
@@ -114,11 +118,11 @@ class ConnHandler(PairedStream):
 
     def on_client_read(self, data):
         if data:
-            self.remote.write(crypto.encrypt(data))
+            self.remote.write(crypto.decrypt(data))
 
     def on_remote_read(self, data):
         if data:
-            self.write(crypto.decrypt(data))
+            self.write(crypto.encrypt(data))
 
 
 if __name__ == "__main__":
