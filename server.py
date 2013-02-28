@@ -78,22 +78,22 @@ class ConnHandler(PairedStream):
     def on_addrtype(self, addrtype):
         addrtype = ord(crypto.decrypt(addrtype))
         if addrtype == 1:
-            self.read_bytes(4, self.on_addr1)
+            self.read_bytes(4, self.on_ipaddr)
         elif addrtype == 3:
-            self.read_bytes(1, self.on_addr3_length)
+            self.read_bytes(1, self.on_hostname_length)
         else:
             logging.warn("addr_type %d not support" % addrtype)
             self.close()
 
-    def on_addr1(self, addr):
+    def on_ipaddr(self, addr):
         self.remote_addr = socket.inet_ntoa(crypto.decrypt(addr))
         self.read_bytes(2, self.on_port)
 
-    def on_addr3_length(self, length):
+    def on_hostname_length(self, length):
         length = ord(crypto.decrypt(length))
-        self.read_bytes(length, self.on_addr3)
+        self.read_bytes(length, self.on_hostname)
 
-    def on_addr3(self, addr):
+    def on_hostname(self, addr):
         self.remote_addr = crypto.decrypt(addr)
         self.read_bytes(2, self.on_port)
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     with open(options.config_path, "rb") as f:
         config = json.load(f)
 
-    server_port = options.server_port if options.server_port else config["server_port"]
+    server_port = int(options.server_port) if options.server_port else config["server_port"]
     server_password = options.server_password if options.server_password else config['password']
 
     if getattr(options, "ipv6"):
