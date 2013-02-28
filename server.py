@@ -115,7 +115,7 @@ class ConnHandler(PairedStream):
     def on_remote_connected(self):
         self.read_until_close(callback=self.on_client_read, streaming_callback=self.on_client_read)
         self.remote.read_until_close(callback=self.on_remote_read, streaming_callback=self.on_remote_read)
-        self._read_from_buffer()  # We must call this to empty filled buffer otherwise nothing will be read in again.
+        self._try_inline_read()  # We must call this to empty filled buffer otherwise nothing will be read in again.
 
     def on_client_read(self, data):
         if data and not self.remote.closed():
