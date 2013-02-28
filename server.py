@@ -21,14 +21,6 @@
 # SOFTWARE.
 
 import sys
-
-try:
-    import gevent, gevent.monkey
-    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
-except ImportError:
-    gevent = None
-    print >>sys.stderr, 'warning: gevent not found, using threading instead'
-
 import socket
 import select
 import SocketServer
@@ -40,6 +32,7 @@ import json
 import logging
 import getopt
 
+
 def get_table(key):
     m = hashlib.md5()
     m.update(key)
@@ -50,6 +43,7 @@ def get_table(key):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
 
+
 def send_all(sock, data):
     bytes_sent = 0
     while True:
@@ -59,6 +53,7 @@ def send_all(sock, data):
         bytes_sent += r
         if bytes_sent == len(data):
             return bytes_sent
+
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -122,6 +117,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
 
@@ -142,7 +138,7 @@ if __name__ == '__main__':
             KEY = value
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt_table = ''.join(get_table(KEY))
     decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
