@@ -115,10 +115,12 @@ class ConnHandler(PairedStream):
         self.remote.read_until_close(callback=self.on_remote_read, streaming_callback=self.on_remote_read)
 
     def on_client_read(self, data):
-        self.remote.write(crypto.encrypt(data))
+        if data:
+            self.remote.write(crypto.encrypt(data))
 
     def on_remote_read(self, data):
-        self.write(crypto.decrypt(data))
+        if data:
+            self.write(crypto.decrypt(data))
 
 
 if __name__ == "__main__":
