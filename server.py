@@ -82,8 +82,7 @@ class ConnHandler(PairedStream):
         elif addrtype == 3:
             self.read_bytes(1, self.on_addr3_length)
         else:
-            # not support
-            logging.warn('addr_type not support')
+            logging.warn("addr_type %d not support" % addrtype)
             self.close()
 
     def on_addr1(self, addr):
