@@ -20,15 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
-import socket
-import struct
-import string
 import hashlib
-import os
 import json
 import logging
-import getopt
+import optparse
+import os
+import socket
+import string
+import struct
 
 from tornado import ioloop
 from tornado import iostream
@@ -126,20 +125,22 @@ class ConnHandler(PairedStream):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
-    with open(os.path.join(os.path.dirname(__file__), "config.json"), "rb") as f:
+
+    parser = optparse.OptionParser("usage: %prog [options] arg")
+    parser.add_option("-c", "--config", dest="config_path",
+                      default=os.path.join(os.path.dirname(__file__), "config.json"))
+    parser.add_option("-p", "--port", dest="server_port")
+    parser.add_option("-k", "--key", dest="server_password")
+    parser.add_option("-6", "--ipv6", action="store_true", dest="ipv6")
+    options, args = parser.parse_args()
+
+    with open(options.config_path, "rb") as f:
         config = json.load(f)
 
-    server_port = config['server_port']
-    server_password = config['password']
+    server_port = options.server_port if options.server_port else config["server_port"]
+    server_password = options.server_password if options.server_password else config['password']
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
-    for key, value in optlist:
-        if key == '-p':
-            server_port = int(value)
-        elif key == '-k':
-            server_password = value
-
-    if '-6' in sys.argv[1:]:
+    if getattr(options, "ipv6"):
         address_family = socket.AF_INET6
     else:
         address_family = socket.AF_INET
