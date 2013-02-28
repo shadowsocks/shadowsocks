@@ -22,8 +22,6 @@
 
 import sys
 import socket
-import select
-import SocketServer
 import struct
 import string
 import hashlib
@@ -32,122 +30,124 @@ import json
 import logging
 import getopt
 
-
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
+from tornado import ioloop
+from tornado import iostream
+from tornado import netutil
 
 
-def send_all(sock, data):
-    bytes_sent = 0
-    while True:
-        r = sock.send(data[bytes_sent:])
-        if r < 0:
-            return r
-        bytes_sent += r
-        if bytes_sent == len(data):
-            return bytes_sent
-
-
-class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    allow_reuse_address = True
-
-
-class Socks5Server(SocketServer.StreamRequestHandler):
-    def handle_tcp(self, sock, remote):
-        try:
-            fdset = [sock, remote]
-            while True:
-                r, w, e = select.select(fdset, [], [])
-                if sock in r:
-                    data = sock.recv(4096)
-                    if len(data) <= 0:
-                        break
-                    result = send_all(remote, self.decrypt(data))
-                    if result < len(data):
-                        raise Exception('failed to send all data')
-                if remote in r:
-                    data = remote.recv(4096)
-                    if len(data) <= 0:
-                        break
-                    result = send_all(sock, self.encrypt(data))
-                    if result < len(data):
-                        raise Exception('failed to send all data')
-
-        finally:
-            sock.close()
-            remote.close()
+class Crypto(object):
+    def __init__(self, password):
+        m = hashlib.md5()
+        m.update(password)
+        s = m.digest()
+        a, b = struct.unpack('<QQ', s)
+        trans = string.maketrans('', '')
+        table = list(trans)
+        for i in xrange(1, 1024):
+            table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
+        self._encrypt_table = ''.join(table)
+        self._decrypt_table = string.maketrans(self._encrypt_table, trans)
 
     def encrypt(self, data):
-        return data.translate(encrypt_table)
+        return data.translate(self._encrypt_table)
 
     def decrypt(self, data):
-        return data.translate(decrypt_table)
-
-    def handle(self):
-        try:
-            sock = self.connection
-            addrtype = ord(self.decrypt(sock.recv(1)))
-            if addrtype == 1:
-                addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
-            elif addrtype == 3:
-                addr = self.decrypt(
-                    self.rfile.read(ord(self.decrypt(sock.recv(1)))))
-            else:
-                # not support
-                logging.warn('addr_type not support')
-                return
-            port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
-            try:
-                logging.info('connecting %s:%d' % (addr, port[0]))
-                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                remote.connect((addr, port[0]))
-            except socket.error, e:
-                # Connection refused
-                logging.warn(e)
-                return
-            self.handle_tcp(sock, remote)
-        except socket.error, e:
-            logging.warn(e)
+        return data.translate(self._decrypt_table)
 
 
-if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__) or '.')
+class Socks5Server(netutil.TCPServer):
+    def handle_stream(self, stream, address):
+        soc = stream.socket
+        soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        ConnHandler(soc).wait_for_data()
 
-    print 'shadowsocks v0.9.3'
 
-    with open('config.json', 'rb') as f:
+class PairedStream(iostream.IOStream):
+    def on_close(self):
+        remote = getattr(self, "remote")
+        if isinstance(remote, PairedStream) and not remote.closed():
+            remote.close()
+
+
+class ConnHandler(PairedStream):
+    def wait_for_data(self):
+        self.read_bytes(1, self.on_addrtype)
+
+    def on_addrtype(self, addrtype):
+        addrtype = ord(crypto.decrypt(addrtype))
+        if addrtype == 1:
+            self.read_bytes(4, self.on_addr1)
+        elif addrtype == 3:
+            self.read_bytes(1, self.on_addr3_length)
+        else:
+            # not support
+            logging.warn('addr_type not support')
+            self.close()
+
+    def on_addr1(self, addr):
+        self.remote_addr = socket.inet_ntoa(crypto.decrypt(addr))
+        self.read_bytes(2, self.on_port)
+
+    def on_addr3_length(self, length):
+        length = ord(crypto.decrypt(length))
+        self.read_bytes(length, self.on_addr3)
+
+    def on_addr3(self, addr):
+        self.remote_addr = crypto.decrypt(addr)
+        self.read_bytes(2, self.on_port)
+
+    def on_port(self, port):
+        self.remote_port = struct.unpack('>H', crypto.decrypt(port))[0]
+        logging.debug("Connecting to %s:%d" % (self.remote_addr, self.remote_port))
+        remote_soc = socket.socket()
+        remote_soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        self.remote = PairedStream(remote_soc)
+        self.set_close_callback(self.remote.on_close)
+        self.remote.set_close_callback(self.on_close)
+
+        self.remote.connect((self.remote_addr, self.remote_port), self.on_remote_connected)
+
+    def on_remote_connected(self):
+        self.read_until_close(callback=self.on_client_read, streaming_callback=self.on_client_read)
+        self.remote.read_until_close(callback=self.on_remote_read, streaming_callback=self.on_remote_read)
+
+    def on_client_read(self, data):
+        self.remote.write(crypto.encrypt(data))
+
+    def on_remote_read(self, data):
+        self.write(crypto.decrypt(data))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+    with open(os.path.join(os.path.dirname(__file__), "config.json"), "rb") as f:
         config = json.load(f)
 
-    SERVER = config['server']
-    PORT = config['server_port']
-    KEY = config['password']
+    server_port = config['server_port']
+    server_password = config['password']
 
     optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
     for key, value in optlist:
         if key == '-p':
-            PORT = int(value)
+            server_port = int(value)
         elif key == '-k':
-            KEY = value
+            server_password = value
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
-
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     if '-6' in sys.argv[1:]:
-        ThreadingTCPServer.address_family = socket.AF_INET6
-    try:
-        server = ThreadingTCPServer(('', PORT), Socks5Server)
-        logging.info("starting server at port %d ..." % PORT)
-        server.serve_forever()
-    except socket.error, e:
-        logging.error(e)
+        address_family = socket.AF_INET6
+    else:
+        address_family = socket.AF_INET
 
+    crypto = Crypto(server_password)
+
+    logging.info("starting server at port %d ..." % server_port)
+    server = Socks5Server()
+    server.bind(port=server_port, family=address_family)
+    server.start()
+    try:
+        ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        logging.exception("Uncaught Exception")
