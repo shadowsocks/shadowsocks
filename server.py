@@ -20,138 +20,144 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
-
-try:
-    import gevent, gevent.monkey
-    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
-except ImportError:
-    gevent = None
-    print >>sys.stderr, 'warning: gevent not found, using threading instead'
-
-import socket
-import select
-import SocketServer
-import struct
-import string
 import hashlib
-import os
 import json
 import logging
-import getopt
+import optparse
+import os
+import socket
+import string
+import struct
 
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
-
-def send_all(sock, data):
-    bytes_sent = 0
-    while True:
-        r = sock.send(data[bytes_sent:])
-        if r < 0:
-            return r
-        bytes_sent += r
-        if bytes_sent == len(data):
-            return bytes_sent
-
-class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    allow_reuse_address = True
+from tornado import ioloop
+from tornado import iostream
+from tornado import netutil
 
 
-class Socks5Server(SocketServer.StreamRequestHandler):
-    def handle_tcp(self, sock, remote):
-        try:
-            fdset = [sock, remote]
-            while True:
-                r, w, e = select.select(fdset, [], [])
-                if sock in r:
-                    data = sock.recv(4096)
-                    if len(data) <= 0:
-                        break
-                    result = send_all(remote, self.decrypt(data))
-                    if result < len(data):
-                        raise Exception('failed to send all data')
-                if remote in r:
-                    data = remote.recv(4096)
-                    if len(data) <= 0:
-                        break
-                    result = send_all(sock, self.encrypt(data))
-                    if result < len(data):
-                        raise Exception('failed to send all data')
-
-        finally:
-            sock.close()
-            remote.close()
+class Crypto(object):
+    def __init__(self, password):
+        m = hashlib.md5()
+        m.update(password)
+        s = m.digest()
+        a, b = struct.unpack('<QQ', s)
+        trans = string.maketrans('', '')
+        table = list(trans)
+        for i in xrange(1, 1024):
+            table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
+        self.encrypt_table = ''.join(table)
+        self.decrypt_table = string.maketrans(self.encrypt_table, trans)
 
     def encrypt(self, data):
-        return data.translate(encrypt_table)
+        return data.translate(self.encrypt_table)
 
     def decrypt(self, data):
-        return data.translate(decrypt_table)
+        return data.translate(self.decrypt_table)
 
-    def handle(self):
-        try:
-            sock = self.connection
-            addrtype = ord(self.decrypt(sock.recv(1)))
-            if addrtype == 1:
-                addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
-            elif addrtype == 3:
-                addr = self.decrypt(
-                    self.rfile.read(ord(self.decrypt(sock.recv(1)))))
+
+class Socks5Server(netutil.TCPServer):
+    def handle_stream(self, stream, address):
+        soc = stream.socket
+        soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        ConnHandler(soc).wait_for_data()
+
+
+class PairedStream(iostream.IOStream):
+    def __init__(self, soc):
+        super(PairedStream, self).__init__(soc)
+        self.remote = None
+
+    def on_close(self):
+        remote = self.remote
+        if isinstance(remote, PairedStream) and not remote.closed():
+            if remote.writing():
+                remote.write("", callback=remote.close())
             else:
-                # not support
-                logging.warn('addr_type not support')
-                return
-            port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
-            try:
-                logging.info('connecting %s:%d' % (addr, port[0]))
-                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                remote.connect((addr, port[0]))
-            except socket.error, e:
-                # Connection refused
-                logging.warn(e)
-                return
-            self.handle_tcp(sock, remote)
-        except socket.error, e:
-            logging.warn(e)
+                remote.close()
 
-if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__) or '.')
 
-    print 'shadowsocks v0.9.3'
+class ConnHandler(PairedStream):
+    def wait_for_data(self):
+        self.read_bytes(1, self.on_addrtype)
 
-    with open('config.json', 'rb') as f:
+    def on_addrtype(self, addrtype):
+        addrtype = ord(crypto.decrypt(addrtype))
+        if addrtype == 1:
+            self.read_bytes(4, self.on_ipaddr)
+        elif addrtype == 3:
+            self.read_bytes(1, self.on_hostname_length)
+        else:
+            logging.warn("addr_type %d not support" % addrtype)
+            self.close()
+
+    def on_ipaddr(self, addr):
+        self.remote_addr = socket.inet_ntoa(crypto.decrypt(addr))
+        self.read_bytes(2, self.on_port)
+
+    def on_hostname_length(self, length):
+        length = ord(crypto.decrypt(length))
+        self.read_bytes(length, self.on_hostname)
+
+    def on_hostname(self, addr):
+        self.remote_addr = crypto.decrypt(addr)
+        self.read_bytes(2, self.on_port)
+
+    def on_port(self, port):
+        self.remote_port = struct.unpack('>H', crypto.decrypt(port))[0]
+        logging.debug("Connecting to %s:%d" % (self.remote_addr, self.remote_port))
+        remote_soc = socket.socket()
+        remote_soc.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        self.remote = PairedStream(remote_soc)
+        self.set_close_callback(self.remote.on_close)
+        self.remote.set_close_callback(self.on_close)
+
+        self.remote.connect((self.remote_addr, self.remote_port), self.on_remote_connected)
+
+    def on_remote_connected(self):
+        self.read_until_close(callback=self.on_client_read, streaming_callback=self.on_client_read)
+        self.remote.read_until_close(callback=self.on_remote_read, streaming_callback=self.on_remote_read)
+        self._try_inline_read()  # We must call this to empty filled buffer otherwise nothing will be read in again.
+
+    def on_client_read(self, data):
+        if data and not self.remote.closed():
+            self.remote.write(crypto.decrypt(data))
+
+    def on_remote_read(self, data):
+        if data and not self.closed():
+            self.write(crypto.encrypt(data))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+
+    parser = optparse.OptionParser("usage: %prog [options] arg")
+    parser.add_option("-c", "--config", dest="config_path",
+                      default=os.path.join(os.path.dirname(__file__), "config.json"))
+    parser.add_option("-p", "--port", dest="server_port")
+    parser.add_option("-k", "--key", dest="server_password")
+    parser.add_option("-6", "--ipv6", action="store_true", dest="ipv6")
+    options, args = parser.parse_args()
+
+    with open(options.config_path, "rb") as f:
         config = json.load(f)
 
-    SERVER = config['server']
-    PORT = config['server_port']
-    KEY = config['password']
+    server_port = int(options.server_port) if options.server_port else config["server_port"]
+    server_password = options.server_password if options.server_password else config['password']
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
-    for key, value in optlist:
-        if key == '-p':
-            PORT = int(value)
-        elif key == '-k':
-            KEY = value
+    if getattr(options, "ipv6"):
+        address_family = socket.AF_INET6
+    else:
+        address_family = socket.AF_INET
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+    crypto = Crypto(server_password)
 
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
-    if '-6' in sys.argv[1:]:
-        ThreadingTCPServer.address_family = socket.AF_INET6
+    logging.info("starting server at port %d ..." % server_port)
+    server = Socks5Server()
+    server.bind(port=server_port, family=address_family)
+    server.start()
     try:
-        server = ThreadingTCPServer(('', PORT), Socks5Server)
-        logging.info("starting server at port %d ..." % PORT)
-        server.serve_forever()
-    except socket.error, e:
-        logging.error(e)
-
+        ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        logging.exception("Uncaught Exception")
