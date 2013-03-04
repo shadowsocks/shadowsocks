@@ -154,7 +154,7 @@ if __name__ == '__main__':
         import json
         
     os.chdir(os.path.dirname(__file__) or '.')
-    print 'shadowsocks v0.9.3'
+    print 'shadowsocks v0.9.4'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
