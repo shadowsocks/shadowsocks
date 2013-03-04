@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import os
+import signal
 import sys
 import select
 import struct
@@ -117,7 +119,7 @@ try:
 finally:
     for p in [p1, p2]:
         try:
-            p.kill()
+            os.kill(p.pid, signal.SIGTERM)
         except OSError:
             pass
    
