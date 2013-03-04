@@ -1,12 +1,12 @@
 language: python 
 python:
+  - "2.5"
   - "2.6"
   - "2.7"
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libevent-dev python-gevent
   - pip install gevent
-  - pip install simplejson
 script:
   - python test.py
 branches:

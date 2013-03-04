@@ -22,7 +22,11 @@
 
 from __future__ import with_statement
 import sys
-
+if sys.version_info < (2, 6):
+    import simplejson as json
+else:
+    import json
+ 
 try:
     import gevent, gevent.monkey
     gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
@@ -147,12 +151,6 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 if __name__ == '__main__':
-    print "Python Version: %s " % '.'.join(str(v) for v in sys.version_info)
-    if sys.version_info < (2, 6):
-        import simplejson as json
-    else:
-        import json
-        
     os.chdir(os.path.dirname(__file__) or '.')
     print 'shadowsocks v0.9.4'
 
