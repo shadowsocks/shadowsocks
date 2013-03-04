@@ -7,6 +7,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libevent-dev python-gevent
   - sudo pip install gevent
+  - sudo pip install simplejson
 script:
   - python test.py
 branches:
