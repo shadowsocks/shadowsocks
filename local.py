@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import with_statement
 import sys
 
 try:
@@ -36,7 +37,6 @@ import struct
 import string
 import hashlib
 import os
-import json
 import logging
 import getopt
 
@@ -147,6 +147,12 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 if __name__ == '__main__':
+    print "Python Version: %s " % '.'.join(str(v) for v in sys.version_info)
+    if sys.version_info < (2, 6):
+        import simplejson as json
+    else:
+        import json
+        
     os.chdir(os.path.dirname(__file__) or '.')
     print 'shadowsocks v0.9.3'
 
