@@ -104,6 +104,10 @@ Please notice that some encryption methods are not available on some environment
 Performance
 ------------
 
+You may use -d option to enable SMART DRIRECT feature. If SMART DIRECT is enabled, connection will be established directly to destination IPs in China.
+
+    python local.py -d
+
 You may want to install gevent for better performance.
 
     $ sudo apt-get install python-gevent

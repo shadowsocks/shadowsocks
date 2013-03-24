@@ -35,6 +35,12 @@ except ImportError:
     gevent = None
     print >>sys.stderr, 'warning: gevent not found, using threading instead'
 
+try:
+    import isdirect
+except ImportError:
+    isdirect = None
+    print >>sys.stderr, 'error importing isdirect, SMART_DIRECT feature disabled'
+
 import socket
 import select
 import SocketServer
@@ -62,13 +68,16 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
-    def handle_tcp(self, sock, remote):
+    def handle_tcp(self, sock, remote, direct):
         try:
             fdset = [sock, remote]
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    data = self.encrypt(sock.recv(4096))
+                    if direct:
+                        data = sock.recv(4096)
+                    else:
+                        data = self.encrypt(sock.recv(4096))
                     if len(data) <= 0:
                         break
                     result = send_all(remote, data)
@@ -76,7 +85,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                         raise Exception('failed to send all data')
 
                 if remote in r:
-                    data = self.decrypt(remote.recv(4096))
+                    if direct:
+                        data = remote.recv(4096)
+                    else:
+                        data = self.decrypt(remote.recv(4096))
                     if len(data) <= 0:
                         break
                     result = send_all(sock, data)
@@ -127,24 +139,29 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             addr_port = self.rfile.read(2)
             addr_to_send += addr_port
             port = struct.unpack('>H', addr_port)
+            direct = SMART_DIRECT and isdirect.isdirect(addr)
             try:
                 reply = "\x05\x00\x00\x01"
                 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 self.wfile.write(reply)
                 # reply immediately
-                remote = socket.create_connection((SERVER, REMOTE_PORT))
-                self.send_encrypt(remote, addr_to_send)
-                logging.info('connecting %s:%d' % (addr, port[0]))
+                if direct:
+                    remote = socket.create_connection((addr, port[0]))
+                    logging.info('direct connecting %s:%d' % (addr, port[0]))
+                else:
+                    remote = socket.create_connection((SERVER, REMOTE_PORT))
+                    self.send_encrypt(remote, addr_to_send)
+                    logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
                 logging.warn(e)
                 return
-            self.handle_tcp(sock, remote)
+            self.handle_tcp(sock, remote, direct)
         except socket.error, e:
             logging.warn(e)
 
 
 def main():
-    global SERVER, REMOTE_PORT, PORT, KEY, METHOD, LOCAL, IPv6
+    global SERVER, REMOTE_PORT, PORT, KEY, METHOD, LOCAL, IPv6, SMART_DIRECT
     
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -167,9 +184,10 @@ def main():
     METHOD = None
     LOCAL = ''
     IPv6 = False
+    SMART_DIRECT = False
     
     config_path = utils.find_config()
-    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6d')
     for key, value in optlist:
         if key == '-c':
             config_path = value
@@ -178,8 +196,10 @@ def main():
         logging.info('loading config from %s' % config_path)
         with open(config_path, 'rb') as f:
             config = json.load(f)
-    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6d')
     for key, value in optlist:
+        if key == '-d':
+            SMART_DIRECT = (isdirect is not None)
         if key == '-p':
             config['server_port'] = int(value)
         elif key == '-k':
