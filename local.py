@@ -136,10 +136,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 # reply immediately
                 if '-6' in sys.argv[1:]:
                     remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+                    remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    remote.connect((SERVER, REMOTE_PORT, 0, 0))
                 else:
                     remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                remote.connect((SERVER, REMOTE_PORT))
+                    remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    remote.connect((SERVER, REMOTE_PORT))
+
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
@@ -161,7 +164,11 @@ if __name__ == '__main__':
     PORT = config['local_port']
     KEY = config['password']
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:l:')
+    argv = sys.argv[1:]
+    if '-6' in sys.argv[1:]:
+        argv.remove('-6')
+
+    optlist, args = getopt.getopt(argv, 's:p:k:l:')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
