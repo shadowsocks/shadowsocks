@@ -1,7 +1,7 @@
 {
-    "server":"localhost",
-    "server_port":8388,
-    "local_port":1080,
-    "password":"barfoo!",
+    "server":"p2.5bird.com",
+    "server_port":13412,
+    "local_port":8080,
+    "password":"zhangminz",
     "timeout":600
 }
