@@ -43,6 +43,7 @@ import hashlib
 import os
 import logging
 import getopt
+import time, zlib
 
 def get_table(key):
     m = hashlib.md5()
@@ -152,6 +153,16 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 
+def get_cached_table(key):
+    cacheFile = str(zlib.crc32(key))
+    if os.path.exists(cacheFile):
+        with open(cacheFile, 'r') as f:
+            table = f.read()
+    else:
+        table = ''.join(get_table(KEY))
+        with open(cacheFile, 'w') as f:
+            f.write(table)
+    return table
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
@@ -182,7 +193,10 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
-    encrypt_table = ''.join(get_table(KEY))
+    start = time.time()
+    encrypt_table = get_cached_table(KEY)
+    logging.info('Elapsed %.2fs ' % (time.time() - start))
+
     decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)
