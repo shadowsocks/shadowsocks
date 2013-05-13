@@ -190,4 +190,7 @@ if __name__ == '__main__':
         server.serve_forever()
     except socket.error, e:
         logging.error(e)
+    except KeyboardInterrupt:
+        server.shutdown()
+        sys.exit(0)
 
