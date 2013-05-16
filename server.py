@@ -108,6 +108,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             elif addrtype == 3:
                 addr = self.decrypt(
                     self.rfile.read(ord(self.decrypt(sock.recv(1)))))
+            elif addrtype == 4:
+                addr = socket.inet_ntop(socket.AF_INET6, self.decrypt(self.rfile.read(16)))
             else:
                 # not support
                 logging.warn('addr_type not support')
@@ -129,7 +131,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
 
-    print 'shadowsocks v1.0'
+    print 'shadowsocks v1.1'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
