@@ -117,9 +117,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
                 logging.info('connecting %s:%d' % (addr, port[0]))
-                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                remote.connect((addr, port[0]))
+                remote = socket.create_connection((addr, port[0]))
             except socket.error, e:
                 # Connection refused
                 logging.warn(e)
