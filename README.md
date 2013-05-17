@@ -2,7 +2,7 @@ shadowsocks
 ===========
 
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)  
-Current version: 1.1
+Current version: 2.0 
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
@@ -40,10 +40,6 @@ You can use args to override settings from `config.json`.
 
     python local.py -s server_name -p server_port -l local_port -k password
     python server.py -p server_port -k password
-
-You may want to install gevent for better performance.
-
-    $ sudo apt-get install python-gevent
 
 Or:
 

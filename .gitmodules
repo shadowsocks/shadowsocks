@@ -1,0 +1,3 @@
+[submodule "ssloop"]
+	path = ssloop
+	url = https://github.com/clowwindy/ssloop.git
