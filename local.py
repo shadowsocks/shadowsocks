@@ -116,7 +116,8 @@ class LocalHandler(object):
                     header_length = 5 + addr_len + 2
                 else:
                     # TODO check addrtype in (1, 3, 4)
-                    raise
+                    # raise Exception('addrtype wrong')
+                    raise something
                 remote_port = struct.unpack('>H', remote_port)[0]
                 logging.info('connecting %s:%d' % (remote_addr, remote_port))
                 self.conn.write('\x05\x00\x00\x01\x00\x00\x00\x00\x10\x10')
@@ -177,7 +178,9 @@ if __name__ == '__main__':
     if '-6' in sys.argv[1:]:
         argv.remove('-6')
 
-    optlist, args = getopt.getopt(argv, 's:p:k:l:')
+    level = logging.INFO
+
+    optlist, args = getopt.getopt(argv, 's:p:k:l:v')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
@@ -187,8 +190,10 @@ if __name__ == '__main__':
             PORT = int(value)
         elif key == '-s':
             SERVER = value
+        elif key == '-v':
+            level = logging.NOTSET
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s',
+    logging.basicConfig(level=level, format='%(asctime)s %(levelname)1.1s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt_table = ''.join(get_table(KEY))

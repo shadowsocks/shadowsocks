@@ -65,8 +65,9 @@ class RemoteHandler(object):
         conn.connect(local_handler.remote_addr_pair)
 
     def on_connect(self, s):
+        logging.debug('on_connnect')
         for piece in self.local_handler.cached_pieces:
-            self.conn.write(decrypt(piece))
+            self.conn.write(piece)
         # TODO write cached pieces
         self.local_handler.stage = 5
 
@@ -84,8 +85,8 @@ class RemoteHandler(object):
 
 class LocalHandler(object):
     def on_data(self, s, data):
+        data = decrypt(data)
         if self.stage == 5:
-            data = decrypt(data)
             self.remote_handler.conn.write(data)
             return
         if self.stage == 0:
@@ -107,7 +108,8 @@ class LocalHandler(object):
                     header_length = 2 + addr_len + 2
                 else:
                     # TODO check addrtype in (1, 3, 4)
-                    raise
+                    # raise 'addrtype wrong'
+                    raise something
                 remote_port = struct.unpack('>H', remote_port)[0]
                 self.remote_addr_pair = (remote_addr, remote_port)
                 logging.info('connecting %s:%d' % self.remote_addr_pair)
@@ -121,8 +123,7 @@ class LocalHandler(object):
                 self.stage = 4
                 return
             except:
-                import traceback
-                traceback.print_exc()
+                logging.exception('')
 
         if self.stage == 4:
             self.cached_pieces.append(data)
@@ -166,14 +167,18 @@ if __name__ == '__main__':
     if '-6' in sys.argv[1:]:
         argv.remove('-6')
 
-    optlist, args = getopt.getopt(argv, 'p:k:')
+    level = logging.INFO
+
+    optlist, args = getopt.getopt(argv, 'p:k:v')
     for key, value in optlist:
         if key == '-p':
             PORT = int(value)
         elif key == '-k':
             KEY = value
+        elif key == '-v':
+            level = logging.NOTSET
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s',
+    logging.basicConfig(level=level, format='%(asctime)s %(levelname)1.1s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt_table = ''.join(get_table(KEY))
