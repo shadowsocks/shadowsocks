@@ -26,10 +26,11 @@ if sys.version_info < (2, 6):
     import simplejson as json
 else:
     import json
- 
+
 try:
-    import gevent, gevent.monkey
-    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
+    import gevent
+    import gevent.monkey
+    gevent.monkey.patch_all(dns=gevent.version_info[0] >= 1)
 except ImportError:
     gevent = None
     print >>sys.stderr, 'warning: gevent not found, using threading instead'
@@ -38,21 +39,11 @@ import socket
 import select
 import SocketServer
 import struct
-import string
-import hashlib
 import os
 import logging
 import getopt
+import encrypt
 
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
 
 def send_all(sock, data):
     bytes_sent = 0
@@ -63,6 +54,7 @@ def send_all(sock, data):
         bytes_sent += r
         if bytes_sent == len(data):
             return bytes_sent
+
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -94,16 +86,17 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             remote.close()
 
     def encrypt(self, data):
-        return data.translate(encrypt_table)
+        return self.encryptor.encrypt(data)
 
     def decrypt(self, data):
-        return data.translate(decrypt_table)
+        return self.encryptor.decrypt(data)
 
     def send_encrypt(self, sock, data):
         sock.send(self.encrypt(data))
 
     def handle(self):
         try:
+            self.encryptor = encrypt.Encryptor(KEY, METHOD)
             sock = self.connection
             sock.recv(262)
             sock.send("\x05\x00")
@@ -167,12 +160,13 @@ if __name__ == '__main__':
     REMOTE_PORT = config['server_port']
     PORT = config['local_port']
     KEY = config['password']
+    METHOD = config.get('method', None)
 
     argv = sys.argv[1:]
     if '-6' in sys.argv[1:]:
         argv.remove('-6')
 
-    optlist, args = getopt.getopt(argv, 's:p:k:l:')
+    optlist, args = getopt.getopt(argv, 's:p:k:l:m:')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
@@ -182,12 +176,14 @@ if __name__ == '__main__':
             PORT = int(value)
         elif key == '-s':
             SERVER = value
+        elif key == '-m':
+            METHOD = value
+
+    encrypt.init_table(KEY, METHOD)
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)
         logging.info("starting server at port %d ..." % PORT)
@@ -197,4 +193,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         server.shutdown()
         sys.exit(0)
-

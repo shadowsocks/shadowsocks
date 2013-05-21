@@ -26,10 +26,11 @@ if sys.version_info < (2, 6):
     import simplejson as json
 else:
     import json
-     
+
 try:
-    import gevent, gevent.monkey
-    gevent.monkey.patch_all(dns=gevent.version_info[0]>=1)
+    import gevent
+    import gevent.monkey
+    gevent.monkey.patch_all(dns=gevent.version_info[0] >= 1)
 except ImportError:
     gevent = None
     print >>sys.stderr, 'warning: gevent not found, using threading instead'
@@ -38,21 +39,11 @@ import socket
 import select
 import SocketServer
 import struct
-import string
-import hashlib
 import os
 import logging
 import getopt
+import encrypt
 
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
 
 def send_all(sock, data):
     bytes_sent = 0
@@ -63,6 +54,7 @@ def send_all(sock, data):
         bytes_sent += r
         if bytes_sent == len(data):
             return bytes_sent
+
 
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -94,13 +86,14 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             remote.close()
 
     def encrypt(self, data):
-        return data.translate(encrypt_table)
+        return self.encryptor.encrypt(data)
 
     def decrypt(self, data):
-        return data.translate(decrypt_table)
+        return self.encryptor.decrypt(data)
 
     def handle(self):
         try:
+            self.encryptor = encrypt.Encryptor(KEY, METHOD)
             sock = self.connection
             addrtype = ord(self.decrypt(sock.recv(1)))
             if addrtype == 1:
@@ -137,19 +130,21 @@ if __name__ == '__main__':
     SERVER = config['server']
     PORT = config['server_port']
     KEY = config['password']
+    METHOD = config.get('method', None)
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:')
     for key, value in optlist:
         if key == '-p':
             PORT = int(value)
         elif key == '-k':
             KEY = value
+        elif key == '-m':
+            METHOD = value
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
+    encrypt.init_table(KEY, METHOD)
     if '-6' in sys.argv[1:]:
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
@@ -158,4 +153,3 @@ if __name__ == '__main__':
         server.serve_forever()
     except socket.error, e:
         logging.error(e)
-
