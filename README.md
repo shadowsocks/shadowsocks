@@ -2,7 +2,7 @@ shadowsocks
 ===========
 
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)  
-Current version: 1.1
+Current version: 1.1.1
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
@@ -23,23 +23,25 @@ Then edit `config.json`, change the following values:
     server_port     server port
     local_port      local port
     password        a password used to encrypt transfer
+    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
 
 Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
 Put all the files on your client machine. Run `python local.py` on your client machine.
 
-Change proxy settings of your browser into
+Change the proxy setting in your browser into
 
-    SOCKS5 127.0.0.1:local_port
-
+    protocol: socks5
+    hostname: 127.0.0.1
+    port:     your local_port
 
 advanced
 ------------
 
 You can use args to override settings from `config.json`.
 
-    python local.py -s server_name -p server_port -l local_port -k password
-    python server.py -p server_port -k password
+    python local.py -s server_name -p server_port -l local_port -k password -m bf-cfb
+    python server.py -p server_port -k password -m bf-cfb
 
 You may want to install gevent for better performance.
 
