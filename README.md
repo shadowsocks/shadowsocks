@@ -8,9 +8,6 @@ shadowsocks is a lightweight tunnel proxy which can help you get through firewal
 
 Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
 
-Warning: AES, DES, blowfish encryption methods are not implemented the same as other versions(Nodejs, etc) yet, please don't use those methods 
-if you want to use Python version together with other versions!
-
 usage
 -----------
 
