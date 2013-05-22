@@ -27,6 +27,11 @@ import struct
 import logging
 
 
+def random_string(length):
+    import M2Crypto.Rand
+    return M2Crypto.Rand.rand_bytes(length)
+
+
 def get_table(key):
     m = hashlib.md5()
     m.update(key)
@@ -55,7 +60,7 @@ def init_table(key, method=None):
         encrypt_table = ''.join(get_table(key))
         decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
     else:
-        get_cipher(key, method, 1)
+        Encryptor(key, method)  # make an Encryptor to test if the settings if OK
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
@@ -89,39 +94,62 @@ method_supported = {
 }
 
 
-def get_cipher(password, method, op):
-    import M2Crypto.EVP
-    password = password.encode('utf-8')
-    method = method.lower()
-    m = method_supported.get(method, None)
-    if m:
-        key, iv = EVP_BytesToKey(password, m[0], m[1])
-        return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op, key_as_bytes=0, d='md5', salt=None, i=1, padding=1)
-
-    logging.error('method %s not supported' % method)
-    sys.exit(1)
-
-
 class Encryptor(object):
     def __init__(self, key, method=None):
         if method == 'table':
             method = None
+        self.key = key
         self.method = method
+        self.iv = None
+        self.iv_sent = False
+        self.cipher_iv = ''
+        self.decipher = None
         if method is not None:
-            self.cipher = get_cipher(key, method, 1)
-            self.decipher = get_cipher(key, method, 0)
+            self.cipher = self.get_cipher(key, method, 1, iv=random_string(32))
         else:
             self.cipher = None
-            self.decipher = None
+
+    def get_cipher_len(self, method):
+        method = method.lower()
+        m = method_supported.get(method, None)
+        return m
+
+    def iv_len(self):
+        return len(self.cipher_iv)
+
+    def get_cipher(self, password, method, op, iv=None):
+        import M2Crypto.EVP
+        password = password.encode('utf-8')
+        method = method.lower()
+        m = self.get_cipher_len(method)
+        if m:
+            key, iv_ = EVP_BytesToKey(password, m[0], m[1])
+            if iv is None:
+                iv = iv_[:m[1]]
+            if op == 1:
+                self.cipher_iv = iv[:m[1]]  # this iv is for cipher, not decipher
+            return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op, key_as_bytes=0, d='md5', salt=None, i=1, padding=1)
+
+        logging.error('method %s not supported' % method)
+        sys.exit(1)
 
     def encrypt(self, buf):
-        if self.cipher is None:
+        if self.method is None:
             return string.translate(buf, encrypt_table)
         else:
-            return self.cipher.update(buf)
+            if self.iv_sent:
+                return self.cipher.update(buf)
+            else:
+                self.iv_sent = True
+                return self.cipher_iv + self.cipher.update(buf)
 
     def decrypt(self, buf):
-        if self.cipher is None:
+        if self.method is None:
             return string.translate(buf, decrypt_table)
         else:
+            if self.decipher is None:
+                decipher_iv_len = self.get_cipher_len(self.method)[1]
+                decipher_iv = buf[:decipher_iv_len]
+                self.decipher = self.get_cipher(self.key, self.method, 0, iv=decipher_iv)
+                buf = buf[decipher_iv_len:]
             return self.decipher.update(buf)

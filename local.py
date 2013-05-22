@@ -67,18 +67,18 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    data = sock.recv(4096)
+                    data = self.encrypt(sock.recv(4096))
                     if len(data) <= 0:
                         break
-                    result = send_all(remote, self.encrypt(data))
+                    result = send_all(remote, data)
                     if result < len(data):
                         raise Exception('failed to send all data')
 
                 if remote in r:
-                    data = remote.recv(4096)
+                    data = self.decrypt(remote.recv(4096))
                     if len(data) <= 0:
                         break
-                    result = send_all(sock, self.decrypt(data))
+                    result = send_all(sock, data)
                     if result < len(data):
                         raise Exception('failed to send all data')
         finally:
