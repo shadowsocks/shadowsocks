@@ -23,7 +23,12 @@ Then edit `config.json`, change the following values:
     server_port     server port
     local_port      local port
     password        a password used to encrypt transfer
-    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
+    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table. If you wa
+
+
+If you want to use non-default encryption method like "bf-cfb", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
+
+    pip install M2Crypto
 
 Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
