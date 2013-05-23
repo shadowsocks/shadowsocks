@@ -25,6 +25,11 @@ Then edit `config.json`, change the following values:
     password        a password used to encrypt transfer
     method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
 
+
+If you want to use non-default encryption method like "bf-cfb", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
+
+    pip install M2Crypto
+
 Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
 Put all the files on your client machine. Run `python local.py` on your client machine.
