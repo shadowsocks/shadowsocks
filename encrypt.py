@@ -144,6 +144,8 @@ class Encryptor(object):
         sys.exit(1)
 
     def encrypt(self, buf):
+        if len(buf) == 0:
+            return buf
         if self.method is None:
             return string.translate(buf, encrypt_table)
         else:
@@ -154,6 +156,8 @@ class Encryptor(object):
                 return self.cipher_iv + self.cipher.update(buf)
 
     def decrypt(self, buf):
+        if len(buf) == 0:
+            return buf
         if self.method is None:
             return string.translate(buf, decrypt_table)
         else:
