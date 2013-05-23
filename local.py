@@ -27,31 +27,11 @@ if sys.version_info < (2, 6):
 else:
     import json
 import struct
-import string
-import hashlib
 import os
 import logging
 import getopt
 import socket
-
-
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
-
-
-def encrypt(data):
-    return data.translate(encrypt_table)
-
-
-def decrypt(data):
-    return data.translate(decrypt_table)
+import encrypt
 
 
 class RemoteHandler(object):
@@ -65,14 +45,14 @@ class RemoteHandler(object):
         conn.connect((SERVER, REMOTE_PORT))
 
     def on_connect(self, s):
-        self.conn.write(encrypt(self.local_handler.addr_to_send))
+        self.conn.write(self.local_handler.encryptor.encrypt(self.local_handler.addr_to_send))
         for piece in self.local_handler.cached_pieces:
-            self.conn.write(encrypt(piece))
+            self.conn.write(self.local_handler.encryptor.encrypt(piece))
         # TODO write cached pieces
         self.local_handler.stage = 5
 
     def on_data(self, s, data):
-        data = decrypt(data)
+        data = self.local_handler.encryptor.decrypt(data)
         self.local_handler.conn.write(data)
 
     def on_close(self, s):
@@ -86,7 +66,7 @@ class RemoteHandler(object):
 class LocalHandler(object):
     def on_data(self, s, data):
         if self.stage == 5:
-            data = encrypt(data)
+            data = self.encryptor.encrypt(data)
             self.remote_handler.conn.write(data)
             return
         if self.stage == 0:
@@ -152,6 +132,7 @@ class LocalHandler(object):
         self.addr_to_send = ''
         self.conn = conn
         self.cached_pieces = []
+        self.encryptor = encrypt.Encryptor(KEY, METHOD)
 
         conn.on('data', self.on_data)
         conn.on('end', self.on_end)
@@ -173,6 +154,7 @@ if __name__ == '__main__':
     REMOTE_PORT = config['server_port']
     PORT = config['local_port']
     KEY = config['password']
+    METHOD = config.get('method', None)
 
     argv = sys.argv[1:]
     if '-6' in sys.argv[1:]:
@@ -180,7 +162,7 @@ if __name__ == '__main__':
 
     level = logging.INFO
 
-    optlist, args = getopt.getopt(argv, 's:p:k:l:v')
+    optlist, args = getopt.getopt(argv, 's:p:k:l:m:v')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
@@ -190,14 +172,15 @@ if __name__ == '__main__':
             PORT = int(value)
         elif key == '-s':
             SERVER = value
+        elif key == '-m':
+            METHOD = value
         elif key == '-v':
             level = logging.NOTSET
 
     logging.basicConfig(level=level, format='%(asctime)s %(levelname)1.1s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
-    encrypt_table = ''.join(get_table(KEY))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
+    encrypt.init_table(KEY, METHOD)
     try:
         logging.info("starting server at port %d ..." % PORT)
         loop = ssloop.instance()
