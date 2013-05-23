@@ -179,10 +179,10 @@ if __name__ == '__main__':
         elif key == '-m':
             METHOD = value
 
-    encrypt.init_table(KEY, METHOD)
-
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+
+    encrypt.init_table(KEY, METHOD)
 
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)
