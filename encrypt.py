@@ -166,4 +166,6 @@ class Encryptor(object):
                 decipher_iv = buf[:decipher_iv_len]
                 self.decipher = self.get_cipher(self.key, self.method, 0, iv=decipher_iv)
                 buf = buf[decipher_iv_len:]
+                if len(buf) == 0:
+                    return buf
             return self.decipher.update(buf)
