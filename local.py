@@ -157,8 +157,6 @@ if __name__ == '__main__':
     METHOD = config.get('method', None)
 
     argv = sys.argv[1:]
-    if '-6' in sys.argv[1:]:
-        argv.remove('-6')
 
     level = logging.INFO
 
