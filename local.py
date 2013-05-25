@@ -40,6 +40,7 @@ class RemoteHandler(object):
         self.local_handler = local_handler
         conn.on('connect', self.on_connect)
         conn.on('data', self.on_data)
+        conn.on('drain', self.on_drain)
         conn.on('close', self.on_close)
         conn.on('end', self.on_end)
         conn.connect((SERVER, REMOTE_PORT))
@@ -53,7 +54,12 @@ class RemoteHandler(object):
 
     def on_data(self, s, data):
         data = self.local_handler.encryptor.decrypt(data)
-        self.local_handler.conn.write(data)
+        if not self.local_handler.conn.write(data):
+            self.conn.pause()
+
+    def on_drain(self, s):
+        if self.local_handler:
+            self.local_handler.conn.resume()
 
     def on_close(self, s):
         # self.local_handler.conn.end()
@@ -67,7 +73,8 @@ class LocalHandler(object):
     def on_data(self, s, data):
         if self.stage == 5:
             data = self.encryptor.encrypt(data)
-            self.remote_handler.conn.write(data)
+            if not self.remote_handler.conn.write(data):
+                self.conn.pause()
             return
         if self.stage == 0:
             self.conn.write('\x05\00')
@@ -117,6 +124,10 @@ class LocalHandler(object):
         if self.stage == 4:
             self.cached_pieces.append(data)
 
+    def on_drain(self, s):
+        if self.remote_handler:
+            self.remote_handler.conn.resume()
+
     def on_end(self, s):
         if self.remote_handler:
             self.remote_handler.conn.end()
@@ -127,14 +138,15 @@ class LocalHandler(object):
 
     def __init__(self, conn):
         self.stage = 0
-        self.remote = None
         self.addr_len = 0
         self.addr_to_send = ''
         self.conn = conn
         self.cached_pieces = []
         self.encryptor = encrypt.Encryptor(KEY, METHOD)
+        self.remote_handler = None
 
         conn.on('data', self.on_data)
+        conn.on('drain', self.on_drain)
         conn.on('end', self.on_end)
         conn.on('close', self.on_close)
 
