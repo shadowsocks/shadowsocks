@@ -58,6 +58,7 @@ class RemoteHandler(object):
             self.conn.pause()
 
     def on_drain(self, s):
+        logging.debug('remote drain')
         if self.local_handler:
             self.local_handler.conn.resume()
 
@@ -116,6 +117,7 @@ class LocalHandler(object):
             self.cached_pieces.append(data)
 
     def on_drain(self, s):
+        logging.debug('local drain')
         if self.remote_handler:
             self.remote_handler.conn.resume()
 
