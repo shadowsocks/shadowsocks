@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
     level = logging.INFO
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:v')
     for key, value in optlist:
         if key == '-p':
             PORT = int(value)
