@@ -125,7 +125,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
 
-    print 'shadowsocks v1.2.1'
+    print 'shadowsocks v1.2.2'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
@@ -134,8 +134,9 @@ if __name__ == '__main__':
     PORT = config['server_port']
     KEY = config['password']
     METHOD = config.get('method', None)
+    IPv6 = False
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:6')
     for key, value in optlist:
         if key == '-p':
             PORT = int(value)
@@ -143,12 +144,14 @@ if __name__ == '__main__':
             KEY = value
         elif key == '-m':
             METHOD = value
+        elif key == '-6':
+            IPv6 = True
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt.init_table(KEY, METHOD)
-    if '-6' in sys.argv[1:]:
+    if IPv6:
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
         server = ThreadingTCPServer(('', PORT), Socks5Server)

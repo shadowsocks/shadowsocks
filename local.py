@@ -131,15 +131,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 self.wfile.write(reply)
                 # reply immediately
-                if '-6' in sys.argv[1:]:
-                    remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-                    remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    remote.connect((SERVER, REMOTE_PORT, 0, 0))
-                else:
-                    remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    remote.connect((SERVER, REMOTE_PORT))
-
+                remote = socket.create_connection((SERVER, REMOTE_PORT))
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
@@ -152,7 +144,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__) or '.')
-    print 'shadowsocks v1.2.1'
+    print 'shadowsocks v1.2.2'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
@@ -161,12 +153,9 @@ if __name__ == '__main__':
     PORT = config['local_port']
     KEY = config['password']
     METHOD = config.get('method', None)
+    IPv6 = False
 
-    argv = sys.argv[1:]
-    if '-6' in sys.argv[1:]:
-        argv.remove('-6')
-
-    optlist, args = getopt.getopt(argv, 's:p:k:l:m:')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:l:m:6')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
@@ -178,6 +167,8 @@ if __name__ == '__main__':
             SERVER = value
         elif key == '-m':
             METHOD = value
+        elif key == '-6':
+            IPv6 = True
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -185,6 +176,8 @@ if __name__ == '__main__':
     encrypt.init_table(KEY, METHOD)
 
     try:
+        if IPv6:
+            ThreadingTCPServer.address_family = socket.AF_INET6
         server = ThreadingTCPServer(('', PORT), Socks5Server)
         logging.info("starting server at port %d ..." % PORT)
         server.serve_forever()
