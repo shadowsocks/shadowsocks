@@ -8,7 +8,7 @@ shadowsocks is a lightweight tunnel proxy which can help you get through firewal
 
 Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
 
-usage
+Usage
 -----------
 
 First, make sure you have Python 2.6 or 2.7.
@@ -26,10 +26,6 @@ Then edit `config.json`, change the following values:
     method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
 
 
-If you want to use non-default encryption method like "bf-cfb", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
-
-    pip install M2Crypto
-
 Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
 
 Put all the files on your client machine. Run `python local.py` on your client machine.
@@ -40,13 +36,30 @@ Change the proxy setting in your browser into
     hostname: 127.0.0.1
     port:     your local_port
 
-advanced
+Encryption
 ------------
+
+If you want to use non-default encryption method like "bf-cfb", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
+
+Ubuntu:
+
+    sudo apt-get install python-m2crypto
+
+Others:
+
+    pip install M2Crypto
+
+
+Command line args
+-----------------
 
 You can use args to override settings from `config.json`.
 
     python local.py -s server_name -p server_port -l local_port -k password -m bf-cfb
     python server.py -p server_port -k password -m bf-cfb
+
+Performance
+------------
 
 You may want to install gevent for better performance.
 
@@ -57,7 +70,7 @@ Or:
     $ sudo apt-get install libevent-dev python-pip
     $ sudo pip install gevent
 
-troubleshooting
+Troubleshooting
 ---------------
 
 * I can only load some websites  
