@@ -105,7 +105,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = self.decrypt(
                     self.rfile.read(ord(self.decrypt(sock.recv(1)))))
             elif addrtype == 4:
-                addr = socket.inet_ntop(socket.AF_INET6, self.decrypt(self.rfile.read(16)))
+                addr = socket.inet_ntop(socket.AF_INET6,
+                                        self.decrypt(self.rfile.read(16)))
             else:
                 # not support
                 logging.warn('addr_type not support')
@@ -147,7 +148,8 @@ if __name__ == '__main__':
         elif key == '-6':
             IPv6 = True
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt.init_table(KEY, METHOD)

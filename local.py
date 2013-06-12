@@ -143,7 +143,14 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__) or '.')
+    try:
+        os.chdir(os.path.dirname(__file__) or '.')
+    except NameError:
+        # fix py2exe
+        if hasattr(sys, "frozen") and sys.frozen in \
+                ("windows_exe", "console_exe"):
+            p = os.path.dirname(os.path.abspath(sys.executable))
+            os.chdir(p)
     print 'shadowsocks v1.2.2'
 
     with open('config.json', 'rb') as f:
@@ -170,7 +177,8 @@ if __name__ == '__main__':
         elif key == '-6':
             IPv6 = True
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s',
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
     encrypt.init_table(KEY, METHOD)
