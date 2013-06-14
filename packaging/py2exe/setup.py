@@ -9,7 +9,7 @@ except ImportError:
     pass
 
 setup(name='shadowsocks',
-        version='1.2.2',
+        version='1.2.3',
         description='a lightweight tunnel proxy which can help you get through firewalls',
         author='clowwindy',
         author_email='clowwindy42@gmail.com',

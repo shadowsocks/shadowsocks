@@ -2,7 +2,7 @@ shadowsocks
 ===========
 
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)
-Current version: 1.2.2
+Current version: 1.2.3
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
@@ -55,8 +55,8 @@ Command line args
 
 You can use args to override settings from `config.json`.
 
-    python local.py -s server_name -p server_port -l local_port -k password -m bf-cfb
-    python server.py -p server_port -k password -m bf-cfb
+    python local.py -s server_name -p server_port -l local_port -k password -m bf-cfb -b bind_address -6
+    python server.py -p server_port -k password -m bf-cfb -6
 
 Performance
 ------------

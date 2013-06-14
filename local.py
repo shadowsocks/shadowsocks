@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 ("windows_exe", "console_exe"):
             p = os.path.dirname(os.path.abspath(sys.executable))
             os.chdir(p)
-    print 'shadowsocks v1.2.2'
+    print 'shadowsocks v1.2.3'
 
     with open('config.json', 'rb') as f:
         config = json.load(f)
@@ -160,9 +160,10 @@ if __name__ == '__main__':
     PORT = config['local_port']
     KEY = config['password']
     METHOD = config.get('method', None)
+    LOCAL = config.get('local', '')
     IPv6 = False
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:l:m:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:6')
     for key, value in optlist:
         if key == '-p':
             REMOTE_PORT = int(value)
@@ -174,6 +175,8 @@ if __name__ == '__main__':
             SERVER = value
         elif key == '-m':
             METHOD = value
+        elif key == '-b':
+            LOCAL = value
         elif key == '-6':
             IPv6 = True
 
@@ -186,8 +189,8 @@ if __name__ == '__main__':
     try:
         if IPv6:
             ThreadingTCPServer.address_family = socket.AF_INET6
-        server = ThreadingTCPServer(('', PORT), Socks5Server)
-        logging.info("starting server at port %d ..." % PORT)
+        server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
+        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
         server.serve_forever()
     except socket.error, e:
         logging.error(e)

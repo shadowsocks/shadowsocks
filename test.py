@@ -101,7 +101,7 @@ try:
         for fd in r:
             line = fd.readline()
             sys.stdout.write(line)
-            if line.find('starting server at port') >= 0:
+            if line.find('starting server') >= 0:
                 ready_count += 1
         
         if ready_count == 2 and p3 is None:
