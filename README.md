@@ -85,3 +85,10 @@ Troubleshooting
     Since you can't specify Socks4 or Socks5 in IE settings, you may want to use a PAC(Proxy auto-config) script, or 
     just use Firefox instead.
 
+License
+-------
+MIT
+
+Bugs and Issues
+----------------
+Please visit [issue tracker](https://github.com/clowwindy/shadowsocks/issues?state=open)
