@@ -1,0 +1,56 @@
+1.2.3 2013-06-14
+- add bind address
+
+1.2.2 2013-05-31
+- local can listen at ::0 with -6 arg; bump 1.2.2
+
+1.2.1 2013-05-23
+- Fix an OpenSSL crash
+
+1.2 2013-05-22
+- Use random iv, we finally have strong encryption
+
+1.1.1 2013-05-21
+- Add encryption, AES, blowfish, etc
+
+1.1 2013-05-16
+- Support IPv6 address (type 4)
+- Drop Python 2.5 support
+
+1.0 2013-04-03
+- Fix -6 IPv6
+
+0.9.4 2013-03-04
+- Support Python 2.5
+
+0.9.3 2013-01-14
+- Fix conn termination null data
+
+0.9.2 2013-01-05
+- Change default timeout
+
+0.9.1 2013-01-05
+- Add Travis-CI test
+
+0.9 2012-12-30
+- Replace send with sendall, fix FreeBSD
+
+0.6 2012-12-06
+- Support args
+
+0.5 2012-11-08
+- Fix encryption with negative md5sum
+
+0.4 2012-11-02
+- Move config into a JSON file
+- Auto-detect config path
+
+0.3 2012-06-06
+- Move socks5 negotiation to local
+
+0.2 2012-05-11
+- Add -6 arg for IPv6
+- Fix socket.error
+
+0.1 2012-04-20
+- Initial verion
