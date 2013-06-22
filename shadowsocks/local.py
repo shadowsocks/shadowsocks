@@ -159,7 +159,7 @@ def main():
     try:
         import pkg_resources
         version = pkg_resources.get_distribution('shadowsocks').version
-    except ImportError:
+    except:
         pass
     print 'shadowsocks %s' % version
 
