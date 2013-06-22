@@ -2,7 +2,7 @@ shadowsocks
 ===========
 
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)
-Current version: 1.2.3
+Current version: 1.3.0
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
 
@@ -15,26 +15,50 @@ First, make sure you have Python 2.6 or 2.7.
 
     $ python --version
     Python 2.6.8
+    
+Install Shadowsocks.
 
+    pip install shadowsocks
+    
+Create a file named `config.json`, with the following content.
 
-Then edit `config.json`, change the following values:
+    {
+        "server":"my_server_ip",
+        "server_port":8388,
+        "local_port":1080,
+        "password":"barfoo!",
+        "timeout":600,
+        "method":null
+    }
 
-    server          your server ip or hostname
+Explaination of the fields:
+
+    server          your server IP (IPv4/IPv6), notice that your server will listen to this IP
     server_port     server port
     local_port      local port
     password        a password used to encrypt transfer
+    timeout         in seconds
     method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
 
+`cd` into the directory of `config.json`. Run `ssserver` on your server. To run it in the background, run
+`nohup ssserver > log &`.
 
-Put all the files on your server. Run `python server.py` on your server. To run it in the background, run `nohup python server.py > log &`.
-
-Put all the files on your client machine. Run `python local.py` on your client machine.
+On your client machine, run `sslocal`.
 
 Change the proxy setting in your browser into
 
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
+
+Command line args
+------------------
+
+You can use args to override settings from `config.json`.
+
+    sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
+    ssserver -p server_port -k password -m bf-cfb
+    ssserver -c /etc/shadowsocks/config.json
 
 Encryption
 ------------
@@ -48,15 +72,6 @@ Ubuntu:
 Others:
 
     pip install M2Crypto
-
-
-Command line args
------------------
-
-You can use args to override settings from `config.json`.
-
-    python local.py -s server_name -p server_port -l local_port -k password -m bf-cfb -b bind_address -6
-    python server.py -p server_port -k password -m bf-cfb -6
 
 Performance
 ------------
