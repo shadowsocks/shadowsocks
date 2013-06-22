@@ -163,6 +163,7 @@ def main():
         pass
     print 'shadowsocks %s' % version
 
+    KEY = None
     METHOD = None
     LOCAL = ''
     IPv6 = False
@@ -201,6 +202,9 @@ def main():
         elif key == '-6':
             IPv6 = True
 
+    if not KEY and not config_path:
+        sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+        
     encrypt.init_table(KEY, METHOD)
 
     try:

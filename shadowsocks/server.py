@@ -139,6 +139,7 @@ def main():
         pass
     print 'shadowsocks %s' % version
 
+    KEY = None
     METHOD = None
     IPv6 = False
  
@@ -147,10 +148,10 @@ def main():
     for key, value in optlist:
         if key == '-c':
             config_path = value
-    with open('config.json', 'rb') as f:
-        config = json.load(f)
 
     if config_path:
+        with open('config.json', 'rb') as f:
+            config = json.load(f)
         logging.info('loading config from %s' % config_path)
         SERVER = config['server']
         PORT = config['server_port']
@@ -167,6 +168,9 @@ def main():
             METHOD = value
         elif key == '-6':
             IPv6 = True
+            
+    if not KEY and not config_path:
+        sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
 
     encrypt.init_table(KEY, METHOD)
     if IPv6:
