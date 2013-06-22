@@ -92,3 +92,5 @@ MIT
 Bugs and Issues
 ----------------
 Please visit [issue tracker](https://github.com/clowwindy/shadowsocks/issues?state=open)
+
+Mailing list: http://groups.google.com/group/shadowsocks
