@@ -8,6 +8,8 @@ shadowsocks is a lightweight tunnel proxy which can help you get through firewal
 
 Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
 
+[Simplfied Chinese](https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
+
 Usage
 -----------
 
@@ -38,7 +40,7 @@ Explaination of the fields:
     local_port      local port
     password        a password used to encrypt transfer
     timeout         in seconds
-    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
+    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table, which is not secure. "aes-256-cfb" is recommended
 
 `cd` into the directory of `config.json`. Run `ssserver` on your server. To run it in the background, run
 `nohup ssserver > log &`.
@@ -50,6 +52,8 @@ Change the proxy setting in your browser into
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
+
+It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
 Command line args
 ------------------
@@ -63,7 +67,26 @@ You can use args to override settings from `config.json`.
 Encryption
 ------------
 
-If you want to use non-default encryption method like "bf-cfb", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
+Default encryption method table, which is not secure, is not recommended. Please use "aes-256-cfb" or "bf-cfb". "rc4" is not secure, either, please don't use it.
+
+List of all encryption methods:
+
+- aes-128-cfb
+- aes-192-cfb
+- aes-256-cfb
+- bf-cfb
+- camellia-128-cfb
+- camellia-192-cfb
+- camellia-256-cfb
+- cast5-cfb
+- des-cfb
+- idea-cfb
+- rc2-cfb
+- rc4
+- seed-cfb
+- table
+
+If you want to use encryption method other than "table", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
 
 Ubuntu:
 
@@ -72,6 +95,8 @@ Ubuntu:
 Others:
 
     pip install M2Crypto
+
+Please notice that some encryption methods are not available on some environments.
 
 Performance
 ------------
