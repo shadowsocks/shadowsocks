@@ -150,7 +150,7 @@ def main():
             config_path = value
 
     if config_path:
-        with open('config.json', 'rb') as f:
+        with open(config_path, 'rb') as f:
             config = json.load(f)
         logging.info('loading config from %s' % config_path)
         SERVER = config['server']
