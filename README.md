@@ -53,6 +53,8 @@ Change the proxy setting in your browser into
     hostname: 127.0.0.1
     port:     your local_port
 
+**Notice: If you want to use encryption method other than "table", please install M2Crypto (See Encryption Section).**
+
 It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
 Command line args
@@ -86,7 +88,7 @@ List of all encryption methods:
 - seed-cfb
 - table
 
-If you want to use encryption method other than "table", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).
+**If you want to use encryption method other than "table", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).**
 
 Ubuntu:
 
