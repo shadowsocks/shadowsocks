@@ -178,32 +178,34 @@ def main():
         logging.info('loading config from %s' % config_path)
         with open(config_path, 'rb') as f:
             config = json.load(f)
-        SERVER = config['server']
-        REMOTE_PORT = config['server_port']
-        PORT = config['local_port']
-        KEY = config['password']
-        METHOD = config.get('method', None)
-        LOCAL = config.get('local', '')
-
     optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
     for key, value in optlist:
         if key == '-p':
-            REMOTE_PORT = int(value)
+            config['server_port'] = int(value)
         elif key == '-k':
-            KEY = value
+            config['password'] = value
         elif key == '-l':
-            PORT = int(value)
+            config['local_port'] = int(value)
         elif key == '-s':
-            SERVER = value
+            config['server'] = value
         elif key == '-m':
-            METHOD = value
+            config['method'] = value
         elif key == '-b':
-            LOCAL = value
+            config['local'] = value
         elif key == '-6':
             IPv6 = True
 
+    SERVER = config['server']
+    REMOTE_PORT = config['server_port']
+    PORT = config['local_port']
+    KEY = config['password']
+    METHOD = config.get('method', None)
+    LOCAL = config.get('local', '')
+
     if not KEY and not config_path:
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+
+    utils.check_config(config)
         
     encrypt.init_table(KEY, METHOD)
 
@@ -211,7 +213,7 @@ def main():
         if IPv6:
             ThreadingTCPServer.address_family = socket.AF_INET6
         server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
-        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
+        logging.info("starting local at %s:%d" % tuple(server.server_address[:2]))
         server.serve_forever()
     except socket.error, e:
         logging.error(e)

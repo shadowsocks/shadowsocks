@@ -1,7 +1,7 @@
 shadowsocks
 ===========
 
-|Build Status| Current version: 1.3.1
+|Build Status|
 
 shadowsocks is a lightweight tunnel proxy which can help you get through
 firewalls

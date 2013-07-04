@@ -144,7 +144,7 @@ def main():
     IPv6 = False
  
     config_path = utils.find_config()
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
     for key, value in optlist:
         if key == '-c':
             config_path = value
@@ -153,31 +153,36 @@ def main():
         with open(config_path, 'rb') as f:
             config = json.load(f)
         logging.info('loading config from %s' % config_path)
-        SERVER = config['server']
-        PORT = config['server_port']
-        KEY = config['password']
-        METHOD = config.get('method', None)
 
-    optlist, args = getopt.getopt(sys.argv[1:], 'p:k:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
     for key, value in optlist:
         if key == '-p':
-            PORT = int(value)
+            config['server_port'] = int(value)
         elif key == '-k':
-            KEY = value
+            config['password'] = value
+        elif key == '-s':
+            config['server'] = value
         elif key == '-m':
-            METHOD = value
+            config['method'] = value
         elif key == '-6':
             IPv6 = True
-            
+
+    SERVER = config['server']
+    PORT = config['server_port']
+    KEY = config['password']
+    METHOD = config.get('method', None)
+
     if not KEY and not config_path:
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+
+    utils.check_config(config)
 
     encrypt.init_table(KEY, METHOD)
     if IPv6:
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
-        server = ThreadingTCPServer(('', PORT), Socks5Server)
-        logging.info("starting server at port %d ..." % PORT)
+        server = ThreadingTCPServer((SERVER, PORT), Socks5Server)
+        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
         server.serve_forever()
     except socket.error, e:
         logging.error(e)
