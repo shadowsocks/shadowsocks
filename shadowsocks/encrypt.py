@@ -98,7 +98,7 @@ method_supported = {
     'cast5-cfb': (16, 8),
     'des-cfb': (8, 8),
     'idea-cfb': (16, 8),
-    'rc2-cfb': (8, 8),
+    'rc2-cfb': (16, 8),
     'rc4': (16, 0),
     'seed-cfb': (16, 16),
 }
