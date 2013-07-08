@@ -30,7 +30,7 @@ Create a file named `config.json`, with the following content.
         "local_port":1080,
         "password":"barfoo!",
         "timeout":600,
-        "method":null
+        "method":"table"
     }
 
 Explaination of the fields:
