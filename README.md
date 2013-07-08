@@ -92,10 +92,11 @@ List of all encryption methods:
 
 Ubuntu:
 
-    sudo apt-get install python-m2crypto
+    apt-get install python-m2crypto
 
 Others:
 
+    apt-get install openssl-dev swig
     pip install M2Crypto
 
 Please notice that some encryption methods are not available on some environments.
