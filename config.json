@@ -4,5 +4,5 @@
     "local_port":1080,
     "password":"barfoo!",
     "timeout":600,
-    "method":null
+    "method":"table"
 }

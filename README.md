@@ -30,7 +30,7 @@ Create a file named `config.json`, with the following content.
         "local_port":1080,
         "password":"barfoo!",
         "timeout":600,
-        "method":null
+        "method":"table"
     }
 
 Explaination of the fields:
@@ -92,10 +92,11 @@ List of all encryption methods:
 
 Ubuntu:
 
-    sudo apt-get install python-m2crypto
+    apt-get install python-m2crypto
 
 Others:
 
+    apt-get install openssl-dev swig
     pip install M2Crypto
 
 Please notice that some encryption methods are not available on some environments.
