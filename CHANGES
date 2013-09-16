@@ -24,10 +24,10 @@
 - Use random iv, we finally have strong encryption
 
 1.1.1 2013-05-21
-- Add encryption, AES, blowfish, etc
+- Add encryption, AES, blowfish, etc.
 
 1.1 2013-05-16
-- Support IPv6 address (type 4)
+- Support IPv6 addresses (type 4)
 - Drop Python 2.5 support
 
 1.0 2013-04-03
@@ -66,4 +66,4 @@
 - Fix socket.error
 
 0.1 2012-04-20
-- Initial verion
+- Initial version

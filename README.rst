@@ -19,7 +19,7 @@ First, make sure you have Python 2.6 or 2.7.
     $ python --version
     Python 2.6.8
 
-Install Shadowsocks.
+Install shadowsocks.
 
 ::
 
@@ -38,7 +38,7 @@ Create a file named ``config.json``, with the following content.
         "method":null
     }
 
-Explaination of the fields:
+Explanation of the fields:
 
 ::
 
@@ -54,7 +54,7 @@ server. To run it in the background, run ``nohup ssserver > log &``.
 
 On your client machine, run ``sslocal``.
 
-Change the proxy setting in your browser into
+Change the proxy settings in your browser to
 
 ::
 
@@ -76,7 +76,7 @@ You can use args to override settings from ``config.json``.
 Encryption
 ----------
 
-If you want to use non-default encryption method like "bf-cfb", please
+If you want to use non-default encryption methods like "bf-cfb", please
 install `M2Crypto <http://chandlerproject.org/Projects/MeTooCrypto>`__.
 
 Ubuntu:

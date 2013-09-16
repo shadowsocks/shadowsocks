@@ -4,7 +4,7 @@ shadowsocks
 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png)](https://travis-ci.org/clowwindy/shadowsocks)
 Current version: 1.3.3
 
-shadowsocks is a lightweight tunnel proxy which can help you get through firewalls
+shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
 
 Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
 
@@ -33,7 +33,7 @@ Create a file named `config.json`, with the following content.
         "method":"table"
     }
 
-Explaination of the fields:
+Explanation of the fields:
 
     server          your server IP (IPv4/IPv6), notice that your server will listen to this IP
     server_port     server port
@@ -47,13 +47,13 @@ Explaination of the fields:
 
 On your client machine, run `sslocal`.
 
-Change the proxy setting in your browser into
+Change the proxy settings in your browser to
 
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
 
-**Notice: If you want to use encryption method other than "table", please install M2Crypto (See Encryption Section).**
+**Notice: If you want to use encryption methods other than "table", please install M2Crypto (See Encryption Section).**
 
 It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
