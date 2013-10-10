@@ -120,12 +120,19 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 # Connection refused
                 logging.warn(e)
                 return
+            addr = remote.getpeername()[0]
+            if not ALLOW_LOCAL:
+                for ip in LOCAL_ADDR:
+                    if addr.startswith(ip):
+                        logging.warn('%s is denied.' % addr)
+                        return
+
             self.handle_tcp(sock, remote)
         except socket.error, e:
             logging.warn(e)
 
 def main():
-    global SERVER, PORT, KEY, METHOD, IPv6
+    global SERVER, PORT, KEY, METHOD, IPv6, ALLOW_LOCAL, LOCAL_ADDR
  
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -142,9 +149,14 @@ def main():
     KEY = None
     METHOD = None
     IPv6 = False
+    ALLOW_LOCAL = False
+    LOCAL_ADDR = ('127.', '10.', '169.254.', '172.16', '172.17', '172.18',
+                  '172.19.', '172.20.', '172.21.', '172.22.', '172.23.',
+                  '172.24.', '172.25.', '172.26.', '172.27.', '172.28.',
+                  '172.29.', '172.30.', '172.31.', '192.168.', '::1')
  
     config_path = utils.find_config()
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6:l')
     for key, value in optlist:
         if key == '-c':
             config_path = value
@@ -154,7 +166,7 @@ def main():
             config = json.load(f)
         logging.info('loading config from %s' % config_path)
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
+    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6:l')
     for key, value in optlist:
         if key == '-p':
             config['server_port'] = int(value)
@@ -166,11 +178,16 @@ def main():
             config['method'] = value
         elif key == '-6':
             IPv6 = True
+        elif key == '-l':
+            ALLOW_LOCAL = True
 
     SERVER = config['server']
     PORT = config['server_port']
     KEY = config['password']
     METHOD = config.get('method', None)
+    if 'allow_local' in config:
+        if config['allow_config']:
+            ALLOW_LOCAL = True
 
     if not KEY and not config_path:
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
