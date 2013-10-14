@@ -153,6 +153,8 @@ def main():
         with open(config_path, 'rb') as f:
             config = json.load(f)
         logging.info('loading config from %s' % config_path)
+    else:
+        config = {}
 
     optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
     for key, value in optlist:
