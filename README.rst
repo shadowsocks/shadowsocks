@@ -48,6 +48,7 @@ Explanation of the fields:
     password        a password used to encrypt transfer
     timeout         in seconds
     method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table
+    allow_local     true if you need to proxy localhost or localnet (e.g. 192.168.1.2).
 
 ``cd`` into the directory of ``config.json``. Run ``ssserver`` on your
 server. To run it in the background, run ``nohup ssserver > log &``.
