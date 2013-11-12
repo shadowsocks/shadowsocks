@@ -154,7 +154,13 @@ def main():
             config = json.load(f)
         logging.info('loading config from %s' % config_path)
     else:
-        config = {}
+        config = {"server": "127.0.0.1",
+                  "server_port": 8388,
+                  "local_port": 1080,
+                  "password": "barfoo!",
+                  "timeout": 600,
+                  "method": "table"
+                  }
 
     optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
     for key, value in optlist:

@@ -179,7 +179,13 @@ def main():
         with open(config_path, 'rb') as f:
             config = json.load(f)
     else:
-        config = {}
+        config = {"server": "127.0.0.1",
+                  "server_port": 8388,
+                  "local_port": 1080,
+                  "password": "barfoo!",
+                  "timeout": 600,
+                  "method": "table"
+                  }
 
     optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
     for key, value in optlist:
