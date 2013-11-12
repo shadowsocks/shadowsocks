@@ -39,7 +39,6 @@ import socket
 import select
 import SocketServer
 import struct
-import os
 import logging
 import getopt
 import encrypt
@@ -124,13 +123,14 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 
+
 def main():
     global SERVER, PORT, KEY, METHOD, IPv6
- 
+
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
-   
+
     version = ''
     try:
         import pkg_resources
@@ -142,7 +142,7 @@ def main():
     KEY = None
     METHOD = None
     IPv6 = False
- 
+
     config_path = utils.find_config()
     optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
     for key, value in optlist:

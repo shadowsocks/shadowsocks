@@ -145,7 +145,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 def main():
     global SERVER, REMOTE_PORT, PORT, KEY, METHOD, LOCAL, IPv6
-    
+
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -167,7 +167,7 @@ def main():
     METHOD = None
     LOCAL = ''
     IPv6 = False
-    
+
     config_path = utils.find_config()
     optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
     for key, value in optlist:
@@ -209,7 +209,7 @@ def main():
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
-        
+
     encrypt.init_table(KEY, METHOD)
 
     try:
@@ -223,6 +223,6 @@ def main():
     except KeyboardInterrupt:
         server.shutdown()
         sys.exit(0)
-        
+
 if __name__ == '__main__':
     main()
