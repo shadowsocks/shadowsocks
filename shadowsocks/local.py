@@ -40,6 +40,8 @@ import select
 import SocketServer
 import struct
 import os
+import random
+import re
 import logging
 import getopt
 import encrypt
@@ -62,6 +64,24 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
+    def getServer(self):
+        aPort = REMOTE_PORT
+        aServer = SERVER
+        if isinstance(REMOTE_PORT, list):
+            # support config like "server_port": [8081, 8082]
+            aPort = random.choice(REMOTE_PORT)
+        if isinstance(SERVER, list):
+            # support config like "server": ["123.123.123.1", "123.123.123.2"]
+            aServer = random.choice(SERVER)
+
+        r = re.match(r'^(.*)\:(\d+)$', aServer)
+        if r:
+            # support config like "server": "123.123.123.1:8381"
+            # or "server": ["123.123.123.1:8381", "123.123.123.2:8381", "123.123.123.2:8382"]
+            aServer = r.group(1)
+            aPort = int(r.group(2))
+        return (aServer, aPort)
+
     def handle_tcp(self, sock, remote):
         try:
             fdset = [sock, remote]
@@ -132,7 +152,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 self.wfile.write(reply)
                 # reply immediately
-                remote = socket.create_connection((SERVER, REMOTE_PORT))
+                aServer, aPort = self.getServer()
+                remote = socket.create_connection((aServer, aPort))
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
@@ -144,8 +165,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 def main():
-    global SERVER, REMOTE_PORT, PORT, KEY, METHOD, LOCAL, IPv6
-    
+    global SERVER, REMOTE_PORT, KEY, METHOD
+
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -167,7 +188,7 @@ def main():
     METHOD = None
     LOCAL = ''
     IPv6 = False
-    
+
     config_path = utils.find_config()
     optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
     for key, value in optlist:
@@ -209,7 +230,7 @@ def main():
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
-        
+
     encrypt.init_table(KEY, METHOD)
 
     try:
@@ -223,6 +244,6 @@ def main():
     except KeyboardInterrupt:
         server.shutdown()
         sys.exit(0)
-        
+
 if __name__ == '__main__':
     main()
