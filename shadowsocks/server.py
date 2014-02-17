@@ -110,8 +110,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = socket.inet_ntop(socket.AF_INET6,
                                         self.decrypt(self.rfile.read(16)))
             else:
-                # not support
-                logging.warn('addr_type not support')
+                # not supported
+                logging.warn('addr_type not supported, maybe wrong password')
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:

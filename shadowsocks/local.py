@@ -141,8 +141,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = socket.inet_ntop(socket.AF_INET6, addr_ip)
                 addr_to_send += addr_ip
             else:
-                logging.warn('addr_type not support')
-                # not support
+                logging.warn('addr_type not supported')
+                # not supported
                 return
             addr_port = self.rfile.read(2)
             addr_to_send += addr_port
