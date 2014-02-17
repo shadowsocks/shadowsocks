@@ -198,7 +198,11 @@ def main():
     if config_path:
         logging.info('loading config from %s' % config_path)
         with open(config_path, 'rb') as f:
-            config = json.load(f)
+            try:
+                config = json.load(f)
+            except ValueError as e:
+                logging.error('found an error in config.json: %s', e.message)
+                sys.exit(1)
     else:
         config = {}
 
