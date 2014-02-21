@@ -137,12 +137,12 @@ class ShadowSocksServer(object):
 
     def default_options(self):
         return {
-            "server": "127.0.0.1",
-            "server_port": 8388,
-            "local_port": 1081,
-            "password": "Keep Your Password",
-            "timeout": 60,
-            "method": "aes-128-cfb",
+            "server":"localhost",
+            "server_port":8388,
+            "local_port":1080,
+            "password":"barfoo!",
+            "timeout":600,
+            "method":"table"
             "IPv6": False
         }
 
