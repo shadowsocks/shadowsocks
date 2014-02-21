@@ -181,11 +181,13 @@ class ShadowSocksServer(object):
             "local_port":1080,
             "password":"barfoo!",
             "timeout":600,
-            "method":"table"
+            "method":"table",
             "IPv6": False
         }
 
     def serve_forever(self):
+        global SERVER, REMOTE_PORT, KEY, METHOD
+        
         self.set_logging()
         self.run_info()
         self.set_options()

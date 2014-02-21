@@ -142,7 +142,7 @@ class ShadowSocksServer(object):
             "local_port":1080,
             "password":"barfoo!",
             "timeout":600,
-            "method":"table"
+            "method":"table",
             "IPv6": False
         }
 
