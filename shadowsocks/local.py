@@ -174,16 +174,14 @@ class ShadowSocksServer(object):
 
     def default_options(self):
         return {
-        "server":"127.0.0.1",
-        "server_port":8388,
-        "local_port":1081,
-        "password":"Keep Your Password",
-        "timeout":60,
-        "method":"aes-128-cfb",
-        "IPv6": False
+            "server": "127.0.0.1",
+            "server_port": 8388,
+            "local_port": 1081,
+            "password": "Keep Your Password",
+            "timeout": 60,
+            "method": "aes-128-cfb",
+            "IPv6": False
         }
-
-
 
     def serve_forever(self):
         self.set_logging()
@@ -197,7 +195,7 @@ class ShadowSocksServer(object):
         KEY = self.options['password']
         METHOD = self.options.get('method', None)
         LOCAL = self.options.get('local', '')
-        
+
         encrypt.init_table(KEY, METHOD)
 
         try:
@@ -219,7 +217,8 @@ class ShadowSocksServer(object):
 
     def set_logging(self):
         logfmt = '[%%(levelname)s] %s%%(message)s' % '%(name)s - '
-        config = lambda x: logging.basicConfig(level=x, format='[%(asctime)s] ' + logfmt, datefmt='%Y%m%d %H:%M:%S')
+        config = lambda x: logging.basicConfig(level=x,
+                                               format='[%(asctime)s] ' + logfmt, datefmt='%Y%m%d %H:%M:%S')
         if self.options.get('debug'):
             config(logging.DEBUG)
         else:
@@ -290,7 +289,6 @@ class ShadowSocksServer(object):
         except:
             pass
         logging.info('shadowsocks %s' % version)
-
 
 
 if __name__ == '__main__':

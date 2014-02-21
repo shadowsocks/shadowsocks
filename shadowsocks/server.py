@@ -63,6 +63,7 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
+
     def handle_tcp(self, sock, remote):
         try:
             fdset = [sock, remote]
@@ -95,7 +96,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            self.encryptor = encrypt.Encryptor(self.server.key, self.server.method)
+            self.encryptor = encrypt.Encryptor(
+                self.server.key, self.server.method)
             sock = self.connection
             iv_len = self.encryptor.iv_len()
             if iv_len:
@@ -125,6 +127,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 
+
 class ShadowSocksServer(object):
 
     def __init__(self):
@@ -133,16 +136,14 @@ class ShadowSocksServer(object):
 
     def default_options(self):
         return {
-        "server":"127.0.0.1",
-        "server_port":8388,
-        "local_port":1081,
-        "password":"Keep Your Password",
-        "timeout":60,
-        "method":"aes-128-cfb",
-        "IPv6": False
+            "server": "127.0.0.1",
+            "server_port": 8388,
+            "local_port": 1081,
+            "password": "Keep Your Password",
+            "timeout": 60,
+            "method": "aes-128-cfb",
+            "IPv6": False
         }
-
-
 
     def serve_forever(self):
 
@@ -160,19 +161,21 @@ class ShadowSocksServer(object):
 
         if PORTPASSWORD:
             if PORT or KEY:
-                logging.warn('warning: port_password should not be used with server_port and password. server_port and password will be ignored')
+                logging.warn(
+                    'warning: port_password should not be used with server_port and password. server_port and password will be ignored')
         else:
             PORTPASSWORD = {}
             PORTPASSWORD[str(PORT)] = KEY
-
 
         encrypt.init_table(KEY, METHOD)
         if self.options['IPv6']:
             ThreadingTCPServer.address_family = socket.AF_INET6
         for port, key in PORTPASSWORD.items():
             server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
-            server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
-            logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
+            server.key, server.method, server.timeout = key, METHOD, int(
+                TIMEOUT)
+            logging.info("starting server at %s:%d" %
+                         tuple(server.server_address[:2]))
             threading.Thread(target=server.serve_forever).start()
 
     def check_config(self):
@@ -180,7 +183,8 @@ class ShadowSocksServer(object):
 
     def set_logging(self):
         logfmt = '[%%(levelname)s] %s%%(message)s' % '%(name)s - '
-        config = lambda x: logging.basicConfig(level=x, format='[%(asctime)s] ' + logfmt, datefmt='%Y%m%d %H:%M:%S')
+        config = lambda x: logging.basicConfig(level=x,
+                                               format='[%(asctime)s] ' + logfmt, datefmt='%Y%m%d %H:%M:%S')
         if self.options.get('debug'):
             config(logging.DEBUG)
         else:
@@ -251,9 +255,6 @@ class ShadowSocksServer(object):
         except:
             pass
         logging.info('shadowsocks %s' % version)
-
-
-
 
 
 if __name__ == '__main__':
