@@ -46,6 +46,7 @@ import getopt
 import encrypt
 import utils
 
+logger = logging.getLogger('server')
 
 def send_all(sock, data):
     bytes_sent = 0
@@ -113,19 +114,19 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                                         self.decrypt(self.rfile.read(16)))
             else:
                 # not supported
-                logging.warn('addr_type not supported, maybe wrong password')
+                logger.warn('addr_type not supported, maybe wrong password')
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
-                logging.info('connecting %s:%d' % (addr, port[0]))
+                logger.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.create_connection((addr, port[0]))
             except socket.error, e:
                 # Connection refused
-                logging.warn(e)
+                logger.warn(e)
                 return
             self.handle_tcp(sock, remote)
         except socket.error, e:
-            logging.warn(e)
+            logger.warn(e)
 
 
 class ShadowSocksServer(object):
@@ -161,7 +162,7 @@ class ShadowSocksServer(object):
 
         if PORTPASSWORD:
             if PORT or KEY:
-                logging.warn(
+                logger.warn(
                     'warning: port_password should not be used with server_port and password. server_port and password will be ignored')
         else:
             PORTPASSWORD = {}
@@ -174,7 +175,7 @@ class ShadowSocksServer(object):
             server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
             server.key, server.method, server.timeout = key, METHOD, int(
                 TIMEOUT)
-            logging.info("starting server at %s:%d" %
+            logger.info("starting server at %s:%d" %
                          tuple(server.server_address[:2]))
             threading.Thread(target=server.serve_forever).start()
 
@@ -201,12 +202,12 @@ class ShadowSocksServer(object):
 
     def _parse_file_options(self, config_path):
         if config_path:
-            logging.info('loading config from %s' % config_path)
+            logger.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
                     config = json.load(f)
                 except ValueError as e:
-                    logging.error(
+                    logger.error(
                         'found an error in config.json: %s', e.message)
                     sys.exit(1)
         else:
@@ -254,11 +255,11 @@ class ShadowSocksServer(object):
             version = pkg_resources.get_distribution('shadowsocks').version
         except:
             pass
-        logging.info('shadowsocks %s' % version)
+        logger.info('shadowsocks %s' % version)
 
 
 if __name__ == '__main__':
     try:
         ShadowSocksServer().serve_forever()
     except socket.error, e:
-        logging.error(e)
+        logger.error(e)

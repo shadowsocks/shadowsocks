@@ -48,6 +48,8 @@ import encrypt
 import utils
 
 
+logger = logging.getLogger('local')
+
 def send_all(sock, data):
     bytes_sent = 0
     while True:
@@ -126,7 +128,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             data = self.rfile.read(4) or '\x00' * 4
             mode = ord(data[1])
             if mode != 1:
-                logging.warn('mode != 1')
+                logger.warn('mode != 1')
                 return
             addrtype = ord(data[3])
             addr_to_send = data[3]
@@ -143,7 +145,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 addr = socket.inet_ntop(socket.AF_INET6, addr_ip)
                 addr_to_send += addr_ip
             else:
-                logging.warn('addr_type not supported')
+                logger.warn('addr_type not supported')
                 # not supported
                 return
             addr_port = self.rfile.read(2)
@@ -157,13 +159,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 aServer, aPort = self.getServer()
                 remote = socket.create_connection((aServer, aPort))
                 self.send_encrypt(remote, addr_to_send)
-                logging.info('connecting %s:%d' % (addr, port[0]))
+                logger.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
-                logging.warn(e)
+                logger.warn(e)
                 return
             self.handle_tcp(sock, remote)
         except socket.error, e:
-            logging.warn(e)
+            logger.warn(e)
 
 
 class ShadowSocksServer(object):
@@ -202,11 +204,11 @@ class ShadowSocksServer(object):
             if self.options['IPv6']:
                 ThreadingTCPServer.address_family = socket.AF_INET6
             server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
-            logging.info("starting local at %s:%d" %
+            logger.info("starting local at %s:%d" %
                          tuple(server.server_address[:2]))
             server.serve_forever()
         except socket.error, e:
-            logging.error(e)
+            logger.error(e)
         except KeyboardInterrupt:
             server.shutdown()
             sys.exit(0)
@@ -235,12 +237,12 @@ class ShadowSocksServer(object):
 
     def _parse_file_options(self, config_path):
         if config_path:
-            logging.info('loading config from %s' % config_path)
+            logger.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
                     config = json.load(f)
                 except ValueError as e:
-                    logging.error(
+                    logger.error(
                         'found an error in config.json: %s', e.message)
                     sys.exit(1)
         else:
@@ -288,7 +290,7 @@ class ShadowSocksServer(object):
             version = pkg_resources.get_distribution('shadowsocks').version
         except:
             pass
-        logging.info('shadowsocks %s' % version)
+        logger.info('shadowsocks %s' % version)
 
 
 if __name__ == '__main__':

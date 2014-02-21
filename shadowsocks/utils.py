@@ -4,6 +4,7 @@
 import os
 import logging
 
+logger = logging.getLogger('utils')
 
 def find_config():
     config_path = 'config.json'
@@ -16,7 +17,7 @@ def find_config():
 
 def check_config(config):
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
-        logging.warn('Server is set to "%s", maybe it\'s not correct' % config['server'])
-        logging.warn('Notice server will listen at %s:%s' % (config['server'], config['server_port']))
+        logger.warn('Server is set to "%s", maybe it\'s not correct' % config['server'])
+        logger.warn('Notice server will listen at %s:%s' % (config['server'], config['server_port']))
     if (config.get('method', '') or '').lower() == 'rc4':
-        logging.warn('RC4 is not safe; please use a safer cipher, like AES-256-CFB')
+        logger.warn('RC4 is not safe; please use a safer cipher, like AES-256-CFB')

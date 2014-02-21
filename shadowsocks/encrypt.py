@@ -26,6 +26,7 @@ import string
 import struct
 import logging
 
+logger = logging.getLogger('encrypt')
 
 def random_string(length):
     import M2Crypto.Rand
@@ -53,7 +54,7 @@ def init_table(key, method=None):
         try:
             __import__('M2Crypto')
         except ImportError:
-            logging.error('M2Crypto is required to use encryption other than default method')
+            logger.error('M2Crypto is required to use encryption other than default method')
             sys.exit(1)
     if not method:
         global encrypt_table, decrypt_table
@@ -63,7 +64,7 @@ def init_table(key, method=None):
         try:
             Encryptor(key, method)  # make an Encryptor to test if the settings if OK
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             sys.exit(1)
 
 
@@ -140,7 +141,7 @@ class Encryptor(object):
                 self.cipher_iv = iv[:m[1]]  # this iv is for cipher, not decipher
             return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op, key_as_bytes=0, d='md5', salt=None, i=1, padding=1)
 
-        logging.error('method %s not supported' % method)
+        logger.error('method %s not supported' % method)
         sys.exit(1)
 
     def encrypt(self, buf):
