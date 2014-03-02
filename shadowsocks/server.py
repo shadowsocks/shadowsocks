@@ -46,6 +46,7 @@ import getopt
 import encrypt
 import utils
 
+logger = logging.getLogger('server')
 
 def send_all(sock, data):
     bytes_sent = 0
@@ -63,6 +64,7 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
+
     def handle_tcp(self, sock, remote):
         try:
             fdset = [sock, remote]
@@ -95,7 +97,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            self.encryptor = encrypt.Encryptor(self.server.key, self.server.method)
+            self.encryptor = encrypt.Encryptor(
+                self.server.key, self.server.method)
             sock = self.connection
             iv_len = self.encryptor.iv_len()
             if iv_len:
@@ -111,99 +114,152 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                                         self.decrypt(self.rfile.read(16)))
             else:
                 # not supported
-                logging.warn('addr_type not supported, maybe wrong password')
+                logger.warn('addr_type not supported, maybe wrong password')
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
-                logging.info('connecting %s:%d' % (addr, port[0]))
+                logger.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.create_connection((addr, port[0]))
             except socket.error, e:
                 # Connection refused
-                logging.warn(e)
+                logger.warn(e)
                 return
             self.handle_tcp(sock, remote)
         except socket.error, e:
-            logging.warn(e)
-
-def main():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)-8s %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+            logger.warn(e)
 
 
-    version = ''
-    try:
-        import pkg_resources
-        version = pkg_resources.get_distribution('shadowsocks').version
-    except:
-        pass
-    print 'shadowsocks %s' % version
+class ShadowSocksServer(object):
 
-    KEY = None
-    METHOD = None
-    IPv6 = False
+    def __init__(self):
 
-    config_path = utils.find_config()
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
-    for key, value in optlist:
-        if key == '-c':
-            config_path = value
+        self.options = self.default_options()
 
-    if config_path:
-        logging.info('loading config from %s' % config_path)
-        with open(config_path, 'rb') as f:
-            try:
-                config = json.load(f)
-            except ValueError as e:
-                logging.error('found an error in config.json: %s', e.message)
-                sys.exit(1)
-        logging.info('loading config from %s' % config_path)
-    else:
-        config = {}
+    def default_options(self):
+        return {
+            "server":"localhost",
+            "server_port":8388,
+            "local_port":1080,
+            "password":"barfoo!",
+            "timeout":600,
+            "method":"table",
+            "IPv6": False
+        }
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
-    for key, value in optlist:
-        if key == '-p':
-            config['server_port'] = int(value)
-        elif key == '-k':
-            config['password'] = value
-        elif key == '-s':
-            config['server'] = value
-        elif key == '-m':
-            config['method'] = value
-        elif key == '-6':
-            IPv6 = True
+    def serve_forever(self):
 
-    SERVER = config['server']
-    PORT = config['server_port']
-    KEY = config['password']
-    METHOD = config.get('method', None)
-    PORTPASSWORD = config.get('port_password', None)
-    TIMEOUT = config.get('timeout', 600)
+        self.set_logging()
+        self.run_info()
+        self.set_options()
+        self.check_config()
 
-    if not KEY and not config_path:
-        sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+        SERVER = self.options['server']
+        PORT = self.options['server_port']
+        KEY = self.options['password']
+        METHOD = self.options.get('method', None)
+        PORTPASSWORD = self.options.get('port_password', None)
+        TIMEOUT = self.options.get('timeout', 600)
 
-    utils.check_config(config)
+        if PORTPASSWORD:
+            if PORT or KEY:
+                logger.warn(
+                    'warning: port_password should not be used with server_port and password. server_port and password will be ignored')
+        else:
+            PORTPASSWORD = {}
+            PORTPASSWORD[str(PORT)] = KEY
 
-    if PORTPASSWORD:
-        if PORT or KEY:
-            logging.warn('warning: port_password should not be used with server_port and password. server_port and password will be ignored')
-    else:
-        PORTPASSWORD = {}
-        PORTPASSWORD[str(PORT)] = KEY
+        encrypt.init_table(KEY, METHOD)
+        if self.options['IPv6']:
+            ThreadingTCPServer.address_family = socket.AF_INET6
+        for port, key in PORTPASSWORD.items():
+            server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
+            server.key, server.method, server.timeout = key, METHOD, int(
+                TIMEOUT)
+            logger.info("starting server at %s:%d" %
+                         tuple(server.server_address[:2]))
+            threading.Thread(target=server.serve_forever).start()
 
-    encrypt.init_table(KEY, METHOD)
-    if IPv6:
-        ThreadingTCPServer.address_family = socket.AF_INET6
-    for port, key in PORTPASSWORD.items():
-        server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
-        server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
-        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
-        threading.Thread(target=server.serve_forever).start()
+    def check_config(self):
+        utils.check_config(self.options)
+
+    def set_logging(self):
+        logfmt = '[%%(levelname)s] %s%%(message)s' % '%(name)s - '
+        config = lambda x: logging.basicConfig(level=x,
+                                               format='[%(asctime)s] ' + logfmt, datefmt='%Y%m%d %H:%M:%S')
+        if self.options.get('debug'):
+            config(logging.DEBUG)
+        else:
+            config(logging.INFO)
+        # logging.basicConfig(level=logging.DEBUG,
+        #                     format='%(asctime)s %(levelname)-8s %(message)s',
+        #                     datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+
+    def set_options(self):
+        config_path = self._find_options()
+        config = self._parse_file_options(config_path)
+        config = self._parse_cmd_options(config)
+        self.options.update(config)
+
+    def _parse_file_options(self, config_path):
+        if config_path:
+            logger.info('loading config from %s' % config_path)
+            with open(config_path, 'rb') as f:
+                try:
+                    config = json.load(f)
+                except ValueError as e:
+                    logger.error(
+                        'found an error in config.json: %s', e.message)
+                    sys.exit(1)
+        else:
+            config = {}
+
+        return config
+
+    def _find_options(self):
+        config_path = utils.find_config()
+        print config_path
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        for key, value in optlist:
+            if key == '-c':
+                config_path = value
+        return config_path
+
+    def _parse_cmd_options(self, config):
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        for key, value in optlist:
+            if key == '-p':
+                config['server_port'] = int(value)
+            elif key == '-k':
+                self.options['password'] = value
+            elif key == '-l':
+                config['local_port'] = int(value)
+            elif key == '-s':
+                config['server'] = value
+            elif key == '-m':
+                config['method'] = value
+            elif key == '-b':
+                config['local'] = value
+            elif key == '-6':
+                config['IPv6'] = True
+        return config
+
+    def run_info(self):
+
+        if hasattr(sys, "frozen") and sys.frozen in \
+                ("windows_exe", "console_exe"):
+            p = os.path.dirname(os.path.abspath(sys.executable))
+            os.chdir(p)
+        version = ''
+        try:
+            import pkg_resources
+            version = pkg_resources.get_distribution('shadowsocks').version
+        except:
+            pass
+        logger.info('shadowsocks %s' % version)
+
 
 if __name__ == '__main__':
     try:
-        main()
+        ShadowSocksServer().serve_forever()
     except socket.error, e:
-        logging.error(e)
+        logger.error(e)
