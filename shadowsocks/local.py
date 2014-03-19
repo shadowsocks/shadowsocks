@@ -235,7 +235,7 @@ def main():
 
     utils.check_config(config)
 
-    encrypt.init_table(KEY, METHOD)
+    encrypt.try_encryptor(KEY, METHOD)
 
     try:
         if IPv6:
