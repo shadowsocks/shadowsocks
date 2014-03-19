@@ -193,7 +193,7 @@ def main():
         PORTPASSWORD = {}
         PORTPASSWORD[str(PORT)] = KEY
 
-    encrypt.init_table(KEY, METHOD)
+    encrypt.try_encryptor(KEY, METHOD)
     if IPv6:
         ThreadingTCPServer.address_family = socket.AF_INET6
     for port, key in PORTPASSWORD.items():
