@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2013 clowwindy
+# Copyright (c) 2014 clowwindy
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -190,45 +190,49 @@ def main():
     IPv6 = False
 
     config_path = utils.find_config()
-    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
-    for key, value in optlist:
-        if key == '-c':
-            config_path = value
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        for key, value in optlist:
+            if key == '-c':
+                config_path = value
 
-    if config_path:
-        logging.info('loading config from %s' % config_path)
-        with open(config_path, 'rb') as f:
-            try:
-                config = json.load(f)
-            except ValueError as e:
-                logging.error('found an error in config.json: %s', e.message)
-                sys.exit(1)
-    else:
-        config = {}
+        if config_path:
+            logging.info('loading config from %s' % config_path)
+            with open(config_path, 'rb') as f:
+                try:
+                    config = json.load(f)
+                except ValueError as e:
+                    logging.error('found an error in config.json: %s', e.message)
+                    sys.exit(1)
+        else:
+            config = {}
 
-    optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
-    for key, value in optlist:
-        if key == '-p':
-            config['server_port'] = int(value)
-        elif key == '-k':
-            config['password'] = value
-        elif key == '-l':
-            config['local_port'] = int(value)
-        elif key == '-s':
-            config['server'] = value
-        elif key == '-m':
-            config['method'] = value
-        elif key == '-b':
-            config['local'] = value
-        elif key == '-6':
-            IPv6 = True
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        for key, value in optlist:
+            if key == '-p':
+                config['server_port'] = int(value)
+            elif key == '-k':
+                config['password'] = value
+            elif key == '-l':
+                config['local_port'] = int(value)
+            elif key == '-s':
+                config['server'] = value
+            elif key == '-m':
+                config['method'] = value
+            elif key == '-b':
+                config['local'] = value
+            elif key == '-6':
+                IPv6 = True
+    except getopt.GetoptError:
+        utils.print_local_help()
+        sys.exit(2)
 
     SERVER = config['server']
     REMOTE_PORT = config['server_port']
     PORT = config['local_port']
     KEY = config['password']
     METHOD = config.get('method', None)
-    LOCAL = config.get('local', '')
+    LOCAL = config.get('local', '127.0.0.1')
 
     if not KEY and not config_path:
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
