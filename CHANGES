@@ -1,3 +1,6 @@
+1.3.6 2014-04-10
+- Fix a typo in help
+
 1.3.5 2014-04-07
 - Add help
 - Change default local binding address into 127.0.0.1
