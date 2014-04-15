@@ -28,3 +28,5 @@ pip-log.txt
 
 #
 config.json
+*.json
+config.*
