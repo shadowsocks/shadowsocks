@@ -12,6 +12,7 @@ import select
 import logging
 import socket
 import errno
+import binascii
 
 try:
     from cStringIO import StringIO
@@ -201,8 +202,8 @@ class IOHandler(BaseHandler):
         self._ios.real_write()
 
     def handle_error(self, events):
-        logging.error("handle_error fd(%s)", self._fd)
-        raise IOLoopError("io error: %x" % events)
+        logging.error("handle_error fd(%s), events: %s", self._fd, binascii.b2a_hex(events))
+        self._ios.close()
 
 
 class SimpleCopyFileHandler(IOHandler):

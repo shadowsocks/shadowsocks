@@ -204,14 +204,13 @@ class LeftTunnelHandler(BaseTunnelHandler):
         try:
             logging.info('connecting to remote %s:%d', addr, port)
             _start_time = time.time()
-            # remote_socket = socket.create_connection((addr, port), G_CONFIG['timeout'])
             remote_socket = socket.socket()
             remote_socket.connect((addr, port))
             remote_socket.setblocking(0)
             logging.info('cost time: %d', time.time()-_start_time)
         except socket.error, e:
             # Connection refused
-            logging.warn("connect_to_remote(): %s, args: %r", e, e.args)
+            logging.warn(e)
             return None
 
         remote_ts = TunnelStream(remote_socket)
