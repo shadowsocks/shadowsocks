@@ -1,8 +1,8 @@
 {
-    "server":"asia.jinxing.me",
-    "server_port":28388,
+    "server":"localhost",
+    "server_port":8388,
     "local_port":1080,
-    "password":"x980barfoo!",
+    "password":"barfoo!",
     "timeout":600,
     "method":"table"
 }
