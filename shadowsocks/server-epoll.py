@@ -202,16 +202,16 @@ class LeftTunnelHandler(BaseTunnelHandler):
             return None
         port = struct.unpack('>H', self.decrypt(rfile.read(2)))[0]
         try:
+            logging.info('connecting to remote %s:%d', addr, port)
             _start_time = time.time()
             # remote_socket = socket.create_connection((addr, port), G_CONFIG['timeout'])
             remote_socket = socket.socket()
             remote_socket.connect((addr, port))
             remote_socket.setblocking(0)
-            logging.info('connecting to remote %s:%d, use time: %d', 
-                            addr, port, time.time()-_start_time)
+            logging.info('cost time: %d', time.time()-_start_time)
         except socket.error, e:
             # Connection refused
-            logging.warn(e)
+            logging.warn("connect_to_remote(): %s, args: %r", e, e.args)
             return None
 
         remote_ts = TunnelStream(remote_socket)
@@ -277,7 +277,6 @@ def main():
     PORTPASSWORD = config.get('port_password')
 
     config['timeout'] = config.get('timeout', 600)
-    TIMEOUT = config.get('timeout')
 
     if not KEY and not config_path:
         sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
@@ -295,16 +294,6 @@ def main():
         PORTPASSWORD[str(PORT)] = KEY
 
     encrypt.init_table(KEY, METHOD)
-
-    """
-    if IPv6:
-        ThreadingTCPServer.address_family = socket.AF_INET6
-    for port, key in PORTPASSWORD.items():
-        server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
-        server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
-        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
-        threading.Thread(target=server.serve_forever).start()
-    """
 
     io = ioloop.IOLoop()
     import socket
