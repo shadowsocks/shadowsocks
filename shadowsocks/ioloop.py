@@ -13,6 +13,7 @@ import logging
 import socket
 import errno
 import binascii
+import time
 
 try:
     from cStringIO import StringIO
@@ -85,16 +86,19 @@ class IOLoop(object):
                 logging.warn('fd %d not in fd_map', fd)
                 self._poller.unregister(fd)
                 continue
+            # logging.info('fd %d, events %d', fd, events)
             handler = self._fd_map[fd]
             if events & MY_POLLEV_ERR:
                 # logging.debug("fd[%s] events MY_POLLEV_ERR | MY_POLLEV_HUP", fd)
-                handler.handle_error(events)
+                handler.handle_error(fd, events)
             elif events & MY_POLLEV_IN or events & MY_POLLEV_PRI:
                 # logging.debug("fd[%s] events MY_POLLEV_IN | MY_POLLEV_PRI", fd)
                 handler.handle_read()
             elif events & MY_POLLEV_OUT:
                 # logging.debug("fd[%s] events MY_POLLEV_OUT", fd)
                 handler.handle_write()
+            else:
+                logging.error("unknow events %d", events)
 
     #@staticmethod
     #def _set_nonblocking(fd):
@@ -161,8 +165,8 @@ class BaseHandler(object):
     def handle_write(self):
         raise
 
-    def handle_error(self):
-        raise
+    def handle_error(self, fd, events):
+        logging.warn("socket error, fd: %d, events: %d", fd, events)
 
 
 class IOHandler(BaseHandler):
@@ -201,9 +205,12 @@ class IOHandler(BaseHandler):
         """fd 可写事件出现"""
         self._ios.real_write()
 
-    def handle_error(self, events):
-        logging.error("handle_error fd(%s), events: %s", self._fd, binascii.b2a_hex(events))
-        self._ios.close()
+    def handle_error(self, fd, events):
+        logging.error("handle_error fd(%s), events: %r", fd, events)
+        try:
+            self._ios.close()
+        except Exception, e:
+            loggin.error("handle_error() close() exception: %s", e)
 
 
 class SimpleCopyFileHandler(IOHandler):
