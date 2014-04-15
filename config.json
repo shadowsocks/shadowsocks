@@ -2,7 +2,7 @@
     "server":"localhost",
     "server_port":8388,
     "local_port":1080,
-    "password":"barfoo!",
+    "password":"barfoo!x",
     "timeout":600,
     "method":"table"
 }
