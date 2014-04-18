@@ -53,7 +53,7 @@ optional arguments:
   -b LOCAL_ADDR         local binding address, default is 127.0.0.1
   -l LOCAL_PORT         local port
   -k PASSWORD           password
-  -s METHOD             encryption method, for example, aes-256-cfb
+  -m METHOD             encryption method, for example, aes-256-cfb
   -c CONFIG             path to config file
 '''
 
@@ -65,6 +65,6 @@ optional arguments:
   -s SERVER_ADDR        server address
   -p SERVER_PORT        server port
   -k PASSWORD           password
-  -s METHOD             encryption method, for example, aes-256-cfb
+  -m METHOD             encryption method, for example, aes-256-cfb
   -c CONFIG             path to config file
 '''
