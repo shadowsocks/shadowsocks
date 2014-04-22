@@ -114,6 +114,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 logging.warn('addr_type not supported, maybe wrong password')
                 return
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
+            logging.debug("SERVER: comes a new request: {0}:{1}".format(addr,port))
             try:
                 logging.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.create_connection((addr, port[0]))
@@ -126,7 +127,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             logging.warn(e)
 
 def main():
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
