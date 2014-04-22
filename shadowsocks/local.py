@@ -63,7 +63,7 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
 
-class Socks5Server(SocketServer.StreamRequestHandler):
+class SocksServer(SocketServer.StreamRequestHandler):
     def getServer(self):
         aPort = REMOTE_PORT
         aServer = SERVER
@@ -102,6 +102,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                     result = send_all(sock, data)
                     if result < len(data):
                         raise Exception('failed to send all data')
+        except Exception as e:
+            pass
         finally:
             sock.close()
             remote.close()
@@ -115,59 +117,103 @@ class Socks5Server(SocketServer.StreamRequestHandler):
     def send_encrypt(self, sock, data):
         sock.send(self.encrypt(data))
 
+   
     def handle(self):
         try:
             self.encryptor = encrypt.Encryptor(KEY, METHOD)
-            sock = self.connection
-            sock.recv(262)
-            sock.send("\x05\x00")
-            data = self.rfile.read(4) or '\x00' * 4
-            mode = ord(data[1])
-            if mode != 1:
-                logging.warn('mode != 1')
-                return
-            addrtype = ord(data[3])
-            addr_to_send = data[3]
-            if addrtype == 1:
-                addr_ip = self.rfile.read(4)
-                addr = socket.inet_ntoa(addr_ip)
-                addr_to_send += addr_ip
-            elif addrtype == 3:
-                addr_len = self.rfile.read(1)
-                addr = self.rfile.read(ord(addr_len))
-                addr_to_send += addr_len + addr
-            elif addrtype == 4:
-                addr_ip = self.rfile.read(16)
-                addr = socket.inet_ntop(socket.AF_INET6, addr_ip)
-                addr_to_send += addr_ip
-            else:
-                logging.warn('addr_type not supported')
-                # not supported
-                return
-            addr_port = self.rfile.read(2)
-            addr_to_send += addr_port
-            port = struct.unpack('>H', addr_port)
-            try:
-                reply = "\x05\x00\x00\x01"
-                reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
-                self.wfile.write(reply)
-                # reply immediately
-                aServer, aPort = self.getServer()
-                remote = socket.create_connection((aServer, aPort))
-                self.send_encrypt(remote, addr_to_send)
-                logging.info('connecting %s:%d' % (addr, port[0]))
-            except socket.error, e:
-                logging.warn(e)
-                return
-            self.handle_tcp(sock, remote)
-        except socket.error, e:
+            self.process()
+        except socket.error as e:
+            logging.warn(e)
+        except Exception as e:
             logging.warn(e)
 
+    def process(self):
+        data = self.rfile.read(1)
+        ver = ord(data[0])
+        logging.debug("{0} => comes a new request".format(self.client_address) )
+        if ver == 4:
+            (addr_to_send, addr, port ) = self.process_v4()
+        elif ver == 5:
+            (addr_to_send, addr, port ) = self.process_v5()
+        else:
+            raise Exception("unsupported protocol")
+        aServer, aPort = self.getServer()
+        logging.debug("{0} => trying to connect to {1}:{2}".format(self.client_address, addr, port) )
+        try:
+            remote = socket.create_connection((aServer, aPort))
+            self.send_encrypt(remote, addr_to_send)
+            logging.info('{0} => connecting {1}:{2}'.format(self.client_address, addr, port))
+        except socket.error, e:
+            logging.warn("error when connecting to {0}:{1} => {2}".format(addr,port, e) )
+            return
+        self.handle_tcp(self.connection, remote)
+
+    def process_v4(self):
+        cmd = self.rfile.read(1)
+        cmd = ord(cmd[0])
+        if( cmd != 1 ):
+            raise Exception("unsupported command, reject")
+        addr_port = self.rfile.read(2)
+        port = struct.unpack('>H', addr_port)[0]
+        addr_ip = self.rfile.read(4)
+        ip = struct.unpack('>bbbb',addr_ip)
+        is4A = False
+        if( ip[0] == 0 and ip[1] == 0 and ip[2] == 0 and ip[3] != 0 ):
+            is4A = True
+        data = self.connection.recv(256)# 256 should be enough to hold the user name and domain address
+        addr_to_send = '\x03' if is4A else '\x01'
+        if not is4A:
+            addr_to_send += addr_ip
+            addr_to_send += addr_port
+            host = socket.inet_ntoa(addr_ip)
+        else:
+            if len(data) < 2:
+                raise Exception("bad socks4A data, reject")
+            pos = data.find("\0")
+            if pos == -1:
+                raise Exception("bad socks4A data")
+            host = data[pos+1:-1]
+            addr_to_send += len(host) + host
+            addr_to_send += addr_port
+        self.wfile.write("\x00\x5a\x22\x22\x00\x00\x00\x00")
+        return (addr_to_send, host, port)
+
+    def process_v5(self):
+        #copy from original implementation
+        self.connection.recv(256)
+        self.wfile.write("\x05\x00")#version 5, no auth
+        data = self.rfile.read(4) or '\x00' * 4
+        if ord(data[1]) != 1:
+            raise Exception("not supported command")
+        addrtype = ord(data[3])
+        addr_to_send = data[3]
+        if addrtype == 1:
+            addr_ip = self.rfile.read(4)
+            addr = socket.inet_ntoa(addr_ip)
+            addr_to_send += addr_ip
+        elif addrtype == 3:
+            addr_len = self.rfile.read(1)
+            addr = self.rfile.read(ord(addr_len))
+            addr_to_send += addr_len + addr
+        elif addrtype == 4:
+            addr_ip = self.rfile.read(16)
+            addr = socket.inet_ntop(socket.AF_INET6, addr_ip)
+            addr_to_send += addr_ip
+        else:
+            raise Exception("not supported addr type")
+
+        addr_port = self.rfile.read(2)
+        addr_to_send += addr_port
+        port = struct.unpack('>H', addr_port)
+        reply = "\x05\x00\x00\x01"
+        reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
+        self.wfile.write(reply)
+        return (addr_to_send, addr, port[0])
 
 def main():
     global SERVER, REMOTE_PORT, KEY, METHOD
 
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
@@ -244,7 +290,7 @@ def main():
     try:
         if IPv6:
             ThreadingTCPServer.address_family = socket.AF_INET6
-        server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
+        server = ThreadingTCPServer((LOCAL, PORT), SocksServer)
         logging.info("starting local at %s:%d" % tuple(server.server_address[:2]))
         server.serve_forever()
     except socket.error, e:
