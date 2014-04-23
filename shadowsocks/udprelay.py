@@ -176,6 +176,10 @@ class UDPRelay(object):
                 return
             self._eventloop.add(client, eventloop.MODE_IN)
 
+            # prevent from recv other sources
+            if self._is_local:
+                client.connect((server_addr, server_port))
+
         data = data[header_length:]
         if not data:
             return
@@ -183,8 +187,6 @@ class UDPRelay(object):
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
-            # prevent from recv other sources
-            client.connect((server_addr, server_port))
         client.sendto(data, (server_addr, server_port))
 
     def _handle_client(self, sock):
