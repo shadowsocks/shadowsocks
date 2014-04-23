@@ -63,7 +63,7 @@
 # `local`   means local server of shadowsocks
 # `remote`  means remote server of shadowsocks
 # `client`  means UDP clients that connects to other servers
-# `server`  means the UDP server that handle user requests
+# `server`  means the UDP server that handles user requests
 
 
 import threading
