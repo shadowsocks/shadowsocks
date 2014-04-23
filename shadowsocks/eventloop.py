@@ -149,7 +149,7 @@ class EventLoop(object):
         else:
             raise Exception('can not find any available functions in select '
                             'package')
-        self._fd_to_f = defaultdict(list)
+        self._fd_to_f = {}
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
@@ -157,16 +157,12 @@ class EventLoop(object):
 
     def add(self, f, mode):
         fd = f.fileno()
-        self._fd_to_f[fd].append(f)
+        self._fd_to_f[fd] = f
         self._impl.add_fd(fd, mode)
 
     def remove(self, f):
         fd = f.fileno()
-        a = self._fd_to_f[fd]
-        if len(a) <= 1:
-            self._fd_to_f[fd] = None
-        else:
-            a.remove(f)
+        self._fd_to_f[fd] = None
         self._impl.remove_fd(fd)
 
     def modify(self, f, mode):
