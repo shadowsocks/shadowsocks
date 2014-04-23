@@ -32,6 +32,9 @@ def random_string(length):
     return M2Crypto.Rand.rand_bytes(length)
 
 
+cached_tables = {}
+
+
 def get_table(key):
     m = hashlib.md5()
     m.update(key)
@@ -42,12 +45,9 @@ def get_table(key):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
 
-encrypt_table = None
-decrypt_table = None
-
 
 def init_table(key, method=None):
-    if method == 'table':
+    if method is not None and method == 'table':
         method = None
     if method:
         try:
@@ -57,10 +57,12 @@ def init_table(key, method=None):
                           'default method')
             sys.exit(1)
     if not method:
-        global encrypt_table, decrypt_table
+        if key in cached_tables:
+            return cached_tables[key]
         encrypt_table = ''.join(get_table(key))
         decrypt_table = string.maketrans(encrypt_table,
                                          string.maketrans('', ''))
+        cached_tables[key] = [encrypt_table, decrypt_table]
     else:
         try:
             Encryptor(key, method)  # test if the settings if OK
@@ -116,9 +118,10 @@ class Encryptor(object):
         self.iv_sent = False
         self.cipher_iv = ''
         self.decipher = None
-        if method is not None:
+        if method:
             self.cipher = self.get_cipher(key, method, 1, iv=random_string(32))
         else:
+            self.encrypt_table, self.decrypt_table = init_table(key)
             self.cipher = None
 
     def get_cipher_len(self, method):
@@ -150,8 +153,8 @@ class Encryptor(object):
     def encrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if self.method is None:
-            return string.translate(buf, encrypt_table)
+        if not self.method:
+            return string.translate(buf, self.encrypt_table)
         else:
             if self.iv_sent:
                 return self.cipher.update(buf)
@@ -162,8 +165,8 @@ class Encryptor(object):
     def decrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if self.method is None:
-            return string.translate(buf, decrypt_table)
+        if not self.method:
+            return string.translate(buf, self.decrypt_table)
         else:
             if self.decipher is None:
                 decipher_iv_len = self.get_cipher_len(self.method)[1]
@@ -174,3 +177,34 @@ class Encryptor(object):
                 if len(buf) == 0:
                     return buf
             return self.decipher.update(buf)
+
+
+def encrypt_all(password, method, op, data):
+    if method is not None and method.lower() == 'table':
+        method = None
+    if not method:
+        [encrypt_table, decrypt_table] = init_table(password)
+        if op:
+            return string.translate(encrypt_table, data)
+        else:
+            return string.translate(decrypt_table, data)
+    else:
+        import M2Crypto.EVP
+        result = []
+        method = method.lower()
+        (key_len, iv_len) = method_supported[method]
+        (key, _) = EVP_BytesToKey(password, key_len, iv_len)
+        if op:
+            iv = random_string(iv_len)
+            result.append(iv)
+        else:
+            iv = data[:iv_len]
+            data = data[iv_len:]
+        cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
+                                       key_as_bytes=0, d='md5', salt=None, i=1,
+                                       padding=1)
+        result.append(cipher.update(data))
+        f = cipher.final()
+        if f:
+            result.append(f)
+        return ''.join(result)

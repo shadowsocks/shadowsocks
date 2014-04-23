@@ -68,7 +68,48 @@
 
 import threading
 import socket
-import event
+import logging
+import struct
+import eventloop
+
+BUF_SIZE = 65536
+
+
+def parse_header(data):
+    addrtype = ord(data[0])
+    dest_addr = None
+    dest_port = None
+    header_length = 0
+    if addrtype == 1:
+        if len(data) >= 7:
+            dest_addr = socket.inet_ntoa(data[1:5])
+            dest_port = struct.unpack('>H', data[5:7])[0]
+            header_length = 7
+        else:
+            logging.warn('[udp] header is too short')
+    elif addrtype == 3:
+        if len(data) > 2:
+            addrlen = ord(data[1])
+            if len(data) >= 2 + addrlen:
+                dest_addr = data[2:2 + addrlen]
+                dest_port = struct.unpack('>H', data[2 + addrlen:4 + addrlen])[0]
+                header_length = 4 + addrlen
+            else:
+                logging.warn('[udp] header is too short')
+        else:
+            logging.warn('[udp] header is too short')
+    elif addrtype == 4:
+        if len(data) >= 19:
+            dest_addr = socket.inet_ntop(socket.AF_INET6, data[1:17])
+            dest_port = struct.unpack('>H', data[17:19])[0]
+            header_length = 19
+        else:
+            logging.warn('[udp] header is too short')
+    else:
+        logging.warn('unsupported addrtype %d' % addrtype)
+    if dest_addr is None:
+        return None
+    return (addrtype, dest_addr, dest_port, header_length)
 
 
 class UDPRelay(object):
@@ -83,25 +124,37 @@ class UDPRelay(object):
         self._method = method
         self._timeout = timeout
         self._is_local = is_local
-        self._eventloop = event.EventLoop()
+        self._eventloop = eventloop.EventLoop()
         self._cache = {}  # TODO replace this dictionary with an LRU cache
 
-    def _handle_server(self, addr, sock, data):
-        # TODO
-        pass
+    def _handle_server(self):
+        server = self._server_socket
+        data = server.recvfrom(BUF_SIZE)
+        if self._is_local:
+            frag = ord(data[2])
+            if frag != 0:
+                logging.warn('drop a message since frag is not 0')
+            else:
+                data = data[3:]
+        else:
+            decrypt
+        
 
-    def _handle_client(self, addr, sock, data):
+    def _handle_client(self, sock):
         # TODO
         pass
 
     def _run(self):
-        eventloop = self._eventloop
         server_socket = self._server_socket
-        eventloop.add(server_socket, event.MODE_IN)
+        self._eventloop.add(server_socket, eventloop.MODE_IN)
         is_local = self._is_local
         while True:
-            r = eventloop.poll()
-            # TODO
+            events = self._eventloop.poll()
+            for sock, event in events:
+                if sock == self._server_socket:
+                    self._handle_server()
+                else:
+                    self._handle_client(sock)
 
     def start(self):
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
@@ -115,4 +168,6 @@ class UDPRelay(object):
         server_socket.setblocking(False)
         self._server_socket = server_socket
 
-        threading.Thread(target=self._run).start()
+        t = threading.Thread(target=self._run)
+        t.setDaemon(True)
+        t.start()

@@ -215,7 +215,7 @@ def main():
                      tuple(server.server_address[:2]))
         threading.Thread(target=server.serve_forever).start()
         udprelay.UDPRelay(SERVER, int(port), None, None, key, METHOD,
-                          int(TIMEOUT), False)
+                          int(TIMEOUT), False).start()
 
 
 if __name__ == '__main__':
