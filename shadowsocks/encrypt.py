@@ -33,6 +33,7 @@ def random_string(length):
 
 
 cached_tables = {}
+cached_keys = {}
 
 
 def get_table(key):
@@ -74,7 +75,10 @@ def init_table(key, method=None):
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
-    # TODO: cache the results
+    password = str(password)
+    r = cached_keys.get(password, None)
+    if r:
+        return r
     m = []
     i = 0
     while len(''.join(m)) < (key_len + iv_len):
@@ -88,6 +92,7 @@ def EVP_BytesToKey(password, key_len, iv_len):
     ms = ''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
+    cached_keys[password] = (key, iv)
     return (key, iv)
 
 
