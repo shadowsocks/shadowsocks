@@ -216,7 +216,6 @@ class UDPRelay(object):
     def _run(self):
         server_socket = self._server_socket
         self._eventloop.add(server_socket, eventloop.MODE_IN)
-        is_local = self._is_local
         while True:
             events = self._eventloop.poll()
             for sock, event in events:
