@@ -174,7 +174,11 @@ class UDPRelay(object):
             else:
                 # drop
                 return
-        self._eventloop.add(client, eventloop.MODE_IN)
+            self._eventloop.add(client, eventloop.MODE_IN)
+
+        data = data[header_length:]
+        if not data:
+            return
         if self._is_local:
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
