@@ -28,9 +28,8 @@ if sys.version_info < (2, 6):
 else:
     import json
 
-# do this before monkey patch
-import udprelay
 
+# TODO remove gevent
 try:
     import gevent
     import gevent.monkey
@@ -38,6 +37,7 @@ try:
 except ImportError:
     gevent = None
     print >>sys.stderr, 'warning: gevent not found, using threading instead'
+
 
 import socket
 import select
@@ -48,6 +48,7 @@ import logging
 import getopt
 import encrypt
 import utils
+import udprelay
 
 
 def send_all(sock, data):
