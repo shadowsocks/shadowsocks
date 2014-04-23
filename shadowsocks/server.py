@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Copyright (c) 2014 clowwindy
 #
@@ -27,6 +28,9 @@ if sys.version_info < (2, 6):
 else:
     import json
 
+# do this before monkey patch
+import udprelay
+
 try:
     import gevent
     import gevent.monkey
@@ -40,7 +44,6 @@ import select
 import threading
 import SocketServer
 import struct
-import os
 import logging
 import getopt
 import encrypt
@@ -205,6 +208,7 @@ def main():
         server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
         logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
         threading.Thread(target=server.serve_forever).start()
+        
 
 if __name__ == '__main__':
     try:

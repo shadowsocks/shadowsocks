@@ -1,7 +1,7 @@
 shadowsocks
 ===========
 
-Current version: 1.3.7 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png?branch=master)](https://travis-ci.org/clowwindy/shadowsocks)
+Current version: 1.4.0 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png?branch=master)](https://travis-ci.org/clowwindy/shadowsocks)
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
 

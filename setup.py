@@ -1,23 +1,22 @@
-from setuptools import setup 
+from setuptools import setup
 
 
 with open('README.rst') as f:
     long_description = f.read()
 
 setup(
-    name = "shadowsocks",
-    version = "1.3.7",
-    license = 'MIT',
-    description = "a lightweight tunnel proxy",
-    author = 'clowwindy',
-    author_email = 'clowwindy42@gmail.com',
-    url = 'https://github.com/clowwindy/shadowsocks',
-    packages = ['shadowsocks'],
+    name="shadowsocks",
+    version="1.4.0",
+    license='MIT',
+    description="a lightweight tunnel proxy",
+    author='clowwindy',
+    author_email='clowwindy42@gmail.com',
+    url='https://github.com/clowwindy/shadowsocks',
+    packages=['shadowsocks'],
     package_data={
         'shadowsocks': ['README.rst', 'LICENSE', 'config.json']
     },
-    install_requires = ['setuptools',
-                        ],
+    install_requires=['setuptools'],
     entry_points="""
     [console_scripts]
     sslocal = shadowsocks.local:main
@@ -29,6 +28,6 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: Proxy Servers',
-        ],
+    ],
     long_description=long_description,
 )
