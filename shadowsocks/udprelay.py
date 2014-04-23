@@ -199,7 +199,10 @@ class UDPRelay(object):
                                        data)
             if not data:
                 return
-            # addrtype, dest_addr, dest_port, header_length = parse_header(data)
+            header_result = parse_header(data)
+            if header_result is None:
+                return
+            # addrtype, dest_addr, dest_port, header_length = header_result
             response = '\x00\x00\0x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno(), None)
         if client_addr:
