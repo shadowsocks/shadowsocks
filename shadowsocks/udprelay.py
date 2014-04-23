@@ -66,12 +66,15 @@
 # `server`  means the UDP server that handles user requests
 
 
+import time
 import threading
 import socket
 import logging
 import struct
 import encrypt
 import eventloop
+import lru_cache
+
 
 BUF_SIZE = 65536
 
@@ -131,8 +134,8 @@ class UDPRelay(object):
         self._timeout = timeout
         self._is_local = is_local
         self._eventloop = eventloop.EventLoop()
-        self._cache = {}  # TODO replace ith an LRU cache
-        self._client_fd_to_server_addr = {}  # TODO replace ith an LRU cache
+        self._cache = lru_cache.LRUCache(timeout=timeout)
+        self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
 
     def _handle_server(self):
         server = self._server_socket
@@ -223,13 +226,20 @@ class UDPRelay(object):
     def _run(self):
         server_socket = self._server_socket
         self._eventloop.add(server_socket, eventloop.MODE_IN)
+        last_time = time.time()
         while True:
-            events = self._eventloop.poll()
+            events = self._eventloop.poll(10)
             for sock, event in events:
                 if sock == self._server_socket:
                     self._handle_server()
                 else:
                     self._handle_client(sock)
+            now = time.time()
+            if now - last_time > 3.5:
+                self._cache.sweep()
+            if now - last_time > 7:
+                self._client_fd_to_server_addr.sweep()
+                last_time = now
 
     def start(self):
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
