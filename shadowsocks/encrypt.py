@@ -53,15 +53,17 @@ def init_table(key, method=None):
         try:
             __import__('M2Crypto')
         except ImportError:
-            logging.error('M2Crypto is required to use encryption other than default method')
+            logging.error('M2Crypto is required to use encryption other than '
+                          'default method')
             sys.exit(1)
     if not method:
         global encrypt_table, decrypt_table
         encrypt_table = ''.join(get_table(key))
-        decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
+        decrypt_table = string.maketrans(encrypt_table,
+                                         string.maketrans('', ''))
     else:
         try:
-            Encryptor(key, method)  # make an Encryptor to test if the settings if OK
+            Encryptor(key, method)  # test if the settings if OK
         except Exception as e:
             logging.error(e)
             sys.exit(1)
@@ -137,8 +139,10 @@ class Encryptor(object):
             if iv is None:
                 iv = iv_[:m[1]]
             if op == 1:
-                self.cipher_iv = iv[:m[1]]  # this iv is for cipher, not decipher
-            return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op, key_as_bytes=0, d='md5', salt=None, i=1, padding=1)
+                self.cipher_iv = iv[:m[1]]  # this iv is for cipher not decipher
+            return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
+                                       key_as_bytes=0, d='md5', salt=None, i=1,
+                                       padding=1)
 
         logging.error('method %s not supported' % method)
         sys.exit(1)
@@ -164,7 +168,8 @@ class Encryptor(object):
             if self.decipher is None:
                 decipher_iv_len = self.get_cipher_len(self.method)[1]
                 decipher_iv = buf[:decipher_iv_len]
-                self.decipher = self.get_cipher(self.key, self.method, 0, iv=decipher_iv)
+                self.decipher = self.get_cipher(self.key, self.method, 0,
+                                                iv=decipher_iv)
                 buf = buf[decipher_iv_len:]
                 if len(buf) == 0:
                     return buf

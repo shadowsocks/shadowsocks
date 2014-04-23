@@ -78,7 +78,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         r = re.match(r'^(.*)\:(\d+)$', aServer)
         if r:
             # support config like "server": "123.123.123.1:8381"
-            # or "server": ["123.123.123.1:8381", "123.123.123.2:8381", "123.123.123.2:8382"]
+            # or "server": ["123.123.123.1:8381", "123.123.123.2:8381"]
             aServer = r.group(1)
             aPort = int(r.group(2))
         return (aServer, aPort)
@@ -203,7 +203,8 @@ def main():
                 try:
                     config = json.load(f)
                 except ValueError as e:
-                    logging.error('found an error in config.json: %s', e.message)
+                    logging.error('found an error in config.json: %s',
+                                  e.message)
                     sys.exit(1)
         else:
             config = {}
@@ -236,17 +237,19 @@ def main():
     LOCAL = config.get('local', '127.0.0.1')
 
     if not KEY and not config_path:
-        sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+        sys.exit('config not specified, please read '
+                 'https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
 
     encrypt.init_table(KEY, METHOD)
 
+    if IPv6:
+        ThreadingTCPServer.address_family = socket.AF_INET6
     try:
-        if IPv6:
-            ThreadingTCPServer.address_family = socket.AF_INET6
         server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
-        logging.info("starting local at %s:%d" % tuple(server.server_address[:2]))
+        logging.info("starting local at %s:%d" %
+                     tuple(server.server_address[:2]))
         server.serve_forever()
     except socket.error, e:
         logging.error(e)

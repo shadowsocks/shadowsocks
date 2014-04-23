@@ -98,7 +98,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
     def handle(self):
         try:
-            self.encryptor = encrypt.Encryptor(self.server.key, self.server.method)
+            self.encryptor = encrypt.Encryptor(self.server.key,
+                                               self.server.method)
             sock = self.connection
             iv_len = self.encryptor.iv_len()
             if iv_len:
@@ -159,7 +160,8 @@ def main():
                 try:
                     config = json.load(f)
                 except ValueError as e:
-                    logging.error('found an error in config.json: %s', e.message)
+                    logging.error('found an error in config.json: %s',
+                                  e.message)
                     sys.exit(1)
             logging.info('loading config from %s' % config_path)
         else:
@@ -189,13 +191,16 @@ def main():
     TIMEOUT = config.get('timeout', 600)
 
     if not KEY and not config_path:
-        sys.exit('config not specified, please read https://github.com/clowwindy/shadowsocks')
+        sys.exit('config not specified, please read '
+                 'https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
 
     if PORTPASSWORD:
         if PORT or KEY:
-            logging.warn('warning: port_password should not be used with server_port and password. server_port and password will be ignored')
+            logging.warn('warning: port_password should not be used with '
+                         'server_port and password. server_port and password '
+                         'will be ignored')
     else:
         PORTPASSWORD = {}
         PORTPASSWORD[str(PORT)] = KEY
@@ -206,9 +211,12 @@ def main():
     for port, key in PORTPASSWORD.items():
         server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
         server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
-        logging.info("starting server at %s:%d" % tuple(server.server_address[:2]))
+        logging.info("starting server at %s:%d" %
+                     tuple(server.server_address[:2]))
         threading.Thread(target=server.serve_forever).start()
-        
+        udprelay.UDPRelay(SERVER, int(port), None, None, key, METHOD,
+                          int(TIMEOUT), False)
+
 
 if __name__ == '__main__':
     try:
