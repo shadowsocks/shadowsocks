@@ -163,7 +163,6 @@ def main():
                     logging.error('found an error in config.json: %s',
                                   e.message)
                     sys.exit(1)
-            logging.info('loading config from %s' % config_path)
         else:
             config = {}
 
