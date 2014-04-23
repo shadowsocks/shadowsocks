@@ -84,6 +84,7 @@ class UDPRelay(object):
         self._timeout = timeout
         self._is_local = is_local
         self._eventloop = event.EventLoop()
+        self._cache = {}  # TODO replace this dictionary with an LRU cache
 
     def _handle_server(self, addr, sock, data):
         # TODO
@@ -96,7 +97,7 @@ class UDPRelay(object):
     def _run(self):
         eventloop = self._eventloop
         server_socket = self._server_socket
-        eventloop.add_fd(server_socket, event.MODE_IN)
+        eventloop.add(server_socket, event.MODE_IN)
         is_local = self._is_local
         while True:
             r = eventloop.poll()
