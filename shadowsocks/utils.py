@@ -37,14 +37,18 @@ def find_config():
 
 def check_config(config):
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
-        logging.warn('Server is set to "%s", maybe it\'s not correct' % config['server'])
-        logging.warn('Notice server will listen at %s:%s' % (config['server'], config['server_port']))
+        logging.warn('Server is set to "%s", maybe it\'s not correct' %
+                     config['server'])
+        logging.warn('Notice server will listen at %s:%s' %
+                     (config['server'], config['server_port']))
     if (config.get('method', '') or '').lower() == 'rc4':
-        logging.warn('RC4 is not safe; please use a safer cipher, like AES-256-CFB')
+        logging.warn('RC4 is not safe; please use a safer cipher, '
+                     'like AES-256-CFB')
 
 
 def print_local_help():
-    print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR] -l LOCAL_PORT -k PASSWORD -m METHOD [-c config]
+    print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR]
+                -l LOCAL_PORT -k PASSWORD -m METHOD [-c config]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -57,8 +61,10 @@ optional arguments:
   -c CONFIG             path to config file
 '''
 
+
 def print_server_help():
-    print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD -m METHOD [-c config]
+    print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD
+                -m METHOD [-c config]
 
 optional arguments:
   -h, --help            show this help message and exit
