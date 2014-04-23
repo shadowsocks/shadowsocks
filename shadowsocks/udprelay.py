@@ -183,6 +183,8 @@ class UDPRelay(object):
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
+            # prevent from recv other sources
+            client.connect((server_addr, server_port))
         client.sendto(data, (server_addr, server_port))
 
     def _handle_client(self, sock):
@@ -212,10 +214,9 @@ class UDPRelay(object):
         if client_addr:
             self._server_socket.sendto(response, client_addr)
         else:
+            # this packet is from somewhere else we know
+            # simply drop that packet
             pass
-            # self._eventloop.remove(sock)
-            # sock.close()
-            # TODO remove it from cache else we can't close it
 
     def _run(self):
         server_socket = self._server_socket
