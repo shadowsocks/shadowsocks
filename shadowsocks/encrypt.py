@@ -201,8 +201,8 @@ def encrypt_all(password, method, op, data):
             iv = data[:iv_len]
             data = data[iv_len:]
         cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
-                                       key_as_bytes=0, d='md5', salt=None, i=1,
-                                       padding=1)
+                                     key_as_bytes=0, d='md5', salt=None, i=1,
+                                     padding=1)
         result.append(cipher.update(data))
         f = cipher.final()
         if f:
