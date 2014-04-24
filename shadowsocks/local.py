@@ -47,6 +47,7 @@ import logging
 import getopt
 import encrypt
 import utils
+import udprelay
 
 
 def send_all(sock, data):
@@ -120,12 +121,63 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         try:
             self.encryptor = encrypt.Encryptor(KEY, METHOD)
             sock = self.connection
-            sock.recv(262)
-            sock.send("\x05\x00")
+            data = sock.recv(262)
+            print '1.', len(data), data.encode('hex')
+            if not data:
+                sock.close()
+                return
+            if len(data) < 3:
+                return
+            method = ord(data[2])
+            if method == 2:
+                logging.warn('client tries to use username/password auth, prete'
+                             'nding the password is OK')
+                sock.send('\x05\x02')
+                try:
+                    ver_ulen = sock.recv(2)
+                    print ver_ulen.encode('hex')
+                    ulen = ord(ver_ulen[1])
+                    if ulen:
+                        username = sock.recv(ulen)
+                        print username
+                        assert(ulen == len(username))
+                    plen = ord(sock.recv(1))
+                    if plen:
+                        _password = sock.recv(plen)
+                        print _password
+                        assert(plen == len(_password))
+                    sock.send('\x01\x00')
+                except Exception as e:
+                    logging.error(e)
+                    return
+            elif method == 0:
+                sock.send("\x05\x00")
+            else:
+                logging.error('unsupported method %d' % method)
+                return
             data = self.rfile.read(4) or '\x00' * 4
+            print '2.', len(data), data.encode('hex')
             mode = ord(data[1])
-            if mode != 1:
-                logging.warn('mode != 1')
+            if mode == 1:
+                pass
+            elif mode == 3:
+                # UDP
+                logging.debug('UDP assc request')
+                if sock.family == socket.AF_INET6:
+                    header = '\x05\x00\x00\x04'
+                else:
+                    header = '\x05\x00\x00\x01'
+                addr, port = sock.getsockname()
+                addr_to_send = socket.inet_pton(sock.family, addr)
+                port_to_send = struct.pack('>H', port)
+                sock.send(header + addr_to_send + port_to_send)
+                while True:
+                    data = sock.recv(4096)
+                    if not data:
+                        break
+                return
+            else:
+                logging.warn('unknown mode %d' % mode)
                 return
             addrtype = ord(data[3])
             addr_to_send = data[3]
@@ -222,7 +274,7 @@ def main():
             elif key == '-m':
                 config['method'] = value
             elif key == '-b':
-                config['local'] = value
+                config['local_address'] = value
             elif key == '-6':
                 IPv6 = True
     except getopt.GetoptError:
@@ -234,7 +286,8 @@ def main():
     PORT = config['local_port']
     KEY = config['password']
     METHOD = config.get('method', None)
-    LOCAL = config.get('local', '127.0.0.1')
+    LOCAL = config.get('local_address', '127.0.0.1')
+    TIMEOUT = config.get('timeout', 600)
 
     if not KEY and not config_path:
         sys.exit('config not specified, please read '
@@ -247,6 +300,8 @@ def main():
     if IPv6:
         ThreadingTCPServer.address_family = socket.AF_INET6
     try:
+        udprelay.UDPRelay(LOCAL, int(PORT), SERVER, REMOTE_PORT, KEY, METHOD,
+                          int(TIMEOUT), True).start()
         server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
         logging.info("starting local at %s:%d" %
                      tuple(server.server_address[:2]))

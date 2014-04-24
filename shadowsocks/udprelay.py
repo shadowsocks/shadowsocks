@@ -188,10 +188,6 @@ class UDPRelay(object):
                 return
             self._eventloop.add(client, eventloop.POLL_IN)
 
-            # prevent from recv other sources
-            if self._is_local:
-                client.connect((server_addr, server_port))
-
         data = data[header_length:]
         if not data:
             return
@@ -199,7 +195,14 @@ class UDPRelay(object):
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
-        client.sendto(data, (server_addr, server_port))
+        try:
+            client.sendto(data, (server_addr, server_port))
+        except IOError as e:
+            err = eventloop.errno_from_exception(e)
+            if err in (errno.EINPROGRESS, errno.EAGAIN):
+                pass
+            else:
+                logging.error(e)
 
     def _handle_client(self, sock):
         data, r_addr = sock.recvfrom(BUF_SIZE)
@@ -223,7 +226,7 @@ class UDPRelay(object):
             if header_result is None:
                 return
             # addrtype, dest_addr, dest_port, header_length = header_result
-            response = '\x00\x00\0x00' + data
+            response = '\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno(), None)
         if client_addr:
             self._server_socket.sendto(response, client_addr)
@@ -271,6 +274,7 @@ class UDPRelay(object):
         self._server_socket = server_socket
 
         t = threading.Thread(target=self._run)
+        t.setName('UDPThread')
         t.setDaemon(True)
         t.start()
         self._thread = t
