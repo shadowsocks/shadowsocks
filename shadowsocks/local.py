@@ -122,7 +122,6 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             self.encryptor = encrypt.Encryptor(KEY, METHOD)
             sock = self.connection
             data = sock.recv(262)
-            print '1.', len(data), data.encode('hex')
             if not data:
                 sock.close()
                 return
@@ -135,16 +134,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 sock.send('\x05\x02')
                 try:
                     ver_ulen = sock.recv(2)
-                    print ver_ulen.encode('hex')
                     ulen = ord(ver_ulen[1])
                     if ulen:
                         username = sock.recv(ulen)
-                        print username
                         assert(ulen == len(username))
                     plen = ord(sock.recv(1))
                     if plen:
                         _password = sock.recv(plen)
-                        print _password
                         assert(plen == len(_password))
                     sock.send('\x01\x00')
                 except Exception as e:
@@ -156,7 +152,6 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 logging.error('unsupported method %d' % method)
                 return
             data = self.rfile.read(4) or '\x00' * 4
-            print '2.', len(data), data.encode('hex')
             mode = ord(data[1])
             if mode == 1:
                 pass
