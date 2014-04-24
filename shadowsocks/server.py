@@ -103,9 +103,17 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                                                self.server.method)
             sock = self.connection
             iv_len = self.encryptor.iv_len()
+            data = sock.recv(iv_len)
+            if iv_len > 0 and not data:
+                sock.close()
+                return
             if iv_len:
-                self.decrypt(sock.recv(iv_len))
-            addrtype = ord(self.decrypt(sock.recv(1)))
+                self.decrypt(data)
+            data = sock.recv(1)
+            if not data:
+                sock.close()
+                return
+            addrtype = ord(self.decrypt(data))
             if addrtype == 1:
                 addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
             elif addrtype == 3:
