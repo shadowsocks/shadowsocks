@@ -74,6 +74,7 @@ import struct
 import encrypt
 import eventloop
 import lru_cache
+import errno
 
 
 BUF_SIZE = 65536
@@ -137,6 +138,14 @@ class UDPRelay(object):
         self._cache = lru_cache.LRUCache(timeout=timeout)
         self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
 
+    def _close_client(self, client):
+        if hasattr(client, 'close'):
+            self._eventloop.remove(client)
+            client.close()
+        else:
+            # just an address
+            pass
+
     def _handle_server(self):
         server = self._server_socket
         data, r_addr = server.recvfrom(BUF_SIZE)
@@ -177,7 +186,7 @@ class UDPRelay(object):
             else:
                 # drop
                 return
-            self._eventloop.add(client, eventloop.MODE_IN)
+            self._eventloop.add(client, eventloop.POLL_IN)
 
             # prevent from recv other sources
             if self._is_local:
@@ -225,10 +234,18 @@ class UDPRelay(object):
 
     def _run(self):
         server_socket = self._server_socket
-        self._eventloop.add(server_socket, eventloop.MODE_IN)
+        self._eventloop.add(server_socket, eventloop.POLL_IN)
         last_time = time.time()
         while True:
-            events = self._eventloop.poll(10)
+            try:
+                events = self._eventloop.poll(10)
+            except (OSError, IOError) as e:
+                if eventloop.errno_from_exception(e) == errno.EPIPE:
+                    # Happens when the client closes the connection
+                    continue
+                else:
+                    logging.error(e)
+                    continue
             for sock, event in events:
                 if sock == self._server_socket:
                     self._handle_server()

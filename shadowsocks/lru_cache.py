@@ -10,8 +10,9 @@ import time
 class LRUCache(collections.MutableMapping):
     """This class is not thread safe"""
 
-    def __init__(self, timeout=60, *args, **kwargs):
+    def __init__(self, timeout=60, close_callback=None, *args, **kwargs):
         self.timeout = timeout
+        self.close_callback = close_callback
         self.store = {}
         self.time_to_keys = collections.defaultdict(list)
         self.last_visits = []
@@ -53,8 +54,9 @@ class LRUCache(collections.MutableMapping):
                 heapq.heappop(self.last_visits)
                 if self.store.__contains__(key):
                     value = self.store[key]
-                    if hasattr(value, 'close'):
-                        value.close()
+                    if self.close_callback is not None:
+                        self.close_callback(value)
+
                     del self.store[key]
                     c += 1
             del self.time_to_keys[least]
