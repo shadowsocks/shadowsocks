@@ -135,7 +135,8 @@ class UDPRelay(object):
         self._timeout = timeout
         self._is_local = is_local
         self._eventloop = eventloop.EventLoop()
-        self._cache = lru_cache.LRUCache(timeout=timeout)
+        self._cache = lru_cache.LRUCache(timeout=timeout,
+                                         close_callback=self._close_client)
         self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
 
     def _close_client(self, client):
