@@ -65,6 +65,10 @@ def send_all(sock, data):
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
+    def server_activate(self):
+        self.socket.setsockopt(socket.SOL_TCP, 23, 5)
+        self.socket.listen(self.request_queue_size)
+
 
 class Socks5Server(SocketServer.StreamRequestHandler):
     def handle_tcp(self, sock, remote):

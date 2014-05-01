@@ -202,9 +202,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 self.wfile.write(reply)
                 # reply immediately
                 aServer, aPort = self.getServer()
-                remote = socket.create_connection((aServer, aPort))
+                MSG_FASTOPEN = 0x20000000
+                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # remote = socket.create_connection((aServer, aPort))
                 remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                self.send_encrypt(remote, addr_to_send)
+                data = self.encrypt(addr_to_send)
+                remote.sendto(data, MSG_FASTOPEN, (aServer, aPort))
+                # self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:
                 logging.warn(e)
