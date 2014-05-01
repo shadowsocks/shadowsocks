@@ -121,6 +121,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         try:
             self.encryptor = encrypt.Encryptor(KEY, METHOD)
             sock = self.connection
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             data = sock.recv(262)
             if not data:
                 sock.close()
@@ -202,6 +203,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 # reply immediately
                 aServer, aPort = self.getServer()
                 remote = socket.create_connection((aServer, aPort))
+                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 self.send_encrypt(remote, addr_to_send)
                 logging.info('connecting %s:%d' % (addr, port[0]))
             except socket.error, e:

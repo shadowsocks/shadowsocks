@@ -102,6 +102,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             self.encryptor = encrypt.Encryptor(self.server.key,
                                                self.server.method)
             sock = self.connection
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             iv_len = self.encryptor.iv_len()
             data = sock.recv(iv_len)
             if iv_len > 0 and not data:
@@ -130,6 +131,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             try:
                 logging.info('connecting %s:%d' % (addr, port[0]))
                 remote = socket.create_connection((addr, port[0]))
+                remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             except socket.error, e:
                 # Connection refused
                 logging.warn(e)
