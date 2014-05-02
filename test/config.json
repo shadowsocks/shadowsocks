@@ -1,10 +1,10 @@
 {
-    "server":"0.0.0.0",
+    "server":"127.0.0.1",
     "server_port":8388,
     "local_port":1080,
     "password":"barfoo!",
     "timeout":300,
-    "method":"table",
+    "method":"aes-256-cfb",
     "local_address":"127.0.0.1",
     "fast_open":false
 }
