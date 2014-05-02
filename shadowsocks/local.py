@@ -69,43 +69,51 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 
 class Socks5Server(SocketServer.StreamRequestHandler):
-    def getServer(self):
-        aPort = REMOTE_PORT
-        aServer = SERVER
-        if isinstance(REMOTE_PORT, list):
+    @staticmethod
+    def get_server():
+        a_port = config_server_port
+        a_server = config_server
+        if isinstance(config_server_port, list):
             # support config like "server_port": [8081, 8082]
-            aPort = random.choice(REMOTE_PORT)
-        if isinstance(SERVER, list):
+            a_port = random.choice(config_server_port)
+        if isinstance(config_server, list):
             # support config like "server": ["123.123.123.1", "123.123.123.2"]
-            aServer = random.choice(SERVER)
+            a_server = random.choice(config_server)
 
-        r = re.match(r'^(.*)\:(\d+)$', aServer)
+        r = re.match(r'^(.*):(\d+)$', a_server)
         if r:
             # support config like "server": "123.123.123.1:8381"
             # or "server": ["123.123.123.1:8381", "123.123.123.2:8381"]
-            aServer = r.group(1)
-            aPort = int(r.group(2))
-        return (aServer, aPort)
+            a_server = r.group(1)
+            a_port = int(r.group(2))
+        return a_server, a_port
 
-    def handle_tcp(self, sock, remote, pending_data=None, server=None, port=None):
+    @staticmethod
+    def handle_tcp(sock, remote, encryptor, pending_data=None,
+                   server=None, port=None):
         connected = False
         try:
-            if FAST_OPEN:
+            if config_fast_open:
                 fdset = [sock]
             else:
                 fdset = [sock, remote]
             while True:
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
-                    if not connected and FAST_OPEN:
+                    if not connected and config_fast_open:
                         data = sock.recv(4096)
-                        data = self.encrypt(pending_data + data)
+                        data = encryptor.encrypt(pending_data + data)
+                        pending_data = None
+                        logging.info('fast open %s:%d' % (server, port))
                         remote.sendto(data, MSG_FASTOPEN, (server, port))
                         connected = True
                         fdset = [sock, remote]
-                        logging.info('fast open %s:%d' % (server, port))
                     else:
-                        data = self.encrypt(sock.recv(4096))
+                        data = sock.recv(4096)
+                        if pending_data:
+                            data = pending_data + data
+                            pending_data = None
+                        data = encryptor.encrypt(data)
                         if len(data) <= 0:
                             break
                         result = send_all(remote, data)
@@ -113,7 +121,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                             raise Exception('failed to send all data')
 
                 if remote in r:
-                    data = self.decrypt(remote.recv(4096))
+                    data = encryptor.decrypt(remote.recv(4096))
                     if len(data) <= 0:
                         break
                     result = send_all(sock, data)
@@ -123,18 +131,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             sock.close()
             remote.close()
 
-    def encrypt(self, data):
-        return self.encryptor.encrypt(data)
-
-    def decrypt(self, data):
-        return self.encryptor.decrypt(data)
-
-    def send_encrypt(self, sock, data):
-        sock.send(self.encrypt(data))
-
     def handle(self):
         try:
-            self.encryptor = encrypt.Encryptor(KEY, METHOD)
+            encryptor = encrypt.Encryptor(config_password, config_method)
             sock = self.connection
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             data = sock.recv(262)
@@ -216,23 +215,23 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 2222)
                 self.wfile.write(reply)
                 # reply immediately
-                aServer, aPort = self.getServer()
-                addrs = socket.getaddrinfo(aServer, aPort)
+                a_server, a_port = Socks5Server.get_server()
+                addrs = socket.getaddrinfo(a_server, a_port)
                 if addrs:
                     af, socktype, proto, canonname, sa = addrs[0]
-                    if FAST_OPEN:
+                    if config_fast_open:
                         remote = socket.socket(af, socktype, proto)
-                        # remote.setsockopt(socket.IPPROTO_TCP,
-                        #                   socket.TCP_NODELAY, 1)
-                        self.handle_tcp(sock, remote, addr_to_send, aServer,
-                                        aPort)
-                    else:
-                        remote = socket.create_connection((aServer, aPort))
                         remote.setsockopt(socket.IPPROTO_TCP,
                                           socket.TCP_NODELAY, 1)
-                        self.send_encrypt(remote, addr_to_send)
+                        Socks5Server.handle_tcp(sock, remote, encryptor,
+                                                addr_to_send, a_server, a_port)
+                    else:
                         logging.info('connecting %s:%d' % (addr, port[0]))
-                        self.handle_tcp(sock, remote)
+                        remote = socket.create_connection((a_server, a_port))
+                        remote.setsockopt(socket.IPPROTO_TCP,
+                                          socket.TCP_NODELAY, 1)
+                        Socks5Server.handle_tcp(sock, remote, encryptor,
+                                                addr_to_send)
             finally:
                 pass
             # except socket.error, e:
@@ -247,7 +246,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 def main():
-    global SERVER, REMOTE_PORT, KEY, METHOD, FAST_OPEN
+    global config_server, config_server_port, config_password, config_method,\
+        config_fast_open
 
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -266,14 +266,13 @@ def main():
         pass
     print 'shadowsocks %s' % version
 
-    KEY = None
-    METHOD = None
-    LOCAL = ''
-    IPv6 = False
+    config_password = None
+    config_method = None
 
     config_path = utils.find_config()
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:',
+                                      ['fast-open'])
         for key, value in optlist:
             if key == '-c':
                 config_path = value
@@ -290,7 +289,8 @@ def main():
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:6')
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:',
+                                      ['fast-open'])
         for key, value in optlist:
             if key == '-p':
                 config['server_port'] = int(value)
@@ -304,35 +304,41 @@ def main():
                 config['method'] = value
             elif key == '-b':
                 config['local_address'] = value
-            elif key == '-6':
-                IPv6 = True
-    except getopt.GetoptError:
+            elif key == '--fast-open':
+                config['fast_open'] = True
+    except getopt.GetoptError as e:
+        logging.error(e)
         utils.print_local_help()
         sys.exit(2)
 
-    SERVER = config['server']
-    REMOTE_PORT = config['server_port']
-    PORT = config['local_port']
-    KEY = config['password']
-    METHOD = config.get('method', None)
-    LOCAL = config.get('local_address', '127.0.0.1')
-    TIMEOUT = config.get('timeout', 600)
-    FAST_OPEN = config.get('fast_open', False)
+    config_server = config['server']
+    config_server_port = config['server_port']
+    config_local_port = config['local_port']
+    config_password = config['password']
+    config_method = config.get('method', None)
+    config_local_address = config.get('local_address', '127.0.0.1')
+    config_timeout = config.get('timeout', 600)
+    config_fast_open = config.get('fast_open', False)
 
-    if not KEY and not config_path:
+    if not config_password and not config_path:
         sys.exit('config not specified, please read '
                  'https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
 
-    encrypt.init_table(KEY, METHOD)
+    encrypt.init_table(config_password, config_method)
 
-    if IPv6:
-        ThreadingTCPServer.address_family = socket.AF_INET6
+    addrs = socket.getaddrinfo(config_local_address, config_local_port)
+    if not addrs:
+        logging.error('cant resolve local address')
+        sys.exit(1)
+    ThreadingTCPServer.address_family = addrs[0][0]
     try:
-        udprelay.UDPRelay(LOCAL, int(PORT), SERVER, REMOTE_PORT, KEY, METHOD,
-                          int(TIMEOUT), True).start()
-        server = ThreadingTCPServer((LOCAL, PORT), Socks5Server)
+        udprelay.UDPRelay(config_local_address, int(config_local_port),
+                          config_server, config_server_port, config_password,
+                          config_method, int(config_timeout), True).start()
+        server = ThreadingTCPServer((config_local_address, config_local_port),
+                                    Socks5Server)
         logging.info("starting local at %s:%d" %
                      tuple(server.server_address[:2]))
         server.serve_forever()

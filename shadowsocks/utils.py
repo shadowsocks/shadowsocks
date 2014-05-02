@@ -48,7 +48,7 @@ def check_config(config):
 
 def print_local_help():
     print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR]
-                -l LOCAL_PORT -k PASSWORD -m METHOD [-c config]
+                -l LOCAL_PORT -k PASSWORD -m METHOD [-c config] [--fast-open]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -59,12 +59,13 @@ optional arguments:
   -k PASSWORD           password
   -m METHOD             encryption method, for example, aes-256-cfb
   -c CONFIG             path to config file
+  --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
 '''
 
 
 def print_server_help():
     print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD
-                -m METHOD [-c config]
+                -m METHOD [-c config] [--fast-open]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -73,4 +74,5 @@ optional arguments:
   -k PASSWORD           password
   -m METHOD             encryption method, for example, aes-256-cfb
   -c CONFIG             path to config file
+  --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
 '''

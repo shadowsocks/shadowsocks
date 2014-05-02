@@ -40,6 +40,7 @@ Explanation of the fields:
     password        a password used to encrypt transfer
     timeout         in seconds
     method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table, which is not secure. "aes-256-cfb" is recommended
+    fast_open       use TCP_FASTOPEN, true/false
 
 `cd` into the directory of `config.json`. Run `ssserver` on your server. To run it in the background, run
 `nohup ssserver > log &`.
@@ -111,6 +112,11 @@ Or:
 
     $ sudo apt-get install libevent-dev python-pip
     $ sudo pip install gevent
+
+If both of your server and client are deployed on Linux 3.7+, you can turn on
+fast_open for lower latency.
+
+    echo 3 > /proc/sys/net/ipv4/tcp_fastopen
 
 License
 -------
