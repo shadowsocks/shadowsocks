@@ -330,7 +330,7 @@ def main():
 
     addrs = socket.getaddrinfo(config_local_address, config_local_port)
     if not addrs:
-        logging.error('cant resolve local address')
+        logging.error('cant resolve listen address')
         sys.exit(1)
     ThreadingTCPServer.address_family = addrs[0][0]
     try:

@@ -66,7 +66,11 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
     def server_activate(self):
-        self.socket.setsockopt(socket.SOL_TCP, 23, 5)
+        if config_fast_open:
+            try:
+                self.socket.setsockopt(socket.SOL_TCP, 23, 5)
+            except socket.error:
+                logging.error('warning: fast open is not available')
         self.socket.listen(self.request_queue_size)
 
 
@@ -144,7 +148,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 
+
 def main():
+    global config_server, config_server_port, config_method, config_fast_open
+
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
@@ -158,13 +165,10 @@ def main():
         pass
     print 'shadowsocks %s' % version
 
-    KEY = None
-    METHOD = None
-    IPv6 = False
-
     config_path = utils.find_config()
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
+        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
+                                      ['fast-open'])
         for key, value in optlist:
             if key == '-c':
                 config_path = value
@@ -181,7 +185,8 @@ def main():
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:6')
+        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
+                                      ['fast-open'])
         for key, value in optlist:
             if key == '-p':
                 config['server_port'] = int(value)
@@ -191,45 +196,50 @@ def main():
                 config['server'] = value
             elif key == '-m':
                 config['method'] = value
-            elif key == '-6':
-                IPv6 = True
+            elif key == '--fast-open':
+                config['fast_open'] = True
     except getopt.GetoptError:
         utils.print_server_help()
         sys.exit(2)
 
-    SERVER = config['server']
-    PORT = config['server_port']
-    KEY = config['password']
-    METHOD = config.get('method', None)
-    PORTPASSWORD = config.get('port_password', None)
-    TIMEOUT = config.get('timeout', 600)
+    config_server = config['server']
+    config_server_port = config['server_port']
+    config_key = config['password']
+    config_method = config.get('method', None)
+    config_port_password = config.get('port_password', None)
+    config_timeout = config.get('timeout', 600)
+    config_fast_open = config.get('fast_open', False)
 
-    if not KEY and not config_path:
+    if not config_key and not config_path:
         sys.exit('config not specified, please read '
                  'https://github.com/clowwindy/shadowsocks')
 
     utils.check_config(config)
 
-    if PORTPASSWORD:
-        if PORT or KEY:
+    if config_port_password:
+        if config_server_port or config_key:
             logging.warn('warning: port_password should not be used with '
                          'server_port and password. server_port and password '
                          'will be ignored')
     else:
-        PORTPASSWORD = {}
-        PORTPASSWORD[str(PORT)] = KEY
+        config_port_password = {}
+        config_port_password[str(config_server_port)] = config_key
 
-    encrypt.init_table(KEY, METHOD)
-    if IPv6:
-        ThreadingTCPServer.address_family = socket.AF_INET6
-    for port, key in PORTPASSWORD.items():
-        server = ThreadingTCPServer((SERVER, int(port)), Socks5Server)
-        server.key, server.method, server.timeout = key, METHOD, int(TIMEOUT)
+    encrypt.init_table(config_key, config_method)
+    addrs = socket.getaddrinfo(config_server, int(8387))
+    if not addrs:
+        logging.error('cant resolve listen address')
+        sys.exit(1)
+    ThreadingTCPServer.address_family = addrs[0][0]
+    for port, key in config_port_password.items():
+        server = ThreadingTCPServer((config_server, int(port)), Socks5Server)
+        server.key, server.method, server.timeout = key, config_method,\
+            int(config_timeout)
         logging.info("starting server at %s:%d" %
                      tuple(server.server_address[:2]))
         threading.Thread(target=server.serve_forever).start()
-        udprelay.UDPRelay(SERVER, int(port), None, None, key, METHOD,
-                          int(TIMEOUT), False).start()
+        udprelay.UDPRelay(config_server, int(port), None, None, key,
+                          config_method, int(config_timeout), False).start()
 
 
 if __name__ == '__main__':
