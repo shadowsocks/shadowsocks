@@ -5,7 +5,7 @@ Current version: 1.4.0 [![Build Status](https://travis-ci.org/clowwindy/shadowso
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
 
-Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
+Both TCP CONNECT and UDP ASSOCIATE are implemented.
 
 [中文说明](https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
 
