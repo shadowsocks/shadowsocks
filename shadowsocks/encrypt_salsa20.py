@@ -76,7 +76,6 @@ class Salsa20Cipher(object):
             data = data[remain:]
 
             results.append(numpy_xor(cur_data, cur_stream))
-            # results.append(cur_data)
 
             if not data:
                 break
