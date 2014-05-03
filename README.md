@@ -30,7 +30,14 @@ Install Shadowsocks.
     easy_install pip
     pip install shadowsocks
 
-#### Windows / OS X:
+#### OS X:
+
+    git clone https://github.com/clowwindy/M2Crypto.git
+    cd M2Crypto
+    pip install .
+    pip install shadowsocks
+
+#### Windows:
 
 Choose a [GUI client][7]
 
