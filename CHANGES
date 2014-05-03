@@ -1,3 +1,7 @@
+1.4.1 2014-05-03
+- Fix error log
+- Fix EINPROGESS with some version of gevent
+
 1.4.0 2014-05-02
 - Adds UDP relay
 - TCP fast open support on Linux 3.7+
