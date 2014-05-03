@@ -1,16 +1,16 @@
 shadowsocks
 ===========
 
-Current version: 1.4.0 [![Build Status](https://travis-ci.org/clowwindy/shadowsocks.png?branch=master)](https://travis-ci.org/clowwindy/shadowsocks)
+Current version: 1.4.0 [![Build Status][1]][0]
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
 
-Other ports and clients can be found [here](https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients).
+Both TCP CONNECT and UDP ASSOCIATE are implemented.
 
-[中文说明](https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
+[中文说明][3]
 
-Usage
------------
+Install
+-------
 
 First, make sure you have Python 2.6 or 2.7.
 
@@ -19,33 +19,54 @@ First, make sure you have Python 2.6 or 2.7.
     
 Install Shadowsocks.
 
+#### Debian / Ubuntu:
+
+    apt-get install python-gevent python-m2crypto
     pip install shadowsocks
-    
-Create a file named `config.json`, with the following content.
+
+#### CentOS:
+
+    yum install m2crypto python-setuptools
+    easy_install pip
+    pip install shadowsocks
+
+#### Windows / OS X:
+
+Choose a [GUI client][7]
+
+Usage
+-----
+
+Create a config file `/etc/shadowsocks.json` (or put it in other path).
+Example:
 
     {
         "server":"my_server_ip",
         "server_port":8388,
+        "local_address": "127.0.0.1",
         "local_port":1080,
-        "password":"barfoo!",
-        "timeout":600,
-        "method":"table"
+        "password":"mypassword",
+        "timeout":300,
+        "method":"aes-256-cfb",
+        "fast_open": false
     }
 
 Explanation of the fields:
 
-    server          your server IP (IPv4/IPv6), notice that your server will listen to this IP
-    server_port     server port
-    local_port      local port
-    password        a password used to encrypt transfer
-    timeout         in seconds
-    method          encryption method, "bf-cfb", "aes-256-cfb", "des-cfb", "rc4", etc. Default is table, which is not secure. "aes-256-cfb" is recommended
-    fast_open       use TCP_FASTOPEN, true/false
+| Name          | Explanation                                     |
+| ------------- | ----------------------------------------------- |
+| server        | the address your server listens                 |
+| server_port   | server port                                     |
+| local_address | the address your local listens                  |
+| local_port    | local port                                      |
+| password      | password used for encryption                    |
+| timeout       | in seconds                                      |
+| method        | encryption method, "aes-256-cfb" is recommended |
+| fast_open     | use [TCP_FASTOPEN][2], true / false             |
 
-`cd` into the directory of `config.json`. Run `ssserver` on your server. To run it in the background, run
-`nohup ssserver > log &`.
+Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background, [use supervisor][8].
 
-On your client machine, run `sslocal`.
+On your client machine, run `sslocal -c /etc/shadowsocks.json`.
 
 Change the proxy settings in your browser to
 
@@ -66,57 +87,10 @@ You can use args to override settings from `config.json`.
     ssserver -p server_port -k password -m bf-cfb
     ssserver -c /etc/shadowsocks/config.json
 
-Encryption
-------------
+Wiki
+----
 
-Default encryption method table, which is not secure, is not recommended. Please use "aes-256-cfb" or "bf-cfb". "rc4" is not secure, either, please don't use it.
-
-List of all encryption methods:
-
-- aes-128-cfb
-- aes-192-cfb
-- aes-256-cfb
-- bf-cfb
-- camellia-128-cfb
-- camellia-192-cfb
-- camellia-256-cfb
-- cast5-cfb
-- des-cfb
-- idea-cfb
-- rc2-cfb
-- rc4
-- seed-cfb
-- table
-
-**If you want to use encryption method other than "table", please install [M2Crypto](http://chandlerproject.org/Projects/MeTooCrypto).**
-
-Ubuntu:
-
-    apt-get install python-m2crypto
-
-Others:
-
-    apt-get install openssl-dev swig
-    pip install M2Crypto
-
-Please notice that some encryption methods are not available on some environments.
-
-Performance
-------------
-
-You may want to install gevent for better performance.
-
-    $ sudo apt-get install python-gevent
-
-Or:
-
-    $ sudo apt-get install libevent-dev python-pip
-    $ sudo pip install gevent
-
-If both of your server and client are deployed on Linux 3.7+, you can turn on
-fast_open for lower latency.
-
-    echo 3 > /proc/sys/net/ipv4/tcp_fastopen
+https://github.com/clowwindy/shadowsocks/wiki
 
 License
 -------
@@ -124,8 +98,18 @@ MIT
 
 Bugs and Issues
 ----------------
-Please visit [issue tracker](https://github.com/clowwindy/shadowsocks/issues?state=open)
+Please visit [issue tracker][5]
 
 Mailing list: http://groups.google.com/group/shadowsocks
 
-Also see [troubleshooting](https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting)
+Also see [troubleshooting][6]
+
+[0]: https://travis-ci.org/clowwindy/shadowsocks
+[1]: https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
+[2]: https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
+[3]: https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[4]: http://chandlerproject.org/Projects/MeTooCrypto
+[5]: https://github.com/clowwindy/shadowsocks/issues?state=open
+[6]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
+[7]: https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
+[8]: https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
