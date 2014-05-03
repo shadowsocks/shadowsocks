@@ -37,6 +37,8 @@ except ImportError:
     print >>sys.stderr, 'warning: gevent not found, using threading instead'
 
 import socket
+import eventloop
+import errno
 import select
 import SocketServer
 import struct
@@ -105,7 +107,13 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                         data = encryptor.encrypt(pending_data + data)
                         pending_data = None
                         logging.info('fast open %s:%d' % (server, port))
-                        remote.sendto(data, MSG_FASTOPEN, (server, port))
+                        try:
+                            remote.sendto(data, MSG_FASTOPEN, (server, port))
+                        except (OSError, IOError) as e:
+                            if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
+                                pass
+                            else:
+                                raise e
                         connected = True
                         fdset = [sock, remote]
                     else:
@@ -232,17 +240,12 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                                           socket.TCP_NODELAY, 1)
                         Socks5Server.handle_tcp(sock, remote, encryptor,
                                                 addr_to_send)
-            finally:
-                pass
-            # except socket.error, e:
-            #     raise e
-                # logging.warn(e)
-                # return
-        finally:
-            pass
-        # except socket.error, e:
-        #     raise e
-        #     logging.warn(e)
+            except (OSError, IOError) as e:
+                logging.warn(e)
+                return
+        except (OSError, IOError) as e:
+            raise e
+            logging.warn(e)
 
 
 def main():
