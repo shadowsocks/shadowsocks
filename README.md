@@ -53,15 +53,16 @@ Example:
 
 Explanation of the fields:
 
-| Name        | Explanation                                     |
-| ----------- | ----------------------------------------------- |
-| server      | the your server listens                         |
-| server_port | server port                                     |
-| local_port  | local port                                      |
-| password    | password used for encryption                    |
-| timeout     | in seconds                                      |
-| method      | encryption method, "aes-256-cfb" is recommended |
-| fast_open   | use [TCP_FASTOPEN][2], true / false             |
+| Name          | Explanation                                     |
+| ------------- | ----------------------------------------------- |
+| server        | the address your server listens                 |
+| server_port   | server port                                     |
+| local_address | the address your local listens                  |
+| local_port    | local port                                      |
+| password      | password used for encryption                    |
+| timeout       | in seconds                                      |
+| method        | encryption method, "aes-256-cfb" is recommended |
+| fast_open     | use [TCP_FASTOPEN][2], true / false             |
 
 Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background, [use supervisor][8].
 
