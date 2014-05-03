@@ -20,16 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import sys
 import hashlib
 import string
 import struct
 import logging
+import encrypt_salsa20
 
 
 def random_string(length):
-    import M2Crypto.Rand
-    return M2Crypto.Rand.rand_bytes(length)
+    try:
+        import M2Crypto.Rand
+        return M2Crypto.Rand.rand_bytes(length)
+    except ImportError:
+        # TODO really strong enough on Linux?
+        return os.urandom(length)
 
 
 cached_tables = {}
@@ -110,6 +116,7 @@ method_supported = {
     'rc2-cfb': (16, 8),
     'rc4': (16, 0),
     'seed-cfb': (16, 16),
+    'salsa20-ctr': (32, 8),
 }
 
 
@@ -138,7 +145,6 @@ class Encryptor(object):
         return len(self.cipher_iv)
 
     def get_cipher(self, password, method, op, iv=None):
-        import M2Crypto.EVP
         password = password.encode('utf-8')
         method = method.lower()
         m = self.get_cipher_len(method)
@@ -148,9 +154,13 @@ class Encryptor(object):
                 iv = iv_[:m[1]]
             if op == 1:
                 self.cipher_iv = iv[:m[1]]  # this iv is for cipher not decipher
-            return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
+            if method != 'salsa20-ctr':
+                import M2Crypto.EVP
+                return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
                                        key_as_bytes=0, d='md5', salt=None, i=1,
                                        padding=1)
+            else:
+                return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
 
         logging.error('method %s not supported' % method)
         sys.exit(1)
