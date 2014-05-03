@@ -21,7 +21,7 @@ Install Shadowsocks.
 
 #### Debian / Ubuntu:
 
-    apt-get install python-gevent python-m2crypto
+    apt-get install python-pip python-gevent python-m2crypto
     pip install shadowsocks
 
 #### CentOS:
@@ -93,6 +93,20 @@ You can use args to override settings from `config.json`.
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb
     ssserver -c /etc/shadowsocks/config.json
+
+Salsa20
+-------
+
+Salsa20 is a fast stream cipher.
+
+Use "salsa20-ctr" in shadowsocks.json.
+
+And install these packages:
+
+#### Debian / Ubuntu:
+
+    apt-get install python-numpy
+    pip install salsa20
 
 Wiki
 ----

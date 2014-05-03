@@ -82,9 +82,9 @@ decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
 for i in range(0, 256):
     assert(target2[0][i] == ord(encrypt_table[i]))
     assert(target2[1][i] == ord(decrypt_table[i]))
-p1 = Popen(['python', 'shadowsocks/server.py', '-c', 'test/config.json'], shell=False, bufsize=0, stdin=PIPE, 
+p1 = Popen(['python', 'shadowsocks/server.py', '-c', sys.argv[-1]], shell=False, bufsize=0, stdin=PIPE, 
     stdout=PIPE, stderr=PIPE, close_fds=True)
-p2 = Popen(['python', 'shadowsocks/local.py', '-c', 'test/config.json'], shell=False, bufsize=0, stdin=PIPE,
+p2 = Popen(['python', 'shadowsocks/local.py', '-c', sys.argv[-1]], shell=False, bufsize=0, stdin=PIPE,
     stdout=PIPE, stderr=PIPE, close_fds=True)
 p3 = None
 

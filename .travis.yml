@@ -4,7 +4,9 @@ python:
   - 2.7
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq build-essential libssl-dev swig libevent-dev python-gevent python-m2crypto
-  - pip install gevent m2crypto
+  - sudo apt-get install -qq build-essential libssl-dev swig libevent-dev python-gevent python-m2crypto python-numpy
+  - pip install gevent m2crypto salsa20
 script:
-  - python test.py
+  - python test.py -c test/table.json
+  - python test.py -c test/aes.json
+  - python test.py -c test/salsa20.json

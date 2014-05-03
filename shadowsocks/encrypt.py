@@ -151,7 +151,8 @@ class Encryptor(object):
         if m:
             key, iv_ = EVP_BytesToKey(password, m[0], m[1])
             if iv is None:
-                iv = iv_[:m[1]]
+                iv = iv_
+            iv = iv[:m[1]]
             if op == 1:
                 self.cipher_iv = iv[:m[1]]  # this iv is for cipher not decipher
             if method != 'salsa20-ctr':
