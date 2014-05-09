@@ -1,3 +1,6 @@
+1.4.2 2014-05-10
+- Add salsa20 cipher
+
 1.4.1 2014-05-03
 - Fix error log
 - Fix EINPROGESS with some version of gevent
