@@ -79,21 +79,29 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         try:
             fdset = [sock, remote]
             while True:
+                should_break = False
                 r, w, e = select.select(fdset, [], [])
                 if sock in r:
                     data = self.decrypt(sock.recv(4096))
                     if len(data) <= 0:
-                        break
-                    result = send_all(remote, data)
-                    if result < len(data):
-                        raise Exception('failed to send all data')
+                        should_break = True
+                    else:
+                        result = send_all(remote, data)
+                        if result < len(data):
+                            raise Exception('failed to send all data')
                 if remote in r:
                     data = self.encrypt(remote.recv(4096))
                     if len(data) <= 0:
-                        break
-                    result = send_all(sock, data)
-                    if result < len(data):
-                        raise Exception('failed to send all data')
+                        should_break = True
+                    else:
+                        result = send_all(sock, data)
+                        if result < len(data):
+                            raise Exception('failed to send all data')
+                if should_break:
+                    # make sure all data are read before we close the sockets
+                    # TODO: we haven't read ALL the data, actually
+                    # http://cs.ecs.baylor.edu/~donahoo/practical/CSockets/TCPRST.pdf
+                    break
 
         finally:
             sock.close()
