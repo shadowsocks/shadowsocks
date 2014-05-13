@@ -32,9 +32,7 @@ Install Shadowsocks.
 
 #### OS X:
 
-    git clone https://github.com/clowwindy/M2Crypto.git
-    cd M2Crypto
-    pip install .
+    pip install M2Crypto
     pip install shadowsocks
 
 #### Windows:
