@@ -22,8 +22,52 @@
 # SOFTWARE.
 
 import os
+import socket
 import logging
 
+
+def inet_ntop(family, ipstr):
+    if family == socket.AF_INET:
+        return socket.inet_ntoa(ipstr)
+    elif family == socket.AF_INET6:
+        v6addr = ':'.join(('%02X%02X' % (ord(i), ord(j)))
+                          for i, j in zip(ipstr[::2], ipstr[1::2]))
+        return v6addr
+
+
+def inet_pton(family, addr):
+    if family == socket.AF_INET:
+        return socket.inet_aton(addr)
+    elif family == socket.AF_INET6:
+        if '.' in addr:  # a v4 addr
+            v4addr = addr[addr.rindex(':') + 1:]
+            v4addr = socket.inet_aton(v4addr)
+            v4addr = map(lambda x: ('%02X' % ord(x)), v4addr)
+            v4addr.insert(2, ':')
+            newaddr = addr[:addr.rindex(':') + 1] + ''.join(v4addr)
+            return inet_pton(family, newaddr)
+        dbyts = [0] * 8  # 8 groups
+        grps = addr.split(':')
+        for i, v in enumerate(grps):
+            if v:
+                dbyts[i] = int(v, 16)
+            else:
+                for j, w in enumerate(grps[::-1]):
+                    if w:
+                        dbyts[7 - j] = int(w, 16)
+                    else:
+                        break
+                break
+        return ''.join((chr(i // 256) + chr(i % 256)) for i in dbyts)
+    else:
+        raise RuntimeError("What family?")
+
+
+if not hasattr(socket, 'inet_pton'):
+    socket.inet_pton = inet_pton
+
+if not hasattr(socket, 'inet_ntop'):
+    socket.inet_ntop = inet_ntop
 
 def find_config():
     config_path = 'config.json'
