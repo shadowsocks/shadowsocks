@@ -10,4 +10,3 @@ script:
   - python test.py -c test/table.json
   - python test.py -c test/aes.json
   - python test.py -c test/salsa20.json
-  - python test.py -c test/workers.json
