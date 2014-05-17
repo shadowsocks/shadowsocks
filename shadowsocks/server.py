@@ -279,6 +279,13 @@ def main():
                 else:
                     children.append(r)
             if not is_child:
+                def handler(signum, frame):
+                    for pid in children:
+                        os.kill(pid, signum)
+                        os.waitpid(pid, 0)
+                    sys.exit()
+                import signal
+                signal.signal(signal.SIGTERM, handler)
                 # master
                 for child in children:
                     os.waitpid(child, 0)
