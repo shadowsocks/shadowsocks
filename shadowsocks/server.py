@@ -284,6 +284,7 @@ def main():
                     os.waitpid(child, 0)
         else:
             logging.warn('worker is only available on Unix/Linux')
+            run_server()
     else:
         run_server()
 

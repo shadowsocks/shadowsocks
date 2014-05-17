@@ -1,7 +1,7 @@
 shadowsocks
 ===========
 
-Current version: 1.4.3 [![Build Status][1]][0]
+Current version: 1.4.4 [![Build Status][1]][0]
 
 shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
 
@@ -55,7 +55,8 @@ Example:
         "password":"mypassword",
         "timeout":300,
         "method":"aes-256-cfb",
-        "fast_open": false
+        "fast_open": false,
+        "workers": 1
     }
 
 Explanation of the fields:
@@ -70,6 +71,7 @@ Explanation of the fields:
 | timeout       | in seconds                                      |
 | method        | encryption method, "aes-256-cfb" is recommended |
 | fast_open     | use [TCP_FASTOPEN][2], true / false             |
+| workers       | number of workers, available on Unix/Linux      |
 
 Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background, [use supervisor][8].
 
@@ -91,7 +93,7 @@ Command line args
 You can use args to override settings from `config.json`.
 
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
-    ssserver -p server_port -k password -m bf-cfb
+    ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
 
 Salsa20
