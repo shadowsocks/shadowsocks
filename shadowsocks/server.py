@@ -47,6 +47,7 @@ import struct
 import logging
 import getopt
 import encrypt
+import os
 import utils
 import udprelay
 
@@ -176,7 +177,7 @@ def main():
     config_path = utils.find_config()
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
-                                      ['fast-open'])
+                                      ['fast-open', 'workers:'])
         for key, value in optlist:
             if key == '-c':
                 config_path = value
@@ -194,7 +195,7 @@ def main():
             config = {}
 
         optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
-                                      ['fast-open'])
+                                      ['fast-open', 'workers='])
         for key, value in optlist:
             if key == '-p':
                 config['server_port'] = int(value)
@@ -206,6 +207,8 @@ def main():
                 config['method'] = value
             elif key == '--fast-open':
                 config['fast_open'] = True
+            elif key == '--workers':
+                config['workers'] = value
     except getopt.GetoptError:
         utils.print_server_help()
         sys.exit(2)
@@ -217,6 +220,7 @@ def main():
     config_port_password = config.get('port_password', None)
     config_timeout = config.get('timeout', 600)
     config_fast_open = config.get('fast_open', False)
+    config_workers = config.get('workers', 1)
 
     if not config_key and not config_path:
         sys.exit('config not specified, please read '
@@ -248,6 +252,17 @@ def main():
         threading.Thread(target=server.serve_forever).start()
         udprelay.UDPRelay(config_server, int(port), None, None, key,
                           config_method, int(config_timeout), False).start()
+
+    if int(config_workers) > 1:
+        if os.name == 'posix':
+            # TODO only serve in workers, not in master
+            for i in xrange(0, int(config_workers) - 1):
+                r = os.fork()
+                if r == 0:
+                    break
+        else:
+            logging.warn('worker is only available on Unix/Linux')
+
 
 
 if __name__ == '__main__':

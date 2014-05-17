@@ -125,4 +125,5 @@ optional arguments:
   -m METHOD             encryption method, for example, aes-256-cfb
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
+  --workers WORKERS     number of workers, available on Unix/Linux
 '''
