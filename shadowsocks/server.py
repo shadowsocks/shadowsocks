@@ -243,26 +243,49 @@ def main():
         logging.error('cant resolve listen address')
         sys.exit(1)
     ThreadingTCPServer.address_family = addrs[0][0]
+    tcp_servers = []
+    udp_servers = []
     for port, key in config_port_password.items():
-        server = ThreadingTCPServer((config_server, int(port)), Socks5Server)
-        server.key, server.method, server.timeout = key, config_method,\
-            int(config_timeout)
+        tcp_server = ThreadingTCPServer((config_server, int(port)),
+                                        Socks5Server)
+        tcp_server.key = key
+        tcp_server.method = config_method
+        tcp_server.timeout = int(config_timeout)
         logging.info("starting server at %s:%d" %
-                     tuple(server.server_address[:2]))
-        threading.Thread(target=server.serve_forever).start()
-        udprelay.UDPRelay(config_server, int(port), None, None, key,
-                          config_method, int(config_timeout), False).start()
+                     tuple(tcp_server.server_address[:2]))
+        tcp_servers.append(tcp_server)
+        udp_server = udprelay.UDPRelay(config_server, int(port), None, None,
+                                       key, config_method, int(config_timeout),
+                                       False)
+        udp_servers.append(udp_server)
+
+    def run_server():
+        for tcp_server in tcp_servers:
+            threading.Thread(target=tcp_server.serve_forever).start()
+        for udp_server in udp_servers:
+            udp_server.start()
 
     if int(config_workers) > 1:
         if os.name == 'posix':
-            # TODO only serve in workers, not in master
-            for i in xrange(0, int(config_workers) - 1):
+            children = []
+            is_child = False
+            for i in xrange(0, int(config_workers)):
                 r = os.fork()
                 if r == 0:
+                    logging.info('worker started')
+                    is_child = True
+                    run_server()
                     break
+                else:
+                    children.append(r)
+            if not is_child:
+                # master
+                for child in children:
+                    os.waitpid(child, 0)
         else:
             logging.warn('worker is only available on Unix/Linux')
-
+    else:
+        run_server()
 
 
 if __name__ == '__main__':

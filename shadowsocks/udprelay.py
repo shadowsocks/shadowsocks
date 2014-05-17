@@ -134,10 +134,20 @@ class UDPRelay(object):
         self._method = method
         self._timeout = timeout
         self._is_local = is_local
-        self._eventloop = eventloop.EventLoop()
         self._cache = lru_cache.LRUCache(timeout=timeout,
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
+
+        addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
+                                   socket.SOCK_DGRAM, socket.SOL_UDP)
+        if len(addrs) == 0:
+            raise Exception("can't get addrinfo for %s:%d" %
+                            (self._listen_addr, self._listen_port))
+        af, socktype, proto, canonname, sa = addrs[0]
+        server_socket = socket.socket(af, socktype, proto)
+        server_socket.bind((self._listen_addr, self._listen_port))
+        server_socket.setblocking(False)
+        self._server_socket = server_socket
 
     def _close_client(self, client):
         if hasattr(client, 'close'):
@@ -238,6 +248,7 @@ class UDPRelay(object):
 
     def _run(self):
         server_socket = self._server_socket
+        self._eventloop = eventloop.EventLoop()
         self._eventloop.add(server_socket, eventloop.POLL_IN)
         last_time = time.time()
         while True:
@@ -263,19 +274,11 @@ class UDPRelay(object):
                 last_time = now
 
     def start(self):
-        addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
-                                   socket.SOCK_DGRAM, socket.SOL_UDP)
-        if len(addrs) == 0:
-            raise Exception("can't get addrinfo for %s:%d" %
-                            (self._listen_addr, self._listen_port))
-        af, socktype, proto, canonname, sa = addrs[0]
-        server_socket = socket.socket(af, socktype, proto)
-        server_socket.bind((self._listen_addr, self._listen_port))
-        server_socket.setblocking(False)
-        self._server_socket = server_socket
-
         t = threading.Thread(target=self._run)
         t.setName('UDPThread')
-        t.setDaemon(True)
+        t.setDaemon(False)
         t.start()
         self._thread = t
+
+    def thread(self):
+        return self._thread
