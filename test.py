@@ -8,6 +8,7 @@ import select
 import struct
 import hashlib
 import string
+import time
 from subprocess import Popen, PIPE
 
 target1 = [
@@ -105,6 +106,7 @@ try:
                 ready_count += 1
         
         if ready_count == 2 and p3 is None:
+            time.sleep(3)
             p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
                         '--socks5-hostname', '127.0.0.1:1080'], shell=False,
                         bufsize=0,  close_fds=True)
