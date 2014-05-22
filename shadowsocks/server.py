@@ -74,6 +74,11 @@ class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                 logging.error('warning: fast open is not available')
         self.socket.listen(self.request_queue_size)
 
+    def get_request(self):
+        connection = self.socket.accept()
+        connection[0].settimeout(config_timeout)
+        return connection
+
 
 class Socks5Server(SocketServer.StreamRequestHandler):
     def handle_tcp(self, sock, remote):
@@ -81,7 +86,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             fdset = [sock, remote]
             while True:
                 should_break = False
-                r, w, e = select.select(fdset, [], [])
+                r, w, e = select.select(fdset, [], [], config_timeout)
+                if not r:
+                    logging.warn('read time out')
+                    break
                 if sock in r:
                     data = self.decrypt(sock.recv(4096))
                     if len(data) <= 0:
@@ -147,7 +155,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
             port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
             try:
                 logging.info('connecting %s:%d' % (addr, port[0]))
-                remote = socket.create_connection((addr, port[0]))
+                remote = socket.create_connection((addr, port[0]),
+                                                  timeout=config_timeout)
+                remote.settimeout(config_timeout)
                 remote.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             except socket.error, e:
                 # Connection refused
@@ -159,7 +169,8 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 
 def main():
-    global config_server, config_server_port, config_method, config_fast_open
+    global config_server, config_server_port, config_method, config_fast_open, \
+        config_timeout
 
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -176,7 +187,7 @@ def main():
 
     config_path = utils.find_config()
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
+        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:t:',
                                       ['fast-open', 'workers:'])
         for key, value in optlist:
             if key == '-c':
@@ -194,7 +205,7 @@ def main():
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:',
+        optlist, args = getopt.getopt(sys.argv[1:], 's:p:k:m:c:t:',
                                       ['fast-open', 'workers='])
         for key, value in optlist:
             if key == '-p':
@@ -205,6 +216,8 @@ def main():
                 config['server'] = value
             elif key == '-m':
                 config['method'] = value
+            elif key == '-t':
+                config['timeout'] = value
             elif key == '--fast-open':
                 config['fast_open'] = True
             elif key == '--workers':
@@ -218,7 +231,7 @@ def main():
     config_key = config['password']
     config_method = config.get('method', None)
     config_port_password = config.get('port_password', None)
-    config_timeout = config.get('timeout', 600)
+    config_timeout = int(config.get('timeout', 300))
     config_fast_open = config.get('fast_open', False)
     config_workers = config.get('workers', 1)
 

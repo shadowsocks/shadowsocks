@@ -282,7 +282,7 @@ def main():
 
     config_path = utils.find_config()
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:',
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:t:',
                                       ['fast-open'])
         for key, value in optlist:
             if key == '-c':
@@ -300,7 +300,7 @@ def main():
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:',
+        optlist, args = getopt.getopt(sys.argv[1:], 's:b:p:k:l:m:c:t:',
                                       ['fast-open'])
         for key, value in optlist:
             if key == '-p':
@@ -328,7 +328,7 @@ def main():
     config_password = config['password']
     config_method = config.get('method', None)
     config_local_address = config.get('local_address', '127.0.0.1')
-    config_timeout = config.get('timeout', 600)
+    config_timeout = int(config.get('timeout', 300))
     config_fast_open = config.get('fast_open', False)
 
     if not config_password and not config_path:
