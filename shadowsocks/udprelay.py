@@ -137,6 +137,7 @@ class UDPRelay(object):
         self._cache = lru_cache.LRUCache(timeout=timeout,
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
+        self._closed = False
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -251,7 +252,7 @@ class UDPRelay(object):
         self._eventloop = eventloop.EventLoop()
         self._eventloop.add(server_socket, eventloop.POLL_IN)
         last_time = time.time()
-        while True:
+        while not self._closed:
             try:
                 events = self._eventloop.poll(10)
             except (OSError, IOError) as e:
@@ -274,11 +275,17 @@ class UDPRelay(object):
                 last_time = now
 
     def start(self):
+        if self._closed:
+            raise Exception('closed')
         t = threading.Thread(target=self._run)
         t.setName('UDPThread')
         t.setDaemon(False)
         t.start()
         self._thread = t
+
+    def close(self):
+        self._closed = True
+        self._server_socket.close()
 
     def thread(self):
         return self._thread

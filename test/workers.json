@@ -6,5 +6,5 @@
     "timeout":300,
     "method":"aes-256-cfb",
     "local_address":"127.0.0.1",
-    "workers": 2
+    "workers": 4
 }

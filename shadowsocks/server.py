@@ -299,7 +299,13 @@ def main():
                     sys.exit()
                 import signal
                 signal.signal(signal.SIGTERM, handler)
+
                 # master
+                for tcp_server in tcp_servers:
+                    tcp_server.server_close()
+                for udp_server in udp_servers:
+                    udp_server.close()
+
                 for child in children:
                     os.waitpid(child, 0)
         else:
