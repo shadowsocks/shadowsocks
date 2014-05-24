@@ -1,5 +1,6 @@
 1.4.5 2014-05-24
-- Add timeout in server
+- Add timeout in TCP server
+- Close sockets in master process
 
 1.4.4 2014-05-17
 - Support multiple workers
