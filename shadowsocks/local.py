@@ -69,6 +69,11 @@ def send_all(sock, data):
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
+    def get_request(self):
+        connection = self.socket.accept()
+        connection[0].settimeout(config_timeout)
+        return connection
+
 
 class Socks5Server(SocketServer.StreamRequestHandler):
     @staticmethod
@@ -101,7 +106,10 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                 fdset = [sock, remote]
             while True:
                 should_break = False
-                r, w, e = select.select(fdset, [], [])
+                r, w, e = select.select(fdset, [], [], config_timeout)
+                if not r:
+                    logging.warn('read time out')
+                    break
                 if sock in r:
                     if not connected and config_fast_open:
                         data = sock.recv(4096)
@@ -243,7 +251,9 @@ class Socks5Server(SocketServer.StreamRequestHandler):
                                                 addr_to_send, a_server, a_port)
                     else:
                         logging.info('connecting %s:%d' % (addr, port[0]))
-                        remote = socket.create_connection((a_server, a_port))
+                        remote = socket.create_connection((a_server, a_port),
+                                                        timeout=config_timeout)
+                        remote.settimeout(config_timeout)
                         remote.setsockopt(socket.IPPROTO_TCP,
                                           socket.TCP_NODELAY, 1)
                         Socks5Server.handle_tcp(sock, remote, encryptor,
@@ -258,7 +268,7 @@ class Socks5Server(SocketServer.StreamRequestHandler):
 
 def main():
     global config_server, config_server_port, config_password, config_method,\
-        config_fast_open
+        config_fast_open, config_timeout
 
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -350,6 +360,7 @@ def main():
                           config_method, int(config_timeout), True).start()
         server = ThreadingTCPServer((config_local_address, config_local_port),
                                     Socks5Server)
+        server.timeout = int(config_timeout)
         logging.info("starting local at %s:%d" %
                      tuple(server.server_address[:2]))
         server.serve_forever()

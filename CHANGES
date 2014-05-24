@@ -1,3 +1,6 @@
+1.4.5 2014-05-24
+- Add timeout in server
+
 1.4.4 2014-05-17
 - Support multiple workers
 
