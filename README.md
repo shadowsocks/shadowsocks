@@ -21,8 +21,8 @@ Install Shadowsocks.
 
 #### Debian / Ubuntu:
 
-    apt-get install python-pip python-gevent python-m2crypto
-    pip install shadowsocks
+    apt-get install build-essential python-pip python-m2crypto
+    pip install gevent shadowsocks
 
 #### CentOS:
 
@@ -73,7 +73,8 @@ Explanation of the fields:
 | fast_open     | use [TCP_FASTOPEN][2], true / false             |
 | workers       | number of workers, available on Unix/Linux      |
 
-Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background, [use supervisor][8].
+Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background,
+[use supervisor][8].
 
 On your client machine, run `sslocal -c /etc/shadowsocks.json`.
 
@@ -83,7 +84,8 @@ Change the proxy settings in your browser to
     hostname: 127.0.0.1
     port:     your local_port
 
-**Notice: If you want to use encryption methods other than "table", please install M2Crypto (See Encryption Section).**
+**Notice: If you want to use encryption methods other than "table", please 
+install M2Crypto (See Encryption Section).**
 
 It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
@@ -95,6 +97,15 @@ You can use args to override settings from `config.json`.
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
+
+gevent
+------
+
+If you suffer from any strange problem when you have installed gevent 0.9.x, 
+install a new version.
+
+    pip install gevent --upgrade
+    
 
 Salsa20
 -------
