@@ -39,6 +39,7 @@ import getopt
 import encrypt
 import os
 import utils
+import tcprelay
 import udprelay
 
 
@@ -216,55 +217,43 @@ def main():
         utils.print_server_help()
         sys.exit(2)
 
-    config_server = config['server']
-    config_server_port = config['server_port']
-    config_key = config['password']
-    config_method = config.get('method', None)
-    config_port_password = config.get('port_password', None)
-    config_timeout = int(config.get('timeout', 300))
-    config_fast_open = config.get('fast_open', False)
-    config_workers = config.get('workers', 1)
-
-    if not config_key and not config_path:
-        sys.exit('config not specified, please read '
-                 'https://github.com/clowwindy/shadowsocks')
+    config['password'] = config.get('password', None)
+    config['method'] = config.get('method', None)
+    config['port_password'] = config.get('port_password', None)
+    config['timeout'] = int(config.get('timeout', 300))
+    config['fast_open'] = config.get('fast_open', False)
+    config['workers'] = config.get('workers', 1)
 
     utils.check_config(config)
 
-    if config_port_password:
-        if config_server_port or config_key:
+    if config['port_password']:
+        if config['server_port'] or config['password']:
             logging.warn('warning: port_password should not be used with '
                          'server_port and password. server_port and password '
                          'will be ignored')
     else:
-        config_port_password = {}
-        config_port_password[str(config_server_port)] = config_key
+        config['port_password'] = {}
+        config['port_password'][str(config['server_port'])] = config['password']
 
-    encrypt.init_table(config_key, config_method)
-    addrs = socket.getaddrinfo(config_server, int(8387))
+    encrypt.init_table(config['password'], config['method'])
+    addrs = socket.getaddrinfo(config['server'], int(8387))
     if not addrs:
         logging.error('cant resolve listen address')
         sys.exit(1)
     ThreadingTCPServer.address_family = addrs[0][0]
     tcp_servers = []
     udp_servers = []
-    for port, key in config_port_password.items():
-        tcp_server = ThreadingTCPServer((config_server, int(port)),
-                                        Socks5Server)
-        tcp_server.key = key
-        tcp_server.method = config_method
-        tcp_server.timeout = int(config_timeout)
+    for port, key in config['port_password'].items():
         logging.info("starting server at %s:%d" %
                      tuple(tcp_server.server_address[:2]))
+        tcp_server = tcprelay.TCPRelay(config, False)
         tcp_servers.append(tcp_server)
-        udp_server = udprelay.UDPRelay(config_server, int(port), None, None,
-                                       key, config_method, int(config_timeout),
-                                       False)
+        udp_server = udprelay.UDPRelay(config, False)
         udp_servers.append(udp_server)
 
     def run_server():
         for tcp_server in tcp_servers:
-            threading.Thread(target=tcp_server.serve_forever).start()
+            tcp_server.start()
         for udp_server in udp_servers:
             udp_server.start()
 
