@@ -25,6 +25,7 @@
 # https://github.com/clowwindy/ssloop
 
 
+import os
 import select
 from collections import defaultdict
 
@@ -187,3 +188,11 @@ def errno_from_exception(e):
         return e.args[0]
     else:
         return None
+
+
+# from tornado
+def get_sock_error(sock):
+    errno = sock.getsockopt(socket.SOL_SOCKET,
+                                   socket.SO_ERROR)
+    return socket.error(errno, os.strerror(errno))
+

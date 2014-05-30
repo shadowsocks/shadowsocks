@@ -29,16 +29,6 @@ else:
     import json
 
 
-# TODO remove gevent
-try:
-    import gevent
-    import gevent.monkey
-    gevent.monkey.patch_all(dns=gevent.version_info[0] >= 1)
-except ImportError:
-    gevent = None
-    print >>sys.stderr, 'warning: gevent not found, using threading instead'
-
-
 import socket
 import select
 import threading

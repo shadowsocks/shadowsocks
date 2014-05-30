@@ -123,16 +123,20 @@ def client_key(a, b, c, d):
 
 
 class UDPRelay(object):
-    def __init__(self, listen_addr='127.0.0.1', listen_port=1080,
-                 remote_addr='127.0.0.1', remote_port=8387, password=None,
-                 method='table', timeout=300, is_local=True):
-        self._listen_addr = listen_addr
-        self._listen_port = listen_port
-        self._remote_addr = remote_addr
-        self._remote_port = remote_port
-        self._password = password
-        self._method = method
-        self._timeout = timeout
+    def __init__(self, config, is_local=True):
+        if is_local:
+            self._listen_addr = config['local_address']
+            self._listen_port = config['local_port']
+            self._remote_addr = config['server']
+            self._remote_port = config['server_port']
+        else:
+            self._listen_addr = config['server']
+            self._listen_port = config['server_port']
+            self._remote_addr = None
+            self._remote_port = None
+        self._password = config['password']
+        self._method = config['method']
+        self._timeout = config['timeout']
         self._is_local = is_local
         self._cache = lru_cache.LRUCache(timeout=timeout,
                                          close_callback=self._close_client)
