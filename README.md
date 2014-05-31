@@ -84,9 +84,6 @@ Change the proxy settings in your browser to
     hostname: 127.0.0.1
     port:     your local_port
 
-**Notice: If you want to use encryption methods other than "table", please 
-install M2Crypto (See Encryption Section).**
-
 It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
 Command line args
