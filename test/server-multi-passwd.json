@@ -12,10 +12,7 @@
         "8386": "foobar6",
         "8387": "foobar7",
         "8388": "foobar8",
-        "8389": "foobar9",
-        "8390": "foobar10",
-        "8391": "foobar11",
-        "8392": "foobar12"
+        "8389": "foobar9"
     },
     "timeout": 60,
     "method": "aes-256-cfb"

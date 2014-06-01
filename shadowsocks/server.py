@@ -56,9 +56,9 @@ def main():
         a_config['password'] = password
         logging.info("starting server at %s:%d" %
                      (a_config['server'], int(port)))
-        tcp_server = tcprelay.TCPRelay(config, False)
+        tcp_server = tcprelay.TCPRelay(a_config, False)
         tcp_servers.append(tcp_server)
-        udp_server = udprelay.UDPRelay(config, False)
+        udp_server = udprelay.UDPRelay(a_config, False)
         udp_servers.append(udp_server)
 
     def run_server():
@@ -96,7 +96,7 @@ def main():
 
                 # master
                 for tcp_server in tcp_servers:
-                    tcp_server.server_close()
+                    tcp_server.close()
                 for udp_server in udp_servers:
                     udp_server.close()
 
