@@ -28,6 +28,8 @@
 import os
 import socket
 import select
+import errno
+import logging
 from collections import defaultdict
 
 
@@ -154,25 +156,24 @@ class EventLoop(object):
     def __init__(self):
         if hasattr(select, 'epoll'):
             self._impl = EpollLoop()
-            self._model = 'epoll'
+            model = 'epoll'
         elif hasattr(select, 'kqueue'):
             self._impl = KqueueLoop()
-            self._model = 'kqueue'
+            model = 'kqueue'
         elif hasattr(select, 'select'):
             self._impl = SelectLoop()
-            self._model = 'select'
+            model = 'select'
         else:
             raise Exception('can not find any available functions in select '
                             'package')
         self._fd_to_f = {}
-
-    @property
-    def model(self):
-        return self._model
+        self._handlers = []
+        self.stopping = False
+        logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
-        return ((self._fd_to_f[fd], event) for fd, event in events)
+        return [(self._fd_to_f[fd], fd, event) for fd, event in events]
 
     def add(self, f, mode):
         fd = f.fileno()
@@ -187,6 +188,26 @@ class EventLoop(object):
     def modify(self, f, mode):
         fd = f.fileno()
         self._impl.modify_fd(fd, mode)
+
+    def add_handler(self, handler):
+        self._handlers.append(handler)
+
+    def run(self):
+        while not self.stopping:
+            events = None
+            try:
+                events = self.poll(1)
+            except (OSError, IOError) as e:
+                if errno_from_exception(e) == errno.EPIPE:
+                    # Happens when the client closes the connection
+                    continue
+                else:
+                    logging.error(e)
+                    continue
+            for handler in self._handlers:
+                # no exceptions should be raised by users
+                # TODO when there are a lot of handlers
+                handler(events)
 
 
 # from tornado

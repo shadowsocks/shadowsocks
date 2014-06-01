@@ -26,7 +26,6 @@ import socket
 import logging
 import encrypt
 import errno
-import threading
 import eventloop
 from common import parse_header
 
@@ -303,6 +302,7 @@ class TCPRelayHandler(object):
             logging.warn('unknown socket')
 
     def destroy(self):
+        logging.debug('destroy')
         if self._remote_sock:
             self._loop.remove(self._remote_sock)
             del self._fd_to_handlers[self._remote_sock.fileno()]
@@ -320,8 +320,9 @@ class TCPRelay(object):
         self._config = config
         self._is_local = is_local
         self._closed = False
-        self._thread = None
+        self._eventloop = None
         self._fd_to_handlers = {}
+        self._last_time = time.time()
 
         if is_local:
             listen_addr = config['local_address']
@@ -343,70 +344,48 @@ class TCPRelay(object):
         server_socket.listen(1024)
         self._server_socket = server_socket
 
-    def _run(self):
-        server_socket = self._server_socket
-        self._eventloop = eventloop.EventLoop()
-        logging.debug('using event model: %s', self._eventloop.model)
-        self._eventloop.add(server_socket,
-                            eventloop.POLL_IN | eventloop.POLL_ERR)
-        last_time = time.time()
-        while not self._closed:
-            try:
-                events = self._eventloop.poll(1)
-            except (OSError, IOError) as e:
-                if eventloop.errno_from_exception(e) == errno.EPIPE:
-                    # Happens when the client closes the connection
-                    continue
-                else:
-                    logging.error(e)
-                    continue
-            for sock, event in events:
-                if sock:
-                    logging.debug('fd %d %s', sock.fileno(),
-                                  eventloop.EVENT_NAMES[event])
-                if sock == self._server_socket:
-                    if event & eventloop.POLL_ERR:
-                        # TODO
-                        raise Exception('server_socket error')
-                    try:
-                        conn = self._server_socket.accept()
-                        TCPRelayHandler(self._fd_to_handlers, self._eventloop,
-                                        conn[0], self._config, self._is_local)
-                    except (OSError, IOError) as e:
-                        error_no = eventloop.errno_from_exception(e)
-                        if error_no in (errno.EAGAIN, errno.EINPROGRESS):
-                            continue
-                        else:
-                            logging.error(e)
-                else:
-                    if sock:
-                        handler = self._fd_to_handlers.get(sock.fileno(), None)
-                        if handler:
-                            handler.handle_event(sock, event)
-                        else:
-                            logging.warn('can not find handler for fd %d',
-                                         sock.fileno())
-                            self._eventloop.remove(sock)
-                    else:
-                        logging.warn('poll removed fd')
-            now = time.time()
-            if now - last_time > 5:
-                # TODO sweep timeouts
-                last_time = now
-
-    def start(self):
-        # TODO combine loops on multiple ports into one single loop
+    def add_to_loop(self, loop):
         if self._closed:
-            raise Exception('closed')
-        t = threading.Thread(target=self._run)
-        t.setName('TCPThread')
-        t.setDaemon(False)
-        t.start()
-        self._thread = t
+            raise Exception('already closed')
+        self._eventloop = loop
+        loop.add_handler(self._handle_events)
+
+        self._eventloop.add(self._server_socket,
+                            eventloop.POLL_IN | eventloop.POLL_ERR)
+
+    def _handle_events(self, events):
+        for sock, fd, event in events:
+            if sock:
+                logging.debug('fd %d %s', fd,
+                              eventloop.EVENT_NAMES.get(event, event))
+            if sock == self._server_socket:
+                if event & eventloop.POLL_ERR:
+                    # TODO
+                    raise Exception('server_socket error')
+                try:
+                    logging.debug('accept')
+                    conn = self._server_socket.accept()
+                    TCPRelayHandler(self._fd_to_handlers, self._eventloop,
+                                    conn[0], self._config, self._is_local)
+                except (OSError, IOError) as e:
+                    error_no = eventloop.errno_from_exception(e)
+                    if error_no in (errno.EAGAIN, errno.EINPROGRESS):
+                        continue
+                    else:
+                        logging.error(e)
+            else:
+                if sock:
+                    handler = self._fd_to_handlers.get(fd, None)
+                    if handler:
+                        handler.handle_event(sock, event)
+                else:
+                    logging.warn('poll removed fd')
+
+            now = time.time()
+            if now - self._last_time > 5:
+                # TODO sweep timeouts
+                self._last_time = now
 
     def close(self):
         self._closed = True
         self._server_socket.close()
-
-    def thread(self):
-        return self._thread

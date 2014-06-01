@@ -24,8 +24,9 @@
 import sys
 import os
 import logging
-import encrypt
 import utils
+import encrypt
+import eventloop
 import tcprelay
 import udprelay
 
@@ -49,11 +50,12 @@ def main():
         logging.info("starting local at %s:%d" %
                      (config['local_address'], config['local_port']))
 
-        # TODO combine the two threads into one loop on a single thread
-        udprelay.UDPRelay(config, True).start()
-        tcprelay.TCPRelay(config, True).start()
-        while sys.stdin.read():
-            pass
+        tcp_server = tcprelay.TCPRelay(config, True)
+        udp_server = udprelay.UDPRelay(config, True)
+        loop = eventloop.EventLoop()
+        tcp_server.add_to_loop(loop)
+        udp_server.add_to_loop(loop)
+        loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)
         os._exit(0)

@@ -22,11 +22,11 @@
 # SOFTWARE.
 
 import sys
-import socket
-import logging
-import encrypt
 import os
+import logging
 import utils
+import encrypt
+import eventloop
 import tcprelay
 import udprelay
 
@@ -56,19 +56,17 @@ def main():
         a_config['password'] = password
         logging.info("starting server at %s:%d" %
                      (a_config['server'], int(port)))
-        tcp_server = tcprelay.TCPRelay(a_config, False)
-        tcp_servers.append(tcp_server)
-        udp_server = udprelay.UDPRelay(a_config, False)
-        udp_servers.append(udp_server)
+        tcp_servers.append(tcprelay.TCPRelay(a_config, False))
+        udp_servers.append(udprelay.UDPRelay(a_config, False))
 
     def run_server():
         try:
+            loop = eventloop.EventLoop()
             for tcp_server in tcp_servers:
-                tcp_server.start()
+                tcp_server.add_to_loop(loop)
             for udp_server in udp_servers:
-                udp_server.start()
-            while sys.stdin.read():
-                pass
+                udp_server.add_to_loop(loop)
+            loop.run()
         except (KeyboardInterrupt, IOError, OSError) as e:
             logging.error(e)
             os._exit(0)
@@ -96,10 +94,10 @@ def main():
                 signal.signal(signal.SIGTERM, handler)
 
                 # master
-                for tcp_server in tcp_servers:
-                    tcp_server.close()
-                for udp_server in udp_servers:
-                    udp_server.close()
+                for a_tcp_server in tcp_servers:
+                    a_tcp_server.close()
+                for a_udp_server in udp_servers:
+                    a_udp_server.close()
 
                 for child in children:
                     os.waitpid(child, 0)
@@ -111,7 +109,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except socket.error, e:
-        logging.error(e)
+    main()

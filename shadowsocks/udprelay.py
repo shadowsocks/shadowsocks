@@ -67,7 +67,6 @@
 
 
 import time
-import threading
 import socket
 import logging
 import struct
@@ -105,8 +104,10 @@ class UDPRelay(object):
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = \
             lru_cache.LRUCache(timeout=config['timeout'])
+        self._eventloop = None
         self._closed = False
-        self._thread = None
+        self._last_time = time.time()
+        self._sockets = set()
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -121,6 +122,7 @@ class UDPRelay(object):
 
     def _close_client(self, client):
         if hasattr(client, 'close'):
+            self._sockets.remove(client.fileno())
             self._eventloop.remove(client)
             client.close()
         else:
@@ -167,6 +169,7 @@ class UDPRelay(object):
             else:
                 # drop
                 return
+            self._sockets.add(client.fileno())
             self._eventloop.add(client, eventloop.POLL_IN)
 
         data = data[header_length:]
@@ -216,45 +219,29 @@ class UDPRelay(object):
             # simply drop that packet
             pass
 
-    def _run(self):
-        server_socket = self._server_socket
-        self._eventloop = eventloop.EventLoop()
-        self._eventloop.add(server_socket, eventloop.POLL_IN)
-        last_time = time.time()
-        while not self._closed:
-            try:
-                events = self._eventloop.poll(10)
-            except (OSError, IOError) as e:
-                if eventloop.errno_from_exception(e) == errno.EPIPE:
-                    # Happens when the client closes the connection
-                    continue
-                else:
-                    logging.error(e)
-                    continue
-            for sock, event in events:
-                if sock == self._server_socket:
-                    self._handle_server()
-                else:
-                    self._handle_client(sock)
-            now = time.time()
-            if now - last_time > 3.5:
-                self._cache.sweep()
-            if now - last_time > 7:
-                self._client_fd_to_server_addr.sweep()
-                last_time = now
-
-    def start(self):
+    def add_to_loop(self, loop):
         if self._closed:
-            raise Exception('closed')
-        t = threading.Thread(target=self._run)
-        t.setName('UDPThread')
-        t.setDaemon(False)
-        t.start()
-        self._thread = t
+            raise Exception('already closed')
+        self._eventloop = loop
+        loop.add_handler(self._handle_events)
+
+        server_socket = self._server_socket
+        self._eventloop.add(server_socket,
+                            eventloop.POLL_IN | eventloop.POLL_ERR)
+
+    def _handle_events(self, events):
+        for sock, fd, event in events:
+            if sock == self._server_socket:
+                self._handle_server()
+            elif sock and (fd in self._sockets):
+                self._handle_client(sock)
+        now = time.time()
+        if now - self._last_time > 3.5:
+            self._cache.sweep()
+        if now - self._last_time > 7:
+            self._client_fd_to_server_addr.sweep()
+            self._last_time = now
 
     def close(self):
         self._closed = True
         self._server_socket.close()
-
-    def thread(self):
-        return self._thread
