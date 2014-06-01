@@ -56,12 +56,6 @@ def find_config():
 
 
 def check_config(config):
-    config['password'] = config.get('password', None)
-    config['method'] = config.get('method', None)
-    config['port_password'] = config.get('port_password', None)
-    config['timeout'] = int(config.get('timeout', 300))
-    config['fast_open'] = config.get('fast_open', False)
-    config['workers'] = config.get('workers', 1)
     if config.get('local_address', '') in ['0.0.0.0']:
         logging.warn('warning: local set to listen 0.0.0.0, which is not safe')
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
@@ -135,6 +129,15 @@ def get_config(is_local):
     if not config['password'] and not config_path:
         sys.exit('config not specified, please read '
                  'https://github.com/clowwindy/shadowsocks')
+
+    config['password'] = config.get('password', None)
+    config['method'] = config.get('method', None)
+    config['port_password'] = config.get('port_password', None)
+    config['timeout'] = int(config.get('timeout', 300))
+    config['fast_open'] = config.get('fast_open', False)
+    config['workers'] = config.get('workers', 1)
+    config['verbose'] = config.get('verbose', False)
+    config['local_address'] = config.get('local_address', '127.0.0.1')
 
     check_config(config)
 

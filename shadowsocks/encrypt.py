@@ -157,9 +157,9 @@ class Encryptor(object):
                 self.cipher_iv = iv[:m[1]]  # this iv is for cipher not decipher
             if method != 'salsa20-ctr':
                 import M2Crypto.EVP
-                return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
-                                       key_as_bytes=0, d='md5', salt=None, i=1,
-                                       padding=1)
+                return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
+                                           op, key_as_bytes=0, d='md5',
+                                           salt=None, i=1, padding=1)
             else:
                 return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
 

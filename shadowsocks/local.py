@@ -55,7 +55,7 @@ def main():
         while sys.stdin.read():
             pass
     except KeyboardInterrupt:
-        sys.exit(0)
+        os._exit(0)
 
 if __name__ == '__main__':
     main()
