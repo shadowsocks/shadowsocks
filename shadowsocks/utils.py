@@ -30,7 +30,7 @@ import logging
 
 def check_python():
     info = sys.version_info
-    if not (info.major == 2 and info.minor >= 6):
+    if not (info[0] == 2 and info[1] >= 6):
         print 'Python 2.6 or 2.7 required'
         sys.exit(1)
 
