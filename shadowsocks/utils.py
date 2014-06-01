@@ -142,7 +142,7 @@ def get_config(is_local):
     if config['verbose']:
         level = logging.DEBUG
     else:
-        level = logging.WARNING
+        level = logging.INFO
     logging.getLogger('').handlers = []
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s',

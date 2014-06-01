@@ -188,7 +188,7 @@ class TCPRelayHandler(object):
                     raise Exception('can not parse header')
                 addrtype, remote_addr, remote_port, header_length =\
                     header_result
-                logging.info('connecting %s:%d' % (remote_addr, remote_port))
+                logging.debug('connecting %s:%d' % (remote_addr, remote_port))
                 if is_local:
                     # forward address to remote
                     self.write_all_to_sock('\x05\x00\x00\x01' +
