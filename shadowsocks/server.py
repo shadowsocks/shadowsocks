@@ -34,9 +34,9 @@ import udprelay
 def main():
     utils.check_python()
 
-    utils.print_shadowsocks()
+    config = utils.get_config(False)
 
-    config = utils.get_config(True)
+    utils.print_shadowsocks()
 
     if config['port_password']:
         if config['server_port'] or config['password']:

@@ -125,7 +125,7 @@ def get_config(is_local):
             elif key == '--workers':
                 config['workers'] = value
     except getopt.GetoptError as e:
-        logging.error(e)
+        print >>sys.stderr, e
         if is_local:
             print_local_help()
         else:
@@ -151,7 +151,7 @@ def get_config(is_local):
 def print_local_help():
     print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR]
                 -l LOCAL_PORT -k PASSWORD -m METHOD [-t TIMEOUT] [-c CONFIG]
-                [--fast-open]
+                [--fast-open] [-v]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -164,12 +164,15 @@ optional arguments:
   -t TIMEOUT            timeout in seconds
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
+  -v                    verbose mode
+
+Online help: <https://github.com/clowwindy/shadowsocks>
 '''
 
 
 def print_server_help():
     print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD
-                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
+                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -181,4 +184,7 @@ optional arguments:
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS     number of workers, available on Unix/Linux
+  -v                    verbose mode
+
+Online help: <https://github.com/clowwindy/shadowsocks>
 '''

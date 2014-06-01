@@ -40,9 +40,9 @@ def main():
         p = os.path.dirname(os.path.abspath(sys.executable))
         os.chdir(p)
 
-    utils.print_shadowsocks()
-
     config = utils.get_config(True)
+
+    utils.print_shadowsocks()
 
     encrypt.init_table(config['password'], config['method'])
 
