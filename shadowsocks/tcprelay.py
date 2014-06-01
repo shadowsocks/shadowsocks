@@ -51,11 +51,11 @@ STAGE_STREAM = 5
 STREAM_UP = 0
 STREAM_DOWN = 1
 
-# stream status
-STATUS_WAIT_INIT = 0
-STATUS_WAIT_READING = 1
-STATUS_WAIT_WRITING = 2
-STATUS_WAIT_READWRITING = STATUS_WAIT_READING | STATUS_WAIT_WRITING
+# stream wait status
+WAIT_STATUS_INIT = 0
+WAIT_STATUS_READING = 1
+WAIT_STATUS_WRITING = 2
+WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
 BUF_SIZE = 8 * 1024
 
@@ -73,8 +73,8 @@ class TCPRelayHandler(object):
                                             config['method'])
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
-        self._upstream_status = STATUS_WAIT_READING
-        self._downstream_status = STATUS_WAIT_INIT
+        self._upstream_status = WAIT_STATUS_READING
+        self._downstream_status = WAIT_STATUS_INIT
         fd_to_handlers[local_sock.fileno()] = self
         local_sock.setblocking(False)
         local_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
@@ -93,20 +93,20 @@ class TCPRelayHandler(object):
         if dirty:
             if self._local_sock:
                 event = eventloop.POLL_ERR
-                if self._downstream_status & STATUS_WAIT_WRITING:
+                if self._downstream_status & WAIT_STATUS_WRITING:
                     event |= eventloop.POLL_OUT
-                if self._upstream_status & STATUS_WAIT_READING:
+                if self._upstream_status & WAIT_STATUS_READING:
                     event |= eventloop.POLL_IN
                 self._loop.modify(self._local_sock, event)
             if self._remote_sock:
                 event = eventloop.POLL_ERR
-                if self._downstream_status & STATUS_WAIT_READING:
+                if self._downstream_status & WAIT_STATUS_READING:
                     event |= eventloop.POLL_IN
-                if self._upstream_status & STATUS_WAIT_WRITING:
+                if self._upstream_status & WAIT_STATUS_WRITING:
                     event |= eventloop.POLL_OUT
                 self._loop.modify(self._remote_sock, event)
 
-    def write_all_to_sock(self, data, sock):
+    def write_to_sock(self, data, sock):
         if not data or not sock:
             return
         uncomplete = False
@@ -126,17 +126,17 @@ class TCPRelayHandler(object):
         if uncomplete:
             if sock == self._local_sock:
                 self._data_to_write_to_local.append(data)
-                self.update_stream(STREAM_DOWN, STATUS_WAIT_WRITING)
+                self.update_stream(STREAM_DOWN, WAIT_STATUS_WRITING)
             elif sock == self._remote_sock:
                 self._data_to_write_to_remote.append(data)
-                self.update_stream(STREAM_UP, STATUS_WAIT_WRITING)
+                self.update_stream(STREAM_UP, WAIT_STATUS_WRITING)
             else:
                 logging.error('write_all_to_sock:unknown socket')
         else:
             if sock == self._local_sock:
-                self.update_stream(STREAM_DOWN, STATUS_WAIT_READING)
+                self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
             elif sock == self._remote_sock:
-                self.update_stream(STREAM_UP, STATUS_WAIT_READING)
+                self.update_stream(STREAM_UP, WAIT_STATUS_READING)
             else:
                 logging.error('write_all_to_sock:unknown socket')
 
@@ -162,11 +162,11 @@ class TCPRelayHandler(object):
         if self._stage == STAGE_STREAM:
             if self._is_local:
                 data = self._encryptor.encrypt(data)
-            self.write_all_to_sock(data, self._remote_sock)
+            self.write_to_sock(data, self._remote_sock)
             return
         elif is_local and self._stage == STAGE_INIT:
             # TODO check auth method
-            self.write_all_to_sock('\x05\00', self._local_sock)
+            self.write_to_sock('\x05\00', self._local_sock)
             self._stage = STAGE_HELLO
             return
         elif self._stage == STAGE_REPLY:
@@ -190,7 +190,7 @@ class TCPRelayHandler(object):
                 logging.debug('connecting %s:%d' % (remote_addr, remote_port))
                 if is_local:
                     # forward address to remote
-                    self.write_all_to_sock('\x05\x00\x00\x01' +
+                    self.write_to_sock('\x05\x00\x00\x01' +
                                            '\x00\x00\x00\x00\x10\x10',
                                            self._local_sock)
                     data_to_send = self._encryptor.encrypt(data)
@@ -224,8 +224,8 @@ class TCPRelayHandler(object):
                                eventloop.POLL_ERR | eventloop.POLL_OUT)
 
                 self._stage = STAGE_REPLY
-                self.update_stream(STREAM_UP, STATUS_WAIT_READWRITING)
-                self.update_stream(STREAM_DOWN, STATUS_WAIT_READING)
+                self.update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                 return
             except Exception:
                 import traceback
@@ -250,7 +250,7 @@ class TCPRelayHandler(object):
         else:
             data = self._encryptor.encrypt(data)
         try:
-            self.write_all_to_sock(data, self._local_sock)
+            self.write_to_sock(data, self._local_sock)
         except Exception:
             import traceback
             traceback.print_exc()
@@ -261,18 +261,18 @@ class TCPRelayHandler(object):
         if self._data_to_write_to_local:
             data = ''.join(self._data_to_write_to_local)
             self._data_to_write_to_local = []
-            self.write_all_to_sock(data, self._local_sock)
+            self.write_to_sock(data, self._local_sock)
         else:
-            self.update_stream(STREAM_DOWN, STATUS_WAIT_READING)
+            self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
 
     def on_remote_write(self):
         self._stage = STAGE_STREAM
         if self._data_to_write_to_remote:
             data = ''.join(self._data_to_write_to_remote)
             self._data_to_write_to_remote = []
-            self.write_all_to_sock(data, self._remote_sock)
+            self.write_to_sock(data, self._remote_sock)
         else:
-            self.update_stream(STREAM_UP, STATUS_WAIT_READING)
+            self.update_stream(STREAM_UP, WAIT_STATUS_READING)
 
     def on_local_error(self):
         logging.error(eventloop.get_sock_error(self._local_sock))

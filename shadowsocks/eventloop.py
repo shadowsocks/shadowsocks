@@ -194,7 +194,6 @@ class EventLoop(object):
 
     def run(self):
         while not self.stopping:
-            events = None
             try:
                 events = self.poll(1)
             except (OSError, IOError) as e:
