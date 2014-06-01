@@ -77,7 +77,7 @@ def get_config(is_local):
         shortopts = 's:b:p:k:l:m:c:t:v'
         longopts = ['fast-open']
     else:
-        shortopts = 's:p:k:m:c:t:'
+        shortopts = 's:p:k:m:c:t:v'
         longopts = ['fast-open', 'workers:']
     try:
         config_path = find_config()

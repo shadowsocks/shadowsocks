@@ -52,10 +52,10 @@ def main():
     udp_servers = []
     for port, password in config['port_password'].items():
         a_config = config.copy()
-        a_config['server_port'] = port
+        a_config['server_port'] = int(port)
         a_config['password'] = password
         logging.info("starting server at %s:%d" %
-                     (a_config['server'], port))
+                     (a_config['server'], int(port)))
         tcp_server = tcprelay.TCPRelay(config, False)
         tcp_servers.append(tcp_server)
         udp_server = udprelay.UDPRelay(config, False)

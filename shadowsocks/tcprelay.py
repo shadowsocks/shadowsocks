@@ -248,6 +248,8 @@ class TCPRelayHandler(object):
             return
         if self._is_local:
             data = self._encryptor.decrypt(data)
+        else:
+            data = self._encryptor.encrypt(data)
         try:
             self.write_all_to_sock(data, self._local_sock)
         except Exception:
