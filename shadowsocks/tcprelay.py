@@ -56,6 +56,7 @@ STREAM_DOWN = 1
 STATUS_WAIT_INIT = 0
 STATUS_WAIT_READING = 1
 STATUS_WAIT_WRITING = 2
+STATUS_WAIT_READWRITING = STATUS_WAIT_READING | STATUS_WAIT_WRITING
 
 BUF_SIZE = 8 * 1024
 
@@ -73,10 +74,11 @@ class TCPRelayHandler(object):
                                             config['method'])
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
-        self._upstream_status = STATUS_WAIT_INIT
+        self._upstream_status = STATUS_WAIT_READING
         self._downstream_status = STATUS_WAIT_INIT
         fd_to_handlers[local_sock.fileno()] = self
         local_sock.setblocking(False)
+        local_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         loop.add(local_sock, eventloop.POLL_IN | eventloop.POLL_ERR)
 
     def update_stream(self, stream, status):
@@ -92,16 +94,16 @@ class TCPRelayHandler(object):
         if dirty:
             if self._local_sock:
                 event = eventloop.POLL_ERR
-                if self._downstream_status == STATUS_WAIT_WRITING:
+                if self._downstream_status & STATUS_WAIT_WRITING:
                     event |= eventloop.POLL_OUT
-                if self._upstream_status == STATUS_WAIT_READING:
+                if self._upstream_status & STATUS_WAIT_READING:
                     event |= eventloop.POLL_IN
                 self._loop.modify(self._local_sock, event)
             if self._remote_sock:
                 event = eventloop.POLL_ERR
-                if self._downstream_status == STATUS_WAIT_READING:
+                if self._downstream_status & STATUS_WAIT_READING:
                     event |= eventloop.POLL_IN
-                if self._upstream_status == STATUS_WAIT_WRITING:
+                if self._upstream_status & STATUS_WAIT_WRITING:
                     event |= eventloop.POLL_OUT
                 self._loop.modify(self._remote_sock, event)
 
@@ -131,6 +133,13 @@ class TCPRelayHandler(object):
                 self.update_stream(STREAM_UP, STATUS_WAIT_WRITING)
             else:
                 logging.error('write_all_to_sock:unknown socket')
+        else:
+            if sock == self._local_sock:
+                self.update_stream(STREAM_DOWN, STATUS_WAIT_READING)
+            elif sock == self._remote_sock:
+                self.update_stream(STREAM_UP, STATUS_WAIT_READING)
+            else:
+                logging.error('write_all_to_sock:unknown socket')
 
     def on_local_read(self):
         # TODO update timeout
@@ -156,14 +165,16 @@ class TCPRelayHandler(object):
                 data = self._encryptor.encrypt(data)
             self.write_all_to_sock(data, self._remote_sock)
             return
-        if is_local and self._stage == STAGE_INIT:
+        elif is_local and self._stage == STAGE_INIT:
             # TODO check auth method
             self.write_all_to_sock('\x05\00', self._local_sock)
             self._stage = STAGE_HELLO
             return
-        if self._stage == STAGE_REPLY:
+        elif self._stage == STAGE_REPLY:
+            if is_local:
+                data = self._encryptor.encrypt(data)
             self._data_to_write_to_remote.append(data)
-        if (is_local and self._stage == STAGE_HELLO) or \
+        elif (is_local and self._stage == STAGE_HELLO) or \
                 (not is_local and self._stage == STAGE_INIT):
             try:
                 if is_local:
@@ -199,20 +210,22 @@ class TCPRelayHandler(object):
                     raise Exception("can't get addrinfo for %s:%d" %
                                     (remote_addr, remote_port))
                 af, socktype, proto, canonname, sa = addrs[0]
-                self._remote_sock = socket.socket(af, socktype, proto)
-                self._fd_to_handlers[self._remote_sock.fileno()] = self
-                self._remote_sock.setblocking(False)
+                remote_sock = socket.socket(af, socktype, proto)
+                self._remote_sock = remote_sock
+                self._fd_to_handlers[remote_sock.fileno()] = self
+                remote_sock.setblocking(False)
+                remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
                 # TODO support TCP fast open
                 try:
-                    self._remote_sock.connect(sa)
+                    remote_sock.connect(sa)
                 except (OSError, IOError) as e:
                     if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
                         pass
-                self._loop.add(self._remote_sock,
+                self._loop.add(remote_sock,
                                eventloop.POLL_ERR | eventloop.POLL_OUT)
 
-                self._stage = 4
-                self.update_stream(STREAM_UP, STATUS_WAIT_WRITING)
+                self._stage = STAGE_REPLY
+                self.update_stream(STREAM_UP, STATUS_WAIT_READWRITING)
                 self.update_stream(STREAM_DOWN, STATUS_WAIT_READING)
                 return
             except Exception:
@@ -220,9 +233,6 @@ class TCPRelayHandler(object):
                 traceback.print_exc()
                 # TODO use logging when debug completed
                 self.destroy()
-
-        elif self._stage == STAGE_REPLY:
-            self._data_to_write_to_remote.append(data)
 
     def on_remote_read(self):
         # TODO update timeout
@@ -334,6 +344,7 @@ class TCPRelay(object):
     def _run(self):
         server_socket = self._server_socket
         self._eventloop = eventloop.EventLoop()
+        logging.debug('using event model: %s', self._eventloop.model)
         self._eventloop.add(server_socket,
                             eventloop.POLL_IN | eventloop.POLL_ERR)
         last_time = time.time()
@@ -348,7 +359,9 @@ class TCPRelay(object):
                     logging.error(e)
                     continue
             for sock, event in events:
-                logging.debug('%s %d', sock, event)
+                if sock:
+                    logging.debug('fd %d %s', sock.fileno(),
+                                  eventloop.EVENT_NAMES[event])
                 if sock == self._server_socket:
                     if event & eventloop.POLL_ERR:
                         # TODO
@@ -364,13 +377,16 @@ class TCPRelay(object):
                         else:
                             logging.error(e)
                 else:
-                    handler = self._fd_to_handlers.get(sock.fileno(), None)
-                    if handler:
-                        handler.handle_event(sock, event)
+                    if sock:
+                        handler = self._fd_to_handlers.get(sock.fileno(), None)
+                        if handler:
+                            handler.handle_event(sock, event)
+                        else:
+                            logging.warn('can not find handler for fd %d',
+                                         sock.fileno())
+                            self._eventloop.remove(sock)
                     else:
-                        logging.warn('can not find handler for fd %d',
-                                     sock.fileno())
-                        self._eventloop.remove(sock)
+                        logging.warn('poll removed fd')
             now = time.time()
             if now - last_time > 5:
                 # TODO sweep timeouts

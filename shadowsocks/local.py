@@ -22,7 +22,6 @@
 # SOFTWARE.
 
 import sys
-import socket
 import os
 import logging
 import encrypt
@@ -50,6 +49,7 @@ def main():
         logging.info("starting local at %s:%d" %
                      (config['local_address'], config['local_port']))
 
+        # TODO combine the two threads into one loop on a single thread
         udprelay.UDPRelay(config, True).start()
         tcprelay.TCPRelay(config, True).start()
         while sys.stdin.read():

@@ -32,7 +32,7 @@ from collections import defaultdict
 
 
 __all__ = ['EventLoop', 'POLL_NULL', 'POLL_IN', 'POLL_OUT', 'POLL_ERR',
-           'POLL_HUP', 'POLL_NVAL']
+           'POLL_HUP', 'POLL_NVAL', 'EVENT_NAMES']
 
 POLL_NULL = 0x00
 POLL_IN = 0x01
@@ -40,6 +40,16 @@ POLL_OUT = 0x04
 POLL_ERR = 0x08
 POLL_HUP = 0x10
 POLL_NVAL = 0x20
+
+
+EVENT_NAMES = {
+    POLL_NULL: 'POLL_NULL',
+    POLL_IN: 'POLL_IN',
+    POLL_OUT: 'POLL_OUT',
+    POLL_ERR: 'POLL_ERR',
+    POLL_HUP: 'POLL_HUP',
+    POLL_NVAL: 'POLL_NVAL',
+}
 
 
 class EpollLoop(object):
@@ -144,14 +154,21 @@ class EventLoop(object):
     def __init__(self):
         if hasattr(select, 'epoll'):
             self._impl = EpollLoop()
+            self._model = 'epoll'
         elif hasattr(select, 'kqueue'):
             self._impl = KqueueLoop()
+            self._model = 'kqueue'
         elif hasattr(select, 'select'):
             self._impl = SelectLoop()
+            self._model = 'select'
         else:
             raise Exception('can not find any available functions in select '
                             'package')
         self._fd_to_f = {}
+
+    @property
+    def model(self):
+        return self._model
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
