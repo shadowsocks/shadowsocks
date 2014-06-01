@@ -1,7 +1,7 @@
 {
     "server":"127.0.0.1",
     "server_port":8388,
-    "local_port":1080,
+    "local_port":1081,
     "password":"barfoo!",
     "timeout":300,
     "method":"table",

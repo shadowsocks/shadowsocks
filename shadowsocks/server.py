@@ -66,6 +66,11 @@ def main():
             tcp_server.start()
         for udp_server in udp_servers:
             udp_server.start()
+        try:
+            while sys.stdin.read():
+                pass
+        except KeyboardInterrupt:
+            os._exit(0)
 
     if int(config['workers']) > 1:
         if os.name == 'posix':
