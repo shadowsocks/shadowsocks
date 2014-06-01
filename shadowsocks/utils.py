@@ -139,15 +139,17 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = config.get('local_address', '127.0.0.1')
 
-    check_config(config)
-
     if config['verbose']:
         level = logging.DEBUG
     else:
         level = logging.WARNING
+    logging.getLogger('').handlers = []
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
+
+    check_config(config)
+
     return config
 
 
