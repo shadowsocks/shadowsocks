@@ -62,14 +62,15 @@ def main():
         udp_servers.append(udp_server)
 
     def run_server():
-        for tcp_server in tcp_servers:
-            tcp_server.start()
-        for udp_server in udp_servers:
-            udp_server.start()
         try:
+            for tcp_server in tcp_servers:
+                tcp_server.start()
+            for udp_server in udp_servers:
+                udp_server.start()
             while sys.stdin.read():
                 pass
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, IOError, OSError) as e:
+            logging.error(e)
             os._exit(0)
 
     if int(config['workers']) > 1:
@@ -86,7 +87,7 @@ def main():
                 else:
                     children.append(r)
             if not is_child:
-                def handler(signum, frame):
+                def handler(signum, _):
                     for pid in children:
                         os.kill(pid, signum)
                         os.waitpid(pid, 0)

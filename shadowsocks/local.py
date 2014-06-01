@@ -54,7 +54,8 @@ def main():
         tcprelay.TCPRelay(config, True).start()
         while sys.stdin.read():
             pass
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, IOError, OSError) as e:
+        logging.error(e)
         os._exit(0)
 
 if __name__ == '__main__':
