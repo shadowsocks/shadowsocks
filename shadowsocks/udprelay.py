@@ -86,7 +86,7 @@ def client_key(a, b, c, d):
 
 
 class UDPRelay(object):
-    def __init__(self, config, is_local=True):
+    def __init__(self, config, is_local):
         if is_local:
             self._listen_addr = config['local_address']
             self._listen_port = config['local_port']

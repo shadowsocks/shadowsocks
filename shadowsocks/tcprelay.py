@@ -76,7 +76,7 @@ class TCPRelayHandler(object):
         self._downstream_status = STATUS_WAIT_READING
         fd_to_handlers[local_sock.fileno()] = self
         local_sock.setblocking(False)
-        loop.add(local_sock, eventloop.POLL_IN)
+        loop.add(local_sock, eventloop.POLL_IN | eventloop.POLL_ERR)
 
     def update_stream(self, stream, status):
         dirty = False
@@ -186,7 +186,8 @@ class TCPRelayHandler(object):
                 self._remote_sock.setblocking(False)
                 # TODO support TCP fast open
                 self._remote_sock.connect(sa)
-                self._loop.add(self._remote_sock, eventloop.POLL_OUT)
+                self._loop.add(self._remote_sock,
+                               eventloop.POLL_ERR | eventloop.POLL_OUT)
 
                 if len(data) > header_length:
                     self._data_to_write_to_remote.append(data[header_length:])
@@ -301,7 +302,8 @@ class TCPRelay(object):
     def _run(self):
         server_socket = self._server_socket
         self._eventloop = eventloop.EventLoop()
-        self._eventloop.add(server_socket, eventloop.POLL_IN)
+        self._eventloop.add(server_socket,
+                            eventloop.POLL_IN | eventloop.POLL_ERR)
         last_time = time.time()
         while not self._closed:
             try:
@@ -315,6 +317,9 @@ class TCPRelay(object):
                     continue
             for sock, event in events:
                 if sock == self._server_socket:
+                    if event & eventloop.POLL_ERR:
+                        # TODO
+                        raise Exception('server_socket error')
                     try:
                         conn = self._server_socket.accept()
                         TCPRelayHandler(self._fd_to_handlers, self._eventloop,

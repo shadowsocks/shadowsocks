@@ -22,7 +22,27 @@
 # SOFTWARE.
 
 import os
+import json
+import sys
+import getopt
 import logging
+
+
+def check_python():
+    info = sys.version_info
+    if not (info.major == 2 and info.minor >= 6):
+        print 'Python 2.6 or 2.7 required'
+        sys.exit(1)
+
+
+def print_shadowsocks():
+    version = ''
+    try:
+        import pkg_resources
+        version = pkg_resources.get_distribution('shadowsocks').version
+    except Exception:
+        pass
+    print 'shadowsocks %s' % version
 
 
 def find_config():
@@ -36,6 +56,12 @@ def find_config():
 
 
 def check_config(config):
+    config['password'] = config.get('password', None)
+    config['method'] = config.get('method', None)
+    config['port_password'] = config.get('port_password', None)
+    config['timeout'] = int(config.get('timeout', 300))
+    config['fast_open'] = config.get('fast_open', False)
+    config['workers'] = config.get('workers', 1)
     if config.get('local_address', '') in ['0.0.0.0']:
         logging.warn('warning: local set to listen 0.0.0.0, which is not safe')
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
@@ -50,6 +76,75 @@ def check_config(config):
     if (int(config.get('timeout', 300)) or 300) > 600:
         logging.warn('warning: your timeout %d seems too long' %
                      int(config.get('timeout')))
+
+
+def get_config(is_local):
+    if is_local:
+        shortopts = 's:b:p:k:l:m:c:t:v'
+        longopts = ['fast-open']
+    else:
+        shortopts = 's:p:k:m:c:t:'
+        longopts = ['fast-open', 'workers:']
+    try:
+        config_path = find_config()
+        optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+        for key, value in optlist:
+            if key == '-c':
+                config_path = value
+
+        if config_path:
+            logging.info('loading config from %s' % config_path)
+            with open(config_path, 'rb') as f:
+                try:
+                    config = json.load(f)
+                except ValueError as e:
+                    logging.error('found an error in config.json: %s',
+                                  e.message)
+                    sys.exit(1)
+        else:
+            config = {}
+
+        optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+        for key, value in optlist:
+            if key == '-p':
+                config['server_port'] = int(value)
+            elif key == '-k':
+                config['password'] = value
+            elif key == '-l':
+                config['local_port'] = int(value)
+            elif key == '-s':
+                config['server'] = value
+            elif key == '-m':
+                config['method'] = value
+            elif key == '-b':
+                config['local_address'] = value
+            elif key == '-v':
+                config['verbose'] = True
+            elif key == '--fast-open':
+                config['fast_open'] = True
+            elif key == '--workers':
+                config['workers'] = value
+    except getopt.GetoptError as e:
+        logging.error(e)
+        if is_local:
+            print_local_help()
+        else:
+            print_server_help()
+        sys.exit(2)
+
+    if not config['password'] and not config_path:
+        sys.exit('config not specified, please read '
+                 'https://github.com/clowwindy/shadowsocks')
+
+    check_config(config)
+
+    if config['verbose']:
+        level = logging.DEBUG
+    else:
+        level = logging.WARNING
+    logging.basicConfig(level=level,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
 
 
 def print_local_help():
