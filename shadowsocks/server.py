@@ -243,9 +243,12 @@ def main():
     ThreadingTCPServer.address_family = addrs[0][0]
     tcp_servers = []
     udp_servers = []
-    for port, key in config['port_password'].items():
+    for port, password in config['port_password'].items():
+        a_config = config.copy()
+        a_config['server_port'] = port
+        a_config['password'] = password
         logging.info("starting server at %s:%d" %
-                     tuple(tcp_server.server_address[:2]))
+                     (a_config['server'], port))
         tcp_server = tcprelay.TCPRelay(config, False)
         tcp_servers.append(tcp_server)
         udp_server = udprelay.UDPRelay(config, False)
@@ -257,11 +260,11 @@ def main():
         for udp_server in udp_servers:
             udp_server.start()
 
-    if int(config_workers) > 1:
+    if int(config['workers']) > 1:
         if os.name == 'posix':
             children = []
             is_child = False
-            for i in xrange(0, int(config_workers)):
+            for i in xrange(0, int(config['workers'])):
                 r = os.fork()
                 if r == 0:
                     logging.info('worker started')

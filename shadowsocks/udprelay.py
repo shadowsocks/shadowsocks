@@ -101,10 +101,12 @@ class UDPRelay(object):
         self._method = config['method']
         self._timeout = config['timeout']
         self._is_local = is_local
-        self._cache = lru_cache.LRUCache(timeout=timeout,
+        self._cache = lru_cache.LRUCache(timeout=config['timeout'],
                                          close_callback=self._close_client)
-        self._client_fd_to_server_addr = lru_cache.LRUCache(timeout=timeout)
+        self._client_fd_to_server_addr = \
+            lru_cache.LRUCache(timeout=config['timeout'])
         self._closed = False
+        self._thread = None
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -206,7 +208,7 @@ class UDPRelay(object):
                 return
             # addrtype, dest_addr, dest_port, header_length = header_result
             response = '\x00\x00\x00' + data
-        client_addr = self._client_fd_to_server_addr.get(sock.fileno(), None)
+        client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
             self._server_socket.sendto(response, client_addr)
         else:

@@ -26,6 +26,7 @@ import socket
 import logging
 import encrypt
 import errno
+import threading
 import eventloop
 from common import parse_header
 
@@ -121,8 +122,8 @@ class TCPRelayHandler(object):
                     # forward address to remote
                     self._data_to_write_to_remote.append(data[:header_length])
                     self.write_all_to_sock('\x05\x00\x00\x01' +
-                                       '\x00\x00\x00\x00\x10\x10',
-                                       self._local_sock)
+                                           '\x00\x00\x00\x00\x10\x10',
+                                           self._local_sock)
                 else:
                     remote_addr = self._config['server']
                     remote_port = self._config['server_port']
@@ -230,6 +231,7 @@ class TCPRelay(object):
         self._config = config
         self._is_local = is_local
         self._closed = False
+        self._thread = None
         self._fd_to_handlers = {}
 
         if is_local:
@@ -270,8 +272,8 @@ class TCPRelay(object):
                 if sock == self._server_socket:
                     try:
                         conn = self._server_socket.accept()
-                        TCPRelayHandler(self._eventloop, conn, self._config,
-                                        self._is_local)
+                        TCPRelayHandler(self._fd_to_handlers, self._eventloop,
+                                        conn, self._config, self._is_local)
                     except (OSError, IOError) as e:
                         error_no = eventloop.errno_from_exception(e)
                         if error_no in [errno.EAGAIN, errno.EINPROGRESS]:
@@ -287,3 +289,19 @@ class TCPRelay(object):
             if now - last_time > 5:
                 # TODO sweep timeouts
                 last_time = now
+
+    def start(self):
+        if self._closed:
+            raise Exception('closed')
+        t = threading.Thread(target=self._run)
+        t.setName('UDPThread')
+        t.setDaemon(False)
+        t.start()
+        self._thread = t
+
+    def close(self):
+        self._closed = True
+        self._server_socket.close()
+
+    def thread(self):
+        return self._thread
