@@ -26,6 +26,7 @@
 
 
 import os
+import socket
 import select
 from collections import defaultdict
 
@@ -192,7 +193,5 @@ def errno_from_exception(e):
 
 # from tornado
 def get_sock_error(sock):
-    errno = sock.getsockopt(socket.SOL_SOCKET,
-                                   socket.SO_ERROR)
+    errno = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
     return socket.error(errno, os.strerror(errno))
-

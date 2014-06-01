@@ -70,19 +70,24 @@ if not hasattr(socket, 'inet_ntop'):
     socket.inet_ntop = inet_ntop
 
 
+ADDRTYPE_IPV4 = 1
+ADDRTYPE_IPV6 = 4
+ADDRTYPE_HOST = 3
+
+
 def parse_header(data):
     addrtype = ord(data[0])
     dest_addr = None
     dest_port = None
     header_length = 0
-    if addrtype == 1:
+    if addrtype == ADDRTYPE_IPV4:
         if len(data) >= 7:
             dest_addr = socket.inet_ntoa(data[1:5])
             dest_port = struct.unpack('>H', data[5:7])[0]
             header_length = 7
         else:
             logging.warn('header is too short')
-    elif addrtype == 3:
+    elif addrtype == ADDRTYPE_HOST:
         if len(data) > 2:
             addrlen = ord(data[1])
             if len(data) >= 2 + addrlen:
@@ -94,7 +99,7 @@ def parse_header(data):
                 logging.warn('header is too short')
         else:
             logging.warn('header is too short')
-    elif addrtype == 4:
+    elif addrtype == ADDRTYPE_IPV6:
         if len(data) >= 19:
             dest_addr = socket.inet_ntop(socket.AF_INET6, data[1:17])
             dest_port = struct.unpack('>H', data[17:19])[0]
