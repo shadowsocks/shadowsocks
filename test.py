@@ -1,15 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import sys
+sys.path.insert(0, 'shadowsocks')
 import os
 import signal
-import sys
 import select
 import struct
 import hashlib
 import string
 import time
 from subprocess import Popen, PIPE
+import encrypt_salsa20
 
 target1 = [
     [60, 53, 84, 138, 217, 94, 88, 23, 39, 242, 219, 35, 12, 157, 165, 181, 255, 143, 83, 247, 162, 16, 31, 209, 190,
@@ -89,6 +91,8 @@ p2 = Popen(['python', 'shadowsocks/local.py', '-c', sys.argv[-1]], shell=False, 
     stdout=PIPE, stderr=PIPE, close_fds=True)
 p3 = None
 
+encrypt_salsa20.test()
+
 print 'encryption test passed'
 
 try:
@@ -120,7 +124,7 @@ try:
         if r == 0:
             print 'test passed'
         sys.exit(r)
-    
+
 finally:
     for p in [p1, p2]:
         try:

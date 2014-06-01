@@ -109,7 +109,7 @@ def test():
     decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     results = []
     pos = 0
-    print 'start'
+    print 'salsa20 test start'
     start = time.time()
     while pos < len(plain):
         l = random.randint(100, 32768)
@@ -124,7 +124,7 @@ def test():
         results.append(decipher.update(c[pos:pos + l]))
         pos += l
     end = time.time()
-    print BLOCK_SIZE * rounds / (end - start)
+    print 'speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start))
     assert ''.join(results) == plain
 
 
