@@ -6,7 +6,7 @@ with open('README.rst') as f:
 
 setup(
     name="shadowsocks",
-    version="1.4.5",
+    version="2.0",
     license='MIT',
     description="a lightweight tunnel proxy",
     author='clowwindy',
@@ -16,7 +16,7 @@ setup(
     package_data={
         'shadowsocks': ['README.rst', 'LICENSE', 'config.json']
     },
-    install_requires=['setuptools'],
+    install_requires=[],
     entry_points="""
     [console_scripts]
     sslocal = shadowsocks.local:main

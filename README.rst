@@ -1,8 +1,12 @@
 shadowsocks
 ===========
 
-shadowsocks is a lightweight tunnel proxy which can help you get through
+|Build Status|
+
+shadowsocks is a lightweight tunnel proxy that help you get through
 firewalls.
+
+2.0 is currently under development. Please use 1.4.x.
 
 Both TCP CONNECT and UDP ASSOCIATE are implemented.
 
@@ -25,7 +29,7 @@ Debian / Ubuntu:
 
 ::
 
-    apt-get install python-pip python-gevent python-m2crypto
+    apt-get install build-essential python-pip python-m2crypto python-dev
     pip install shadowsocks
 
 CentOS:
@@ -98,8 +102,8 @@ Explanation of the fields:
 +------------------+-----------------------------------------------------------------------------------------------------+
 
 Run ``ssserver -c /etc/shadowsocks.json`` on your server. To run it in
-the background, `use
-supervisor <https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor>`__.
+the background, use
+`Supervisor <https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor>`__.
 
 On your client machine, run ``sslocal -c /etc/shadowsocks.json``.
 
@@ -110,9 +114,6 @@ Change the proxy settings in your browser to
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
-
-**Notice: If you want to use encryption methods other than "table",
-please install M2Crypto (See Encryption Section).**
 
 It's recommended to use shadowsocks with AutoProxy or Proxy
 SwitchySharp.
@@ -128,23 +129,6 @@ You can use args to override settings from ``config.json``.
     ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
 
-Salsa20
--------
-
-Salsa20 is a fast stream cipher.
-
-Use "salsa20-ctr" in shadowsocks.json.
-
-And install these packages:
-
-Debian / Ubuntu:
-^^^^^^^^^^^^^^^^
-
-::
-
-    apt-get install python-numpy
-    pip install salsa20
-
 Wiki
 ----
 
@@ -158,13 +142,13 @@ MIT
 Bugs and Issues
 ---------------
 
-Please visit `issue
-tracker <https://github.com/clowwindy/shadowsocks/issues?state=open>`__
+Please visit `Issue
+Tracker <https://github.com/clowwindy/shadowsocks/issues?state=open>`__
 
 Mailing list: http://groups.google.com/group/shadowsocks
 
 Also see
-`troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
+`Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
 
 .. |Build Status| image:: https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
    :target: https://travis-ci.org/clowwindy/shadowsocks

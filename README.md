@@ -1,13 +1,15 @@
 shadowsocks
 ===========
 
-Current version: 1.4.5 [![Build Status][1]][0]
+Current version: 2.0 [![Build Status][]][Shadowsocks]
 
-shadowsocks is a lightweight tunnel proxy which can help you get through firewalls.
+shadowsocks is a lightweight tunnel proxy that help you get through firewalls.
+
+2.0 is currently under development. Please use 1.4.x.
 
 Both TCP CONNECT and UDP ASSOCIATE are implemented.
 
-[中文说明][3]
+[中文说明]
 
 Install
 -------
@@ -22,7 +24,7 @@ Install Shadowsocks.
 #### Debian / Ubuntu:
 
     apt-get install build-essential python-pip python-m2crypto python-dev
-    pip install gevent shadowsocks
+    pip install shadowsocks
 
 #### CentOS:
 
@@ -39,7 +41,7 @@ Install Shadowsocks.
 
 #### Windows:
 
-Choose a [GUI client][7]
+Choose a [GUI client]
 
 Usage
 -----
@@ -70,11 +72,11 @@ Explanation of the fields:
 | password      | password used for encryption                    |
 | timeout       | in seconds                                      |
 | method        | encryption method, "aes-256-cfb" is recommended |
-| fast_open     | use [TCP_FASTOPEN][2], true / false             |
+| fast_open     | use [TCP_FASTOPEN], true / false                |
 | workers       | number of workers, available on Unix/Linux      |
 
-Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the background,
-[use supervisor][8].
+Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the
+background, use [Supervisor].
 
 On your client machine, run `sslocal -c /etc/shadowsocks.json`.
 
@@ -83,9 +85,6 @@ Change the proxy settings in your browser to
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
-
-**Notice: If you want to use encryption methods other than "table", please 
-install M2Crypto (See Encryption Section).**
 
 It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
 
@@ -98,29 +97,6 @@ You can use args to override settings from `config.json`.
     ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
 
-gevent
-------
-
-If you suffer from any strange problem when you have installed gevent 0.9.x, 
-install a new version.
-
-    pip install gevent --upgrade
-    
-
-Salsa20
--------
-
-Salsa20 is a fast stream cipher.
-
-Use "salsa20-ctr" in shadowsocks.json.
-
-And install these packages:
-
-#### Debian / Ubuntu:
-
-    apt-get install python-numpy
-    pip install salsa20
-
 Wiki
 ----
 
@@ -132,18 +108,18 @@ MIT
 
 Bugs and Issues
 ----------------
-Please visit [issue tracker][5]
+Please visit [Issue Tracker]
 
 Mailing list: http://groups.google.com/group/shadowsocks
 
-Also see [troubleshooting][6]
+Also see [Troubleshooting]
 
-[0]: https://travis-ci.org/clowwindy/shadowsocks
-[1]: https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
-[2]: https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
-[3]: https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
-[4]: http://chandlerproject.org/Projects/MeTooCrypto
-[5]: https://github.com/clowwindy/shadowsocks/issues?state=open
-[6]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
-[7]: https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
-[8]: https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
+
+[Shadowsocks]:     https://travis-ci.org/clowwindy/shadowsocks
+[Build Status]:    https://travis-ci.org/clowwindy/shadowsocks.png?branch=2.0
+[TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
+[Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
+[GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
+[Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
+[Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
+[中文说明]:        https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
