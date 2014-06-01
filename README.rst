@@ -15,15 +15,6 @@ Both TCP CONNECT and UDP ASSOCIATE are implemented.
 Install
 -------
 
-First, make sure you have Python 2.6 or 2.7.
-
-::
-
-    $ python --version
-    Python 2.6.8
-
-Install Shadowsocks.
-
 Debian / Ubuntu:
 ^^^^^^^^^^^^^^^^
 
