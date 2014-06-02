@@ -191,8 +191,8 @@ class TCPRelayHandler(object):
                 if is_local:
                     # forward address to remote
                     self.write_to_sock('\x05\x00\x00\x01' +
-                                           '\x00\x00\x00\x00\x10\x10',
-                                           self._local_sock)
+                                       '\x00\x00\x00\x00\x10\x10',
+                                       self._local_sock)
                     data_to_send = self._encryptor.encrypt(data)
                     self._data_to_write_to_remote.append(data_to_send)
                     remote_addr = self._config['server']
