@@ -107,7 +107,7 @@ Also see [Troubleshooting]
 
 
 [1.4.x]:           https://github.com/clowwindy/shadowsocks/tree/1.4
-[Build Status]:    https://travis-ci.org/clowwindy/shadowsocks.png?branch=2.0
+[Build Status]:    https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
 [Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
 [TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
 [Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
