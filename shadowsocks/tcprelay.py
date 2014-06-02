@@ -435,7 +435,7 @@ class TCPRelay(object):
 
     def _sweep_timeout(self):
         # tornado's timeout memory management is more flexible that we need
-        # we just need a sorted last_activity queue and it's faster that heapq
+        # we just need a sorted last_activity queue and it's faster than heapq
         # in fact we can do O(1) insertion/remove so we invent our own
         if self._timeouts:
             now = time.time()
