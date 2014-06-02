@@ -1,13 +1,11 @@
 shadowsocks
 ===========
 
-Current version: 2.0 [![Build Status]][Travis CI]
+Current version: 2.0-pre [![Build Status]][Travis CI]
 
 shadowsocks is a lightweight tunnel proxy that help you get through firewalls.
 
 2.0 is currently experimental. Please use 1.4.x.
-
-Both TCP CONNECT and UDP ASSOCIATE are implemented.
 
 [中文说明]
 
