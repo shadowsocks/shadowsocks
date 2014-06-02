@@ -198,7 +198,6 @@ class TCPRelayHandler(object):
                         self._stage = STAGE_UDP_ASSOC
                         # just wait for the client to disconnect
                         return
-
                     elif cmd == CMD_CONNECT:
                         # just trim VER CMD RSV
                         data = data[3:]
