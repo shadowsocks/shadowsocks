@@ -23,17 +23,21 @@
 
 import time
 import socket
+import errno
+import struct
 import logging
 import encrypt
-import errno
 import eventloop
 from common import parse_header
 
 CMD_CONNECT = 1
+CMD_BIND = 2
+CMD_UDP_ASSOCIATE = 3
 
 # local:
 # stage 0 init
 # stage 1 hello received, hello sent
+# stage 2 UDP assoc
 # stage 4 addr received, reply sent
 # stage 5 remote connected
 
@@ -44,6 +48,7 @@ CMD_CONNECT = 1
 
 STAGE_INIT = 0
 STAGE_HELLO = 1
+STAGE_UDP_ASSOC = 2
 STAGE_REPLY = 4
 STAGE_STREAM = 5
 
@@ -178,7 +183,28 @@ class TCPRelayHandler(object):
             try:
                 if is_local:
                     cmd = ord(data[1])
-                    # TODO check cmd == 1
+                    if cmd == CMD_UDP_ASSOCIATE:
+                        logging.debug('UDP associate')
+                        if self._local_sock.family == socket.AF_INET6:
+                            header = '\x05\x00\x00\x04'
+                        else:
+                            header = '\x05\x00\x00\x01'
+                        addr, port = self._local_sock.getsockname()
+                        addr_to_send = socket.inet_pton(self._local_sock.family,
+                                                        addr)
+                        port_to_send = struct.pack('>H', port)
+                        self.write_to_sock(header + addr_to_send + port_to_send,
+                                           self._local_sock)
+                        self._stage = STAGE_UDP_ASSOC
+                        # just wait for the client to disconnect
+                        return
+
+                    elif cmd == CMD_CONNECT:
+                        data = data[3:]
+                    else:
+                        logging.error('unknown command %d', cmd)
+                        self.destroy()
+                        return
                     assert cmd == CMD_CONNECT
                     # just trim VER CMD RSV
                     data = data[3:]
