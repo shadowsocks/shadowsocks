@@ -5,7 +5,7 @@ Current version: 2.0-pre [![Build Status]][Travis CI]
 
 shadowsocks is a lightweight tunnel proxy that help you get through firewalls.
 
-2.0 is currently experimental. Please use 1.4.x.
+2.0-pre is currently experimental. Please use [1.4.x].
 
 [中文说明]
 
@@ -106,6 +106,7 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see [Troubleshooting]
 
 
+[1.4.x]:           https://github.com/clowwindy/shadowsocks/tree/1.4
 [Build Status]:    https://travis-ci.org/clowwindy/shadowsocks.png?branch=2.0
 [Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
 [TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
