@@ -230,5 +230,5 @@ def errno_from_exception(e):
 
 # from tornado
 def get_sock_error(sock):
-    errno = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-    return socket.error(errno, os.strerror(errno))
+    error_number = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+    return socket.error(error_number, os.strerror(error_number))
