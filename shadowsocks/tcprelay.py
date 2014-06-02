@@ -320,11 +320,13 @@ class TCPRelayHandler(object):
             self.update_stream(STREAM_UP, WAIT_STATUS_READING)
 
     def on_local_error(self):
-        logging.error(eventloop.get_sock_error(self._local_sock))
+        if self._local_sock:
+            logging.error(eventloop.get_sock_error(self._local_sock))
         self.destroy()
 
     def on_remote_error(self):
-        logging.error(eventloop.get_sock_error(self._remote_sock))
+        if self._remote_sock:
+            logging.error(eventloop.get_sock_error(self._remote_sock))
         self.destroy()
 
     def handle_event(self, sock, event):
