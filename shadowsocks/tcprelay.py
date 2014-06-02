@@ -200,14 +200,12 @@ class TCPRelayHandler(object):
                         return
 
                     elif cmd == CMD_CONNECT:
+                        # just trim VER CMD RSV
                         data = data[3:]
                     else:
                         logging.error('unknown command %d', cmd)
                         self.destroy()
                         return
-                    assert cmd == CMD_CONNECT
-                    # just trim VER CMD RSV
-                    data = data[3:]
                 header_result = parse_header(data)
                 if header_result is None:
                     raise Exception('can not parse header')
