@@ -64,10 +64,10 @@ def check_config(config):
     if (config.get('method', '') or '').lower() == 'rc4':
         logging.warn('warning: RC4 is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
-    if (int(config.get('timeout', 300)) or 300) < 100:
+    if config.get('timeout', 300) < 100:
         logging.warn('warning: your timeout %d seems too short' %
                      int(config.get('timeout')))
-    if (int(config.get('timeout', 300)) or 300) > 600:
+    if config.get('timeout', 300) > 600:
         logging.warn('warning: your timeout %d seems too long' %
                      int(config.get('timeout')))
 
@@ -114,6 +114,8 @@ def get_config(is_local):
                 config['local_address'] = value
             elif key == '-v':
                 config['verbose'] = True
+            elif key == '-t':
+                config['timeout'] = int(value)
             elif key == '--fast-open':
                 config['fast_open'] = True
             elif key == '--workers':
