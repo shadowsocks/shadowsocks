@@ -61,6 +61,9 @@ def check_config(config):
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
         logging.warn('warning: server set to listen %s:%s, are you sure?' %
                      (config['server'], config['server_port']))
+    if (config.get('method', '') or '').lower() == '':
+        logging.warn('warning: table is not safe; please use a safer cipher, '
+                     'like AES-256-CFB')
     if (config.get('method', '') or '').lower() == 'rc4':
         logging.warn('warning: RC4 is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
