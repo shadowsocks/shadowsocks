@@ -34,6 +34,8 @@ from common import parse_header
 TIMEOUTS_CLEAN_SIZE = 512
 TIMEOUT_PRECISION = 4
 
+MSG_FASTOPEN = 0x20000000
+
 CMD_CONNECT = 1
 CMD_BIND = 2
 CMD_UDP_ASSOCIATE = 3
@@ -199,6 +201,34 @@ class TCPRelayHandler(object):
             if is_local:
                 data = self._encryptor.encrypt(data)
             self._data_to_write_to_remote.append(data)
+            if is_local and self._upstream_status == WAIT_STATUS_INIT and \
+                    self._config['fast_open']:
+                try:
+                    data = ''.join(self._data_to_write_to_local)
+                    l = len(data)
+                    s = self._remote_sock.sendto(data, MSG_FASTOPEN,
+                                                 self.remote_address)
+                    if s < l:
+                        data = data[s:]
+                        self._data_to_write_to_local = [data]
+                        self.update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                        self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                    else:
+                        self._data_to_write_to_local = []
+                        self.update_stream(STREAM_UP, WAIT_STATUS_READING)
+                        self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                        self._stage = STAGE_STREAM
+                except (OSError, IOError) as e:
+                    if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
+                        self.update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                        self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                    elif eventloop.errno_from_exception(e) == errno.ENOTCONN:
+                        logging.error('fast open not supported on this OS')
+                        self._config['fast_open'] = False
+                        self.destroy()
+                    else:
+                        logging.error(e)
+                        self.destroy()
         elif (is_local and self._stage == STAGE_HELLO) or \
                 (not is_local and self._stage == STAGE_INIT):
             try:
@@ -259,18 +289,23 @@ class TCPRelayHandler(object):
                 self._fd_to_handlers[remote_sock.fileno()] = self
                 remote_sock.setblocking(False)
                 remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-                # TODO support TCP fast open
-                try:
-                    remote_sock.connect(sa)
-                except (OSError, IOError) as e:
-                    if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
-                        pass
-                self._loop.add(remote_sock,
-                               eventloop.POLL_ERR | eventloop.POLL_OUT)
 
-                self._stage = STAGE_REPLY
-                self.update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
-                self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                if self._is_local and self._config['fast_open']:
+                    # wait for more data to arrive and send them in one SYN
+                    self._stage = STAGE_REPLY
+                    # TODO when there is already data in this packet
+                else:
+                    try:
+                        remote_sock.connect(sa)
+                    except (OSError, IOError) as e:
+                        if eventloop.errno_from_exception(e) == \
+                                errno.EINPROGRESS:
+                            pass
+                    self._loop.add(remote_sock,
+                                   eventloop.POLL_ERR | eventloop.POLL_OUT)
+                    self._stage = STAGE_REPLY
+                    self.update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                    self.update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                 return
             except Exception:
                 import traceback
