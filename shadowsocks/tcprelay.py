@@ -180,10 +180,8 @@ class TCPRelayHandler(object):
                 data = ''.join(self._data_to_write_to_local)
                 l = len(data)
                 s = self._remote_sock.sendto(data, MSG_FASTOPEN,
-                                             self.remote_address)
-                self._loop.add(self._remote_sock,
-                               eventloop.POLL_ERR | eventloop.POLL_OUT)
-                self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                                             (self._config['server'],
+                                              self._config['server_port']))
                 if s < l:
                     data = data[s:]
                     self._data_to_write_to_local = [data]
@@ -195,7 +193,6 @@ class TCPRelayHandler(object):
             except (OSError, IOError) as e:
                 if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
                     self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
-                    self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                 elif eventloop.errno_from_exception(e) == errno.ENOTCONN:
                     logging.error('fast open not supported on this OS')
                     self._config['fast_open'] = False
@@ -264,6 +261,7 @@ class TCPRelayHandler(object):
             if self._is_local and self._config['fast_open']:
                 # wait for more data to arrive and send them in one SYN
                 self._stage = STAGE_REPLY
+                self._loop.add(remote_sock, eventloop.POLL_ERR)
                 # TODO when there is already data in this packet
             else:
                 try:

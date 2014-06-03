@@ -13,4 +13,3 @@ script:
   - python test.py -c tests/salsa20.json
   - python test.py -c tests/server-multi-passwd.json
   - python test.py -c tests/workers.json
-  - python test.py -c tests/fastopen.json
