@@ -84,6 +84,7 @@ class TCPRelayHandler(object):
         self._stage = STAGE_INIT
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
+        self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
         self._upstream_status = WAIT_STATUS_READING
@@ -172,9 +173,10 @@ class TCPRelayHandler(object):
         if self._is_local:
             data = self._encryptor.encrypt(data)
         self._data_to_write_to_remote.append(data)
-        if self._is_local and self._upstream_status == WAIT_STATUS_INIT and \
+        if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             try:
+                self._fastopen_connected = True
                 data = ''.join(self._data_to_write_to_local)
                 l = len(data)
                 s = self._remote_sock.sendto(data, MSG_FASTOPEN,
