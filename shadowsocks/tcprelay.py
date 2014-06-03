@@ -181,15 +181,16 @@ class TCPRelayHandler(object):
                 l = len(data)
                 s = self._remote_sock.sendto(data, MSG_FASTOPEN,
                                              self.remote_address)
+                self._loop.add(self._remote_sock,
+                               eventloop.POLL_ERR | eventloop.POLL_OUT)
+                self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                 if s < l:
                     data = data[s:]
                     self._data_to_write_to_local = [data]
                     self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
-                    self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                 else:
                     self._data_to_write_to_local = []
                     self._update_stream(STREAM_UP, WAIT_STATUS_READING)
-                    self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                     self._stage = STAGE_STREAM
             except (OSError, IOError) as e:
                 if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
