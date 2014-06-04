@@ -1,8 +1,7 @@
 shadowsocks
 ===========
 
-[![Build Status]][Travis CI]
-![Downloads Stat]
+[![Build Status]][Travis CI] ![PyPI version] ![Downloads Stat]
 
 Current version: 2.0-pre
 
@@ -119,3 +118,4 @@ Also see [Troubleshooting]
 [Build Status]:    http://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
 [Downloads Stat]:  http://img.shields.io/pypi/dm/shadowsocks.svg?style=flat
+[PyPI version]:    http://img.shields.io/pypi/v/shadowsocks.svg?style=flat
