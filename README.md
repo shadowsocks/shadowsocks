@@ -9,7 +9,7 @@ shadowsocks is a lightweight tunnel proxy that help you get through firewalls.
 
 2.0-pre is currently experimental. Please use [1.4.x].
 
-[中文说明]
+[中文说明][Chinese Readme]
 
 Install
 -------
@@ -109,13 +109,13 @@ Also see [Troubleshooting]
 
 
 [1.4.x]:           https://github.com/clowwindy/shadowsocks/tree/1.4
-[TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
-[Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
-[GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
-[Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
-[Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
-[中文说明]:        https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Build Status]:    http://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
-[Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
+[Chinese Readme]:  https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
+[Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
 [PyPI]:            https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:    http://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+[Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
+[TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
+[Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
+[Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
