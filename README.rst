@@ -1,14 +1,9 @@
 shadowsocks
 ===========
 
-|Build Status|
+|PyPI version| |Build Status|
 
-shadowsocks is a lightweight tunnel proxy that help you get through
-firewalls.
-
-2.0 is currently under development. Please use 1.4.x.
-
-Both TCP CONNECT and UDP ASSOCIATE are implemented.
+A fast tunnel proxy that help you get through firewalls.
 
 `中文说明 <https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E>`__
 
@@ -141,5 +136,7 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see
 `Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
 
-.. |Build Status| image:: https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
+.. |PyPI version| image:: http://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+   :target: https://pypi.python.org/pypi/shadowsocks
+.. |Build Status| image:: http://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
    :target: https://travis-ci.org/clowwindy/shadowsocks
