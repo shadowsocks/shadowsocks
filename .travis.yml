@@ -12,4 +12,5 @@ script:
   - python test.py -c tests/aes.json
   - python test.py -c tests/salsa20.json
   - python test.py -c tests/server-multi-passwd.json
+  - python test.py -c tests/server-multi-passwd-table.json
   - python test.py -c tests/workers.json

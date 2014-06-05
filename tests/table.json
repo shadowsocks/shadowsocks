@@ -3,7 +3,7 @@
     "server_port":8388,
     "local_port":1081,
     "password":"barfoo!",
-    "timeout":300,
+    "timeout":60,
     "method":"table",
     "local_address":"127.0.0.1",
     "fast_open":false
