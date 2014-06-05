@@ -2,7 +2,7 @@
     "server":"127.0.0.1",
     "server_port":8388,
     "local_port":1081,
-    "password":"barfoo!",
+    "password":"salsa20_password",
     "timeout":60,
     "method":"salsa20-ctr",
     "local_address":"127.0.0.1",

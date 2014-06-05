@@ -73,6 +73,10 @@ def check_config(config):
     if config.get('timeout', 300) > 600:
         logging.warn('warning: your timeout %d seems too long' %
                      int(config.get('timeout')))
+    if config.get('password') in ['mypassword', 'barfoo!']:
+        logging.error('DON\'T USE DEFAULT PASSWORD! Please change it in your '
+                      'config.json!')
+        exit(1)
 
 
 def get_config(is_local):
