@@ -8,7 +8,7 @@ setup(
     name="shadowsocks",
     version="2.0",
     license='MIT',
-    description="a lightweight tunnel proxy",
+    description="A fast tunnel proxy that help you get through firewalls",
     author='clowwindy',
     author_email='clowwindy42@gmail.com',
     url='https://github.com/clowwindy/shadowsocks',
