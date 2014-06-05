@@ -1,6 +1,8 @@
-2.0 2014-06-02
+2.0 2014-06-05
 - Use a new event model
 - Remove gevent
+- Refuse to use default password
+- Fix a problem when using multiple passwords with table encryption
 
 1.4.5 2014-05-24
 - Add timeout in TCP server
