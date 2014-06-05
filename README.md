@@ -3,11 +3,7 @@ shadowsocks
 
 [![PyPI version]][PyPI] [![Build Status]][Travis CI] 
 
-Current version: 2.0-pre
-
-shadowsocks is a lightweight tunnel proxy that help you get through firewalls.
-
-2.0-pre is currently experimental. Please use [1.4.x].
+A fast tunnel proxy that help you get through firewalls.
 
 [中文说明][Chinese Readme]
 
