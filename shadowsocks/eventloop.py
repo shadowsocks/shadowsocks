@@ -204,9 +204,11 @@ class EventLoop(object):
                     logging.error(e)
                     continue
             for handler in self._handlers:
-                # no exceptions should be raised by users
                 # TODO when there are a lot of handlers
-                handler(events)
+                try:
+                    handler(events)
+                except (OSError, IOError) as e:
+                    logging.error(e)
 
 
 # from tornado

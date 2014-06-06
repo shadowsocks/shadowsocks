@@ -57,6 +57,7 @@ STAGE_HELLO = 1
 STAGE_UDP_ASSOC = 2
 STAGE_REPLY = 4
 STAGE_STREAM = 5
+STAGE_DESTROYED = -1
 
 # stream direction
 STREAM_UP = 0
@@ -137,7 +138,7 @@ class TCPRelayHandler(object):
 
     def _write_to_sock(self, data, sock):
         if not data or not sock:
-            return
+            return False
         uncomplete = False
         try:
             l = len(data)
@@ -152,6 +153,7 @@ class TCPRelayHandler(object):
             else:
                 logging.error(e)
                 self.destroy()
+                return False
         if uncomplete:
             if sock == self._local_sock:
                 self._data_to_write_to_local.append(data)
@@ -168,6 +170,7 @@ class TCPRelayHandler(object):
                 self._update_stream(STREAM_UP, WAIT_STATUS_READING)
             else:
                 logging.error('write_all_to_sock:unknown socket')
+        return True
 
     def _handle_stage_reply(self, data):
         if self._is_local:
@@ -367,10 +370,14 @@ class TCPRelayHandler(object):
         self.destroy()
 
     def handle_event(self, sock, event):
+        if self._stage == STAGE_DESTROYED:
+            return
         # order is important
         if sock == self._remote_sock:
             if event & eventloop.POLL_IN:
                 self._on_remote_read()
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_OUT:
                 self._on_remote_write()
             if event & eventloop.POLL_ERR:
@@ -378,6 +385,8 @@ class TCPRelayHandler(object):
         elif sock == self._local_sock:
             if event & eventloop.POLL_IN:
                 self._on_local_read()
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_OUT:
                 self._on_local_write()
             if event & eventloop.POLL_ERR:
@@ -386,6 +395,9 @@ class TCPRelayHandler(object):
             logging.warn('unknown socket')
 
     def destroy(self):
+        if self._stage == STAGE_DESTROYED:
+            return
+        self._stage = STAGE_DESTROYED
         if self._remote_address:
             logging.debug('destroy: %s:%d' %
                           self._remote_address)
