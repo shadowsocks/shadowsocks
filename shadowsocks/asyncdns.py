@@ -45,28 +45,71 @@ _request_count = 1
 # |                    ARCOUNT                    |
 # +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
+QTYPE_ANY = 255
+QTYPE_A = 1
+QTYPE_AAAA = 28
+QCLASS_IN = 1
+
+
+def convert_address(address):
+    address = address.strip('.')
+    labels = address.split('.')
+    results = []
+    for label in labels:
+        l = len(label)
+        if l > 63:
+            return None
+        results.append(chr(l))
+        results.append(label)
+    results.append('\0')
+    return ''.join(results)
+
 
 def pack_request(address):
     global _request_count
-    _request_count += 1
     header = struct.pack('!HBBHHHH', _request_count, 1, 0, 1, 0, 0, 0)
-    pass
+    addr = convert_address(address)
+    qtype_qclass = struct.pack('!HH', QTYPE_A, QCLASS_IN)
+    _request_count += 1
+    return header + addr + qtype_qclass
 
 
 def unpack_response(data):
+    if len(data) > 12:
+        header = struct.unpack('!HBBHHHH', data[:12])
+        res_id = header[0]
+        res_qr = header[1] & 128
+        res_tc = header[1] & 2
+        res_ra = header[2] & 128
+        res_rcode = header[2] & 15
+        res_qdcount = header[3]
+        res_ancount = header[4]
+        res_nscount = header[5]
+        res_arcount = header[6]
+        print header
     # TODO detect address type
-    pass
+    print data
+    print data.encode('hex')
+    return data
 
 
 def resolve(address, callback):
-    callback(address)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.SOL_UDP)
+    req = pack_request(address)
+    if req is None:
+        # TODO
+        return
+    sock.sendto(req, ('8.8.8.8', 53))
+    res, addr = sock.recvfrom(1024)
+    parsed_res = unpack_response(res)
+    callback(parsed_res)
 
 
 def test():
     def _callback(address):
         print address
 
-    resolve('www.baidu.com', _callback)
+    resolve('www.google.com', _callback)
 
 
 if __name__ == '__main__':
