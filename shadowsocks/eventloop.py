@@ -202,6 +202,8 @@ class EventLoop(object):
                     continue
                 else:
                     logging.error(e)
+                    import traceback
+                    traceback.print_exc()
                     continue
             for handler in self._handlers:
                 # TODO when there are a lot of handlers
@@ -209,6 +211,8 @@ class EventLoop(object):
                     handler(events)
                 except (OSError, IOError) as e:
                     logging.error(e)
+                    import traceback
+                    traceback.print_exc()
 
 
 # from tornado

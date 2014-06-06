@@ -26,6 +26,7 @@ import socket
 import errno
 import struct
 import logging
+import traceback
 import encrypt
 import eventloop
 from common import parse_header
@@ -152,6 +153,7 @@ class TCPRelayHandler(object):
                 uncomplete = True
             else:
                 logging.error(e)
+                traceback.print_exc()
                 self.destroy()
                 return False
         if uncomplete:
@@ -202,6 +204,7 @@ class TCPRelayHandler(object):
                     self.destroy()
                 else:
                     logging.error(e)
+                    traceback.print_exc()
                     self.destroy()
 
     def _handle_stage_hello(self, data):
@@ -277,8 +280,8 @@ class TCPRelayHandler(object):
                 self._stage = STAGE_REPLY
                 self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
                 self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
-        except Exception:
-            import traceback
+        except Exception as e:
+            logging.error(e)
             traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
@@ -336,8 +339,8 @@ class TCPRelayHandler(object):
             data = self._encryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
-        except Exception:
-            import traceback
+        except Exception as e:
+            logging.error(e)
             traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
@@ -540,6 +543,7 @@ class TCPRelay(object):
                         continue
                     else:
                         logging.error(e)
+                        traceback.print_exc()
             else:
                 if sock:
                     handler = self._fd_to_handlers.get(fd, None)
