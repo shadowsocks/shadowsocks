@@ -364,11 +364,13 @@ class TCPRelayHandler(object):
 
     def _on_local_error(self):
         if self._local_sock:
+            logging.debug('got local error')
             logging.error(eventloop.get_sock_error(self._local_sock))
         self.destroy()
 
     def _on_remote_error(self):
         if self._remote_sock:
+            logging.debug('got remote error')
             logging.error(eventloop.get_sock_error(self._remote_sock))
         self.destroy()
 
@@ -377,23 +379,27 @@ class TCPRelayHandler(object):
             return
         # order is important
         if sock == self._remote_sock:
+            if event & eventloop.POLL_ERR:
+                self._on_remote_error()
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_IN:
                 self._on_remote_read()
             if self._stage == STAGE_DESTROYED:
                 return
             if event & eventloop.POLL_OUT:
                 self._on_remote_write()
-            if event & eventloop.POLL_ERR:
-                self._on_remote_error()
         elif sock == self._local_sock:
+            if event & eventloop.POLL_ERR:
+                self._on_local_error()
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_IN:
                 self._on_local_read()
             if self._stage == STAGE_DESTROYED:
                 return
             if event & eventloop.POLL_OUT:
                 self._on_local_write()
-            if event & eventloop.POLL_ERR:
-                self._on_local_error()
         else:
             logging.warn('unknown socket')
 
@@ -525,9 +531,9 @@ class TCPRelay(object):
 
     def _handle_events(self, events):
         for sock, fd, event in events:
-            # if sock:
-            #     logging.debug('fd %d %s', fd,
-            #                   eventloop.EVENT_NAMES.get(event, event))
+            if sock:
+                logging.debug('fd %d %s', fd,
+                              eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
                     # TODO
