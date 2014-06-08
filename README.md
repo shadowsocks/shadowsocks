@@ -12,7 +12,7 @@ Install
 
 #### Debian / Ubuntu:
 
-    apt-get install build-essential python-pip python-m2crypto python-dev
+    apt-get install python-pip python-m2crypto
     pip install shadowsocks
 
 #### CentOS:
