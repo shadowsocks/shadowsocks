@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import time
 import socket
 import struct
 import logging
@@ -29,9 +30,9 @@ import lru_cache
 import eventloop
 
 
-common.patch_socket()
+CACHE_SWEEP_INTERVAL = 30
 
-_request_count = 1
+common.patch_socket()
 
 # rfc1035
 # format
@@ -85,14 +86,10 @@ def build_address(address):
     return ''.join(results)
 
 
-def build_request(address, qtype):
-    global _request_count
-    header = struct.pack('!HBBHHHH', _request_count, 1, 0, 1, 0, 0, 0)
+def build_request(address, qtype, request_id):
+    header = struct.pack('!HBBHHHH', request_id, 1, 0, 1, 0, 0, 0)
     addr = build_address(address)
     qtype_qclass = struct.pack('!HH', qtype, QCLASS_IN)
-    _request_count += 1
-    if _request_count > 65535:
-        _request_count = 1
     return header + addr + qtype_qclass
 
 
@@ -240,10 +237,12 @@ class DNSResolver(object):
 
     def __init__(self):
         self._loop = None
+        self._request_id = 1
         self._hostname_status = {}
         self._hostname_to_cb = {}
         self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
+        self._last_time = time.time()
         self._sock = None
         self._parse_config()
 
@@ -327,6 +326,10 @@ class DNSResolver(object):
                     break
                 self._handle_data(data)
             break
+        now = time.time()
+        if now - self._last_time > CACHE_SWEEP_INTERVAL:
+            self._cache.sweep()
+            self._last_time = now
 
     def remove_callback(self, callback):
         hostname = self._cb_to_hostname.get(callback)
@@ -343,7 +346,10 @@ class DNSResolver(object):
     def _send_req(self, hostname, qtype):
         logging.debug('resolving %s with type %d using server %s', hostname,
                       qtype, self._dns_server)
-        req = build_request(hostname, qtype)
+        self._request_id += 1
+        if self._request_id > 32768:
+            self._request_id = 1
+        req = build_request(hostname, qtype, self._request_id)
         self._sock.sendto(req, self._dns_server)
 
     def resolve(self, hostname, callback):
@@ -382,19 +388,20 @@ def test():
     resolver = DNSResolver()
     resolver.add_to_loop(loop)
 
-    resolver.resolve('www.google.com', _callback)
-    resolver.resolve('8.8.8.8', _callback)
-    resolver.resolve('www.twitter.com', _callback)
-    resolver.resolve('ipv6.google.com', _callback)
-    resolver.resolve('ipv6.l.google.com', _callback)
-    resolver.resolve('www.gmail.com', _callback)
-    resolver.resolve('r4---sn-3qqp-ioql.googlevideo.com', _callback)
-    resolver.resolve('www.baidu.com', _callback)
-    resolver.resolve('www.a.shifen.com', _callback)
-    resolver.resolve('m.baidu.jp', _callback)
-    resolver.resolve('www.youku.com', _callback)
-    resolver.resolve('www.twitter.com', _callback)
-    resolver.resolve('ipv6.google.com', _callback)
+    for hostname in ['www.google.com',
+                     '8.8.8.8',
+                     'www.twitter.com',
+                     'ipv6.google.com',
+                     'ipv6.l.google.com',
+                     'www.gmail.com',
+                     'r4---sn-3qqp-ioql.googlevideo.com',
+                     'www.baidu.com',
+                     'www.a.shifen.com',
+                     'm.baidu.jp',
+                     'www.youku.com',
+                     'www.twitter.com',
+                     'ipv6.google.com']:
+        resolver.resolve(hostname, _callback)
 
     loop.run()
 
