@@ -296,6 +296,7 @@ class DNSResolver(object):
         if self._loop:
             raise Exception('already add to loop')
         self._loop = loop
+        # TODO when dns server is IPv6
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                    socket.SOL_UDP)
         self._sock.setblocking(False)
@@ -339,6 +340,7 @@ class DNSResolver(object):
                 logging.error('dns socket err')
                 self._loop.remove(self._sock)
                 self._sock.close()
+                # TODO when dns server is IPv6
                 self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                            socket.SOL_UDP)
                 self._sock.setblocking(False)
