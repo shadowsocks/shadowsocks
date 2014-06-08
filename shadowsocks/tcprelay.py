@@ -26,6 +26,7 @@ import socket
 import errno
 import struct
 import logging
+import traceback
 import encrypt
 import eventloop
 from common import parse_header
@@ -57,6 +58,7 @@ STAGE_HELLO = 1
 STAGE_UDP_ASSOC = 2
 STAGE_REPLY = 4
 STAGE_STREAM = 5
+STAGE_DESTROYED = -1
 
 # stream direction
 STREAM_UP = 0
@@ -137,7 +139,7 @@ class TCPRelayHandler(object):
 
     def _write_to_sock(self, data, sock):
         if not data or not sock:
-            return
+            return False
         uncomplete = False
         try:
             l = len(data)
@@ -151,7 +153,9 @@ class TCPRelayHandler(object):
                 uncomplete = True
             else:
                 logging.error(e)
+                traceback.print_exc()
                 self.destroy()
+                return False
         if uncomplete:
             if sock == self._local_sock:
                 self._data_to_write_to_local.append(data)
@@ -168,6 +172,7 @@ class TCPRelayHandler(object):
                 self._update_stream(STREAM_UP, WAIT_STATUS_READING)
             else:
                 logging.error('write_all_to_sock:unknown socket')
+        return True
 
     def _handle_stage_reply(self, data):
         if self._is_local:
@@ -199,6 +204,7 @@ class TCPRelayHandler(object):
                     self.destroy()
                 else:
                     logging.error(e)
+                    traceback.print_exc()
                     self.destroy()
 
     def _handle_stage_hello(self, data):
@@ -274,8 +280,8 @@ class TCPRelayHandler(object):
                 self._stage = STAGE_REPLY
                 self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
                 self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
-        except Exception:
-            import traceback
+        except Exception as e:
+            logging.error(e)
             traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
@@ -333,8 +339,8 @@ class TCPRelayHandler(object):
             data = self._encryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
-        except Exception:
-            import traceback
+        except Exception as e:
+            logging.error(e)
             traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
@@ -358,34 +364,49 @@ class TCPRelayHandler(object):
 
     def _on_local_error(self):
         if self._local_sock:
+            logging.debug('got local error')
             logging.error(eventloop.get_sock_error(self._local_sock))
         self.destroy()
 
     def _on_remote_error(self):
         if self._remote_sock:
+            logging.debug('got remote error')
             logging.error(eventloop.get_sock_error(self._remote_sock))
         self.destroy()
 
     def handle_event(self, sock, event):
+        if self._stage == STAGE_DESTROYED:
+            return
         # order is important
         if sock == self._remote_sock:
-            if event & eventloop.POLL_IN:
-                self._on_remote_read()
-            if event & eventloop.POLL_OUT:
-                self._on_remote_write()
             if event & eventloop.POLL_ERR:
                 self._on_remote_error()
-        elif sock == self._local_sock:
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_IN:
-                self._on_local_read()
+                self._on_remote_read()
+            if self._stage == STAGE_DESTROYED:
+                return
             if event & eventloop.POLL_OUT:
-                self._on_local_write()
+                self._on_remote_write()
+        elif sock == self._local_sock:
             if event & eventloop.POLL_ERR:
                 self._on_local_error()
+            if self._stage == STAGE_DESTROYED:
+                return
+            if event & eventloop.POLL_IN:
+                self._on_local_read()
+            if self._stage == STAGE_DESTROYED:
+                return
+            if event & eventloop.POLL_OUT:
+                self._on_local_write()
         else:
             logging.warn('unknown socket')
 
     def destroy(self):
+        if self._stage == STAGE_DESTROYED:
+            return
+        self._stage = STAGE_DESTROYED
         if self._remote_address:
             logging.debug('destroy: %s:%d' %
                           self._remote_address)
@@ -510,9 +531,9 @@ class TCPRelay(object):
 
     def _handle_events(self, events):
         for sock, fd, event in events:
-            # if sock:
-            #     logging.debug('fd %d %s', fd,
-            #                   eventloop.EVENT_NAMES.get(event, event))
+            if sock:
+                logging.debug('fd %d %s', fd,
+                              eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
                     # TODO
@@ -528,6 +549,7 @@ class TCPRelay(object):
                         continue
                     else:
                         logging.error(e)
+                        traceback.print_exc()
             else:
                 if sock:
                     handler = self._fd_to_handlers.get(fd, None)

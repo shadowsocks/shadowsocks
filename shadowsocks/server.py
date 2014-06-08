@@ -69,6 +69,8 @@ def main():
             loop.run()
         except (KeyboardInterrupt, IOError, OSError) as e:
             logging.error(e)
+            import traceback
+            traceback.print_exc()
             os._exit(0)
 
     if int(config['workers']) > 1:
