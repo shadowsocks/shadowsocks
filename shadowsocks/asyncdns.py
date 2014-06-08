@@ -173,8 +173,8 @@ def parse_response(data):
             res_tc = header[1] & 2
             # res_ra = header[2] & 128
             res_rcode = header[2] & 15
-            assert res_tc == 0
-            assert res_rcode in [0, 3]
+            # assert res_tc == 0
+            # assert res_rcode in [0, 3]
             res_qdcount = header[3]
             res_ancount = header[4]
             res_nscount = header[5]
@@ -308,7 +308,11 @@ class DNSResolver(object):
         for callback in callbacks:
             if self._cb_to_hostname.__contains__(callback):
                 del self._cb_to_hostname[callback]
-            callback((hostname, ip), None)
+            if ip:
+                callback((hostname, ip), None)
+            else:
+                callback((hostname, None),
+                         Exception('unknown hostname %s' % hostname))
         if self._hostname_to_cb.__contains__(hostname):
             del self._hostname_to_cb[hostname]
         if self._hostname_status.__contains__(hostname):
@@ -329,7 +333,8 @@ class DNSResolver(object):
                 self._hostname_status[hostname] = STATUS_IPV6
                 self._send_req(hostname, QTYPE_AAAA)
             else:
-                self._cache[hostname] = ip
+                if ip:
+                    self._cache[hostname] = ip
                 self._call_callback(hostname, ip)
 
     def handle_events(self, events):
