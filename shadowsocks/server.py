@@ -29,6 +29,7 @@ import encrypt
 import eventloop
 import tcprelay
 import udprelay
+import asyncdns
 
 
 def main():
@@ -50,18 +51,20 @@ def main():
     encrypt.init_table(config['password'], config['method'])
     tcp_servers = []
     udp_servers = []
+    dns_resolver = asyncdns.DNSResolver()
     for port, password in config['port_password'].items():
         a_config = config.copy()
         a_config['server_port'] = int(port)
         a_config['password'] = password
         logging.info("starting server at %s:%d" %
                      (a_config['server'], int(port)))
-        tcp_servers.append(tcprelay.TCPRelay(a_config, False))
-        udp_servers.append(udprelay.UDPRelay(a_config, False))
+        tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
+        udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
 
     def run_server():
         try:
             loop = eventloop.EventLoop()
+            dns_resolver.add_to_loop(loop)
             for tcp_server in tcp_servers:
                 tcp_server.add_to_loop(loop)
             for udp_server in udp_servers:
@@ -100,6 +103,7 @@ def main():
                     a_tcp_server.close()
                 for a_udp_server in udp_servers:
                     a_udp_server.close()
+                dns_resolver.close()
 
                 for child in children:
                     os.waitpid(child, 0)

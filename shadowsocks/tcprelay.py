@@ -426,9 +426,10 @@ class TCPRelayHandler(object):
 
 
 class TCPRelay(object):
-    def __init__(self, config, is_local):
+    def __init__(self, config, dns_resolver, is_local):
         self._config = config
         self._is_local = is_local
+        self._dns_resolver = dns_resolver
         self._closed = False
         self._eventloop = None
         self._fd_to_handlers = {}
@@ -466,6 +467,8 @@ class TCPRelay(object):
         self._server_socket = server_socket
 
     def add_to_loop(self, loop):
+        if self._eventloop:
+            raise Exception('already add to loop')
         if self._closed:
             raise Exception('already closed')
         self._eventloop = loop

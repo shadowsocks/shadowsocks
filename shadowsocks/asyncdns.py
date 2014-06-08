@@ -244,9 +244,7 @@ class DNSResolver(object):
         self._hostname_to_cb = {}
         self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                   socket.SOL_UDP)
-        self._sock.setblocking(False)
+        self._sock = None
         self._parse_config()
 
     def _parse_config(self):
@@ -272,7 +270,12 @@ class DNSResolver(object):
         self._dns_server = ('8.8.8.8', 53)
 
     def add_to_loop(self, loop):
+        if self._loop:
+            raise Exception('already add to loop')
         self._loop = loop
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                   socket.SOL_UDP)
+        self._sock.setblocking(False)
         loop.add(self._sock, eventloop.POLL_IN)
         loop.add_handler(self.handle_events)
 
@@ -361,6 +364,9 @@ class DNSResolver(object):
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
+
+    def close(self):
+        self._sock.close()
 
 
 def test():

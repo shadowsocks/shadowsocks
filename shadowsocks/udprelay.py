@@ -85,7 +85,7 @@ def client_key(a, b, c, d):
 
 
 class UDPRelay(object):
-    def __init__(self, config, is_local):
+    def __init__(self, config, dns_resolver, is_local):
         if is_local:
             self._listen_addr = config['local_address']
             self._listen_port = config['local_port']
@@ -96,6 +96,7 @@ class UDPRelay(object):
             self._listen_port = config['server_port']
             self._remote_addr = None
             self._remote_port = None
+        self._dns_resolver = dns_resolver
         self._password = config['password']
         self._method = config['method']
         self._timeout = config['timeout']
@@ -220,6 +221,8 @@ class UDPRelay(object):
             pass
 
     def add_to_loop(self, loop):
+        if self._eventloop:
+            raise Exception('already add to loop')
         if self._closed:
             raise Exception('already closed')
         self._eventloop = loop

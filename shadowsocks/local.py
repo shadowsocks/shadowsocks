@@ -29,6 +29,7 @@ import encrypt
 import eventloop
 import tcprelay
 import udprelay
+import asyncdns
 
 
 def main():
@@ -50,14 +51,18 @@ def main():
         logging.info("starting local at %s:%d" %
                      (config['local_address'], config['local_port']))
 
-        tcp_server = tcprelay.TCPRelay(config, True)
-        udp_server = udprelay.UDPRelay(config, True)
+        dns_resolver = asyncdns.DNSResolver()
+        tcp_server = tcprelay.TCPRelay(config, dns_resolver, True)
+        udp_server = udprelay.UDPRelay(config, dns_resolver, True)
         loop = eventloop.EventLoop()
+        dns_resolver.add_to_loop(loop)
         tcp_server.add_to_loop(loop)
         udp_server.add_to_loop(loop)
         loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)
+        import traceback
+        traceback.print_exc()
         os._exit(0)
 
 if __name__ == '__main__':
