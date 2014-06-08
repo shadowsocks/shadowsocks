@@ -63,11 +63,15 @@ def inet_pton(family, addr):
         raise RuntimeError("What family?")
 
 
-if not hasattr(socket, 'inet_pton'):
-    socket.inet_pton = inet_pton
+def patch_socket():
+    if not hasattr(socket, 'inet_pton'):
+        socket.inet_pton = inet_pton
 
-if not hasattr(socket, 'inet_ntop'):
-    socket.inet_ntop = inet_ntop
+    if not hasattr(socket, 'inet_ntop'):
+        socket.inet_ntop = inet_ntop
+
+
+patch_socket()
 
 
 ADDRTYPE_IPV4 = 1
