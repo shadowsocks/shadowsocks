@@ -45,11 +45,13 @@ CMD_UDP_ASSOCIATE = 3
 # stage 0 init
 # stage 1 hello received, hello sent
 # stage 2 UDP assoc
+# stage 3 DNS
 # stage 4 addr received, reply sent
 # stage 5 remote connected
 
 # remote:
 # stage 0 init
+# stage 3 DNS
 # stage 4 addr received, reply sent
 # stage 5 remote connected
 
