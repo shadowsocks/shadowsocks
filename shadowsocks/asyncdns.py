@@ -298,6 +298,8 @@ class DNSResolver(object):
                 callback((hostname, ip), None)
             if self._hostname_to_cb.__contains__(hostname):
                 del self._hostname_to_cb[hostname]
+            if self._hostname_status.__contains__(hostname):
+                del self._hostname_status[hostname]
 
     def handle_events(self, events):
         for sock, fd, event in events:
@@ -328,6 +330,8 @@ class DNSResolver(object):
                 arr.remove(callback)
                 if not arr:
                     del self._hostname_to_cb[hostname]
+                    if self._hostname_status.__contains__(hostname):
+                        del self._hostname_status[hostname]
 
     def _send_req(self, hostname, qtype):
         logging.debug('resolving %s with type %d using server %s', hostname,
