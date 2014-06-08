@@ -405,6 +405,8 @@ class DNSResolver(object):
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
+                # TODO send again only if waited too long
+                self._send_req(hostname, QTYPE_A)
 
     def close(self):
         self._sock.close()
