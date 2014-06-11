@@ -23,6 +23,7 @@ Install
 
 #### OS X:
 
+    brew install swig
     git clone https://github.com/clowwindy/M2Crypto.git
     cd M2Crypto
     pip install .
