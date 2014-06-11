@@ -201,9 +201,9 @@ def encrypt_all(password, method, op, data):
     if not method:
         [encrypt_table, decrypt_table] = init_table(password)
         if op:
-            return string.translate(encrypt_table, data)
+            return string.translate(data, encrypt_table)
         else:
-            return string.translate(decrypt_table, data)
+            return string.translate(data, decrypt_table)
     else:
         import M2Crypto.EVP
         result = []

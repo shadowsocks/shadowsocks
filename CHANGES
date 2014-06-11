@@ -1,3 +1,6 @@
+2.0.3 2014-06-11
+- Fix table encryption with UDP
+
 2.0.2 2014-06-11
 - Add asynchronous DNS in TCP relay
 
