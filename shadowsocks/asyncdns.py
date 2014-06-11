@@ -164,21 +164,34 @@ def parse_record(data, offset, question=False):
         return nlen + 4, (name, None, record_type, record_class, None, None)
 
 
+def parse_header(data):
+    if len(data) >= 12:
+        header = struct.unpack('!HBBHHHH', data[:12])
+        res_id = header[0]
+        res_qr = header[1] & 128
+        res_tc = header[1] & 2
+        res_ra = header[2] & 128
+        res_rcode = header[2] & 15
+        # assert res_tc == 0
+        # assert res_rcode in [0, 3]
+        res_qdcount = header[3]
+        res_ancount = header[4]
+        res_nscount = header[5]
+        res_arcount = header[6]
+        return (res_id, res_qr, res_tc, res_ra, res_rcode, res_qdcount,
+                res_ancount, res_nscount, res_arcount)
+    return None
+
+
 def parse_response(data):
     try:
         if len(data) >= 12:
-            header = struct.unpack('!HBBHHHH', data[:12])
-            # res_id = header[0]
-            # res_qr = header[1] & 128
-            res_tc = header[1] & 2
-            # res_ra = header[2] & 128
-            res_rcode = header[2] & 15
-            # assert res_tc == 0
-            # assert res_rcode in [0, 3]
-            res_qdcount = header[3]
-            res_ancount = header[4]
-            res_nscount = header[5]
-            res_arcount = header[6]
+            header = parse_header(data)
+            if not header:
+                return None
+            res_id, res_qr, res_tc, res_ra, res_rcode, res_qdcount, \
+                res_ancount, res_nscount, res_arcount = header
+
             qds = []
             ans = []
             offset = 12
