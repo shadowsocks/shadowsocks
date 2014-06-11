@@ -1,3 +1,6 @@
+2.0.2 2014-06-11
+- Add asynchronous DNS in TCP relay
+
 2.0.1 2014-06-05
 - Better logging
 - Maybe fix bad file descriptor
