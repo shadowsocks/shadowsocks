@@ -423,7 +423,9 @@ class DNSResolver(object):
                 self._send_req(hostname, QTYPE_A)
 
     def close(self):
-        self._sock.close()
+        if self._sock:
+            self._sock.close()
+            self._sock = None
 
 
 def test():
