@@ -70,6 +70,7 @@ QTYPE_ANY = 255
 QTYPE_A = 1
 QTYPE_AAAA = 28
 QTYPE_CNAME = 5
+QTYPE_NS = 2
 QCLASS_IN = 1
 
 
@@ -99,10 +100,10 @@ def parse_ip(addrtype, data, length, offset):
         return socket.inet_ntop(socket.AF_INET, data[offset:offset + length])
     elif addrtype == QTYPE_AAAA:
         return socket.inet_ntop(socket.AF_INET6, data[offset:offset + length])
-    elif addrtype == QTYPE_CNAME:
+    elif addrtype in [QTYPE_CNAME, QTYPE_NS]:
         return parse_name(data, offset)[1]
     else:
-        return data
+        return data[offset:offset + length]
 
 
 def parse_name(data, offset):
