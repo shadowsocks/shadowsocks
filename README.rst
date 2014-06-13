@@ -15,7 +15,7 @@ Debian / Ubuntu:
 
 ::
 
-    apt-get install build-essential python-pip python-m2crypto python-dev
+    apt-get install python-pip python-m2crypto
     pip install shadowsocks
 
 CentOS:
@@ -32,6 +32,7 @@ OS X:
 
 ::
 
+    brew install swig
     git clone https://github.com/clowwindy/M2Crypto.git
     cd M2Crypto
     pip install .
