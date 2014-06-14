@@ -76,7 +76,7 @@ Change the proxy settings in your browser to
     hostname: 127.0.0.1
     port:     your local_port
 
-It's recommended to use shadowsocks with AutoProxy or Proxy SwitchySharp.
+It's recommended to use shadowsocks with [SwitchySharp].
 
 Command line args
 ------------------
@@ -115,3 +115,4 @@ Also see [Troubleshooting]
 [TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
 [Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
 [Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
+[SwitchySharp]:    https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm
