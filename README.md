@@ -105,7 +105,6 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see [Troubleshooting]
 
 
-[1.4.x]:           https://github.com/clowwindy/shadowsocks/tree/1.4
 [Build Status]:    https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Chinese Readme]:  https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
