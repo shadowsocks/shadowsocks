@@ -13,7 +13,13 @@ Install
 You'll have a client on your local machine, and install a server on a
 remote server.
 
-For client, find any [GUI client]. For server:
+### Client
+
+* [Windows] / [OS X]
+* [Android] / [iOS]
+* [OpenWRT]
+
+### Server
 
 #### Debian / Ubuntu:
 
@@ -26,23 +32,10 @@ For client, find any [GUI client]. For server:
     easy_install pip
     pip install shadowsocks
 
-#### OS X:
+Configuration
+-------------
 
-    brew install swig
-    git clone https://github.com/clowwindy/M2Crypto.git
-    cd M2Crypto
-    pip install .
-    pip install shadowsocks
-
-#### Windows:
-
-Since installing M2Crypto on Windows is a bit frustrating, use
-[node.js version] instead.
-
-Usage
------
-
-Create a config file `/etc/shadowsocks.json` (or put it in other path).
+On your server create a config file `/etc/shadowsocks.json` (or put it in other path).
 Example:
 
     {
@@ -74,7 +67,8 @@ Explanation of the fields:
 Run `ssserver -c /etc/shadowsocks.json` on your server. To run it in the
 background, use [Supervisor].
 
-On your client machine, run `sslocal -c /etc/shadowsocks.json`.
+On your client machine, use the same configuration as your server, and
+start your client.
 
 Change the proxy settings in your browser to
 
@@ -111,11 +105,14 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see [Troubleshooting]
 
 
+[Android]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
 [Build Status]:    https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Chinese Readme]:  https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
+[iOS]:            https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios
 [Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
-[node.js version]: https://github.com/clowwindy/shadowsocks-nodejs
+[OpenWRT]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
+[OS X]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
 [PyPI]:            https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:    https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
 [Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
@@ -123,3 +120,4 @@ Also see [Troubleshooting]
 [Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
 [Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
 [SwitchySharp]:    https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm
+[Windows]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#windows
