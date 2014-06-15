@@ -10,6 +10,11 @@ A fast tunnel proxy that help you get through firewalls.
 Install
 -------
 
+You'll have a client on your local machine, and install a server on a
+remote server.
+
+For client, find any [GUI client]. For server:
+
 #### Debian / Ubuntu:
 
     apt-get install python-pip python-m2crypto
@@ -31,7 +36,8 @@ Install
 
 #### Windows:
 
-Choose a [GUI client]
+Since installing M2Crypto on Windows is a bit frustrating, use
+[node.js version] instead.
 
 Usage
 -----
@@ -109,6 +115,7 @@ Also see [Troubleshooting]
 [Chinese Readme]:  https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
 [Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
+[node.js version]: https://github.com/clowwindy/shadowsocks-nodejs
 [PyPI]:            https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:    https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
 [Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
