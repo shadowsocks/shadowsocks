@@ -87,6 +87,8 @@ You can use args to override settings from `config.json`.
     ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
 
+List all available args with `-h`.
+
 Wiki
 ----
 
