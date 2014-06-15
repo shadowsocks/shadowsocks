@@ -82,6 +82,9 @@ arguments to force Chrome to use the proxy:
 
     Chrome.exe --proxy-server="socks5://127.0.0.1:1080" --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost"
 
+If you can't even download Chrome, find a friend to download a
+[Chrome Standalone] installer for you.
+
 Command line args
 ------------------
 
@@ -111,19 +114,20 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see [Troubleshooting]
 
 
-[Android]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
-[Build Status]:    https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
-[Chinese Readme]:  https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
-[GUI client]:      https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
-[iOS]:            https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios
-[Issue Tracker]:   https://github.com/clowwindy/shadowsocks/issues?state=open
-[OpenWRT]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
-[OS X]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
-[PyPI]:            https://pypi.python.org/pypi/shadowsocks
-[PyPI version]:    https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
-[Supervisor]:      https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
-[TCP_FASTOPEN]:    https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
-[Travis CI]:       https://travis-ci.org/clowwindy/shadowsocks
-[Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
-[SwitchySharp]:    https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm
-[Windows]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#windows
+[Android]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
+[Build Status]:      https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
+[Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[Chrome Standalone]: https://support.google.com/installer/answer/126299
+[GUI client]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
+[iOS]:               https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios
+[Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
+[OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
+[OS X]:              https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
+[PyPI]:              https://pypi.python.org/pypi/shadowsocks
+[PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+[Supervisor]:        https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
+[TCP_FASTOPEN]:      https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
+[Travis CI]:         https://travis-ci.org/clowwindy/shadowsocks
+[Troubleshooting]:   https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
+[SwitchySharp]:      https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm
+[Windows]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#windows
