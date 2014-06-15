@@ -35,7 +35,7 @@ remote server.
 Configuration
 -------------
 
-On your server create a config file `/etc/shadowsocks.json` (or put it in other path).
+On your server create a config file `/etc/shadowsocks.json`.
 Example:
 
     {
@@ -70,13 +70,17 @@ background, use [Supervisor].
 On your client machine, use the same configuration as your server, and
 start your client.
 
-Change the proxy settings in your browser to
+If you use Chrome, it's recommended to use [SwitchySharp]. Change the proxy 
+settings to
 
     protocol: socks5
     hostname: 127.0.0.1
     port:     your local_port
 
-It's recommended to use shadowsocks with [SwitchySharp].
+If you can't install [SwitchySharp], you can launch Chrome with the following
+arguments to force Chrome to use the proxy:
+
+    Chrome.exe --proxy-server="socks5://127.0.0.1:1080" --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost"
 
 Command line args
 ------------------
