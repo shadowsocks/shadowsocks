@@ -157,7 +157,8 @@ class TCPRelayHandler(object):
                 uncomplete = True
             else:
                 logging.error(e)
-                traceback.print_exc()
+                if self._config['verbose']:
+                    traceback.print_exc()
                 self.destroy()
                 return False
         if uncomplete:
@@ -208,7 +209,8 @@ class TCPRelayHandler(object):
                     self.destroy()
                 else:
                     logging.error(e)
-                    traceback.print_exc()
+                    if self._config['verbose']:
+                        traceback.print_exc()
                     self.destroy()
 
     def _handle_stage_hello(self, data):
@@ -263,7 +265,8 @@ class TCPRelayHandler(object):
                                            self._handle_dns_resolved)
         except Exception as e:
             logging.error(e)
-            traceback.print_exc()
+            if self._config['verbose']:
+                traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
 
@@ -317,7 +320,8 @@ class TCPRelayHandler(object):
                     return
                 except (OSError, IOError) as e:
                     logging.error(e)
-                    traceback.print_exc()
+                    if self._config['verbose']:
+                        traceback.print_exc()
         self.destroy()
 
     def _on_local_read(self):
@@ -375,7 +379,8 @@ class TCPRelayHandler(object):
             self._write_to_sock(data, self._local_sock)
         except Exception as e:
             logging.error(e)
-            traceback.print_exc()
+            if self._config['verbose']:
+                traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
 
@@ -593,7 +598,8 @@ class TCPRelay(object):
                         continue
                     else:
                         logging.error(e)
-                        traceback.print_exc()
+                        if self._config['verbose']:
+                            traceback.print_exc()
             else:
                 if sock:
                     handler = self._fd_to_handlers.get(fd, None)
