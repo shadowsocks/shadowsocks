@@ -46,7 +46,12 @@ def main():
                          'will be ignored')
     else:
         config['port_password'] = {}
-        config['port_password'][str(config['server_port'])] = config['password']
+        server_port = config['server_port']
+        if type(server_port) == list:
+            for a_server_port in server_port:
+                config['port_password'][a_server_port] = config['password']
+        else:
+            config['port_password'][str(server_port)] = config['password']
 
     encrypt.init_table(config['password'], config['method'])
     tcp_servers = []
