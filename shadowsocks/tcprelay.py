@@ -397,19 +397,20 @@ class TCPRelayHandler(object):
             self._update_stream(STREAM_UP, WAIT_STATUS_READING)
 
     def _on_local_error(self):
+        logging.debug('got local error')
         if self._local_sock:
-            logging.debug('got local error')
             logging.error(eventloop.get_sock_error(self._local_sock))
         self.destroy()
 
     def _on_remote_error(self):
+        logging.debug('got remote error')
         if self._remote_sock:
-            logging.debug('got remote error')
             logging.error(eventloop.get_sock_error(self._remote_sock))
         self.destroy()
 
     def handle_event(self, sock, event):
         if self._stage == STAGE_DESTROYED:
+            logging.debug('ignore handle_event: destroyed')
             return
         # order is important
         if sock == self._remote_sock:
@@ -439,6 +440,7 @@ class TCPRelayHandler(object):
 
     def destroy(self):
         if self._stage == STAGE_DESTROYED:
+            logging.debug('already destroyed')
             return
         self._stage = STAGE_DESTROYED
         if self._remote_address:
@@ -447,11 +449,13 @@ class TCPRelayHandler(object):
         else:
             logging.debug('destroy')
         if self._remote_sock:
+            logging.debug('destroying remote')
             self._loop.remove(self._remote_sock)
             del self._fd_to_handlers[self._remote_sock.fileno()]
             self._remote_sock.close()
             self._remote_sock = None
         if self._local_sock:
+            logging.debug('destroying local')
             self._loop.remove(self._local_sock)
             del self._fd_to_handlers[self._local_sock.fileno()]
             self._local_sock.close()
@@ -539,6 +543,7 @@ class TCPRelay(object):
         # we just need a sorted last_activity queue and it's faster than heapq
         # in fact we can do O(1) insertion/remove so we invent our own
         if self._timeouts:
+            logging.debug('sweeping timeouts')
             now = time.time()
             length = len(self._timeouts)
             pos = self._timeout_offset
@@ -569,15 +574,15 @@ class TCPRelay(object):
 
     def _handle_events(self, events):
         for sock, fd, event in events:
-            if sock:
-                logging.debug('fd %d %s', fd,
-                              eventloop.EVENT_NAMES.get(event, event))
+            # if sock:
+            #     logging.debug('fd %d %s', fd,
+            #                   eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
                     # TODO
                     raise Exception('server_socket error')
                 try:
-                    # logging.debug('accept')
+                    logging.debug('accept')
                     conn = self._server_socket.accept()
                     TCPRelayHandler(self, self._fd_to_handlers, self._eventloop,
                                     conn[0], self._config, self._dns_resolver,
