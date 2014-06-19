@@ -1,3 +1,7 @@
+2.0.6 2014-06-19
+- Fix CPU 100% on POLL_HUP
+- More friendly logging
+
 2.0.5 2014-06-18
 - Support a simple config format for multiple ports
 
