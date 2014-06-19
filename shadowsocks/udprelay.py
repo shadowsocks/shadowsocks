@@ -133,6 +133,8 @@ class UDPRelay(object):
     def _handle_server(self):
         server = self._server_socket
         data, r_addr = server.recvfrom(BUF_SIZE)
+        if not data:
+            logging.debug('UDP handle_server: data is empty')
         if self._is_local:
             frag = ord(data[2])
             if frag != 0:
@@ -141,9 +143,10 @@ class UDPRelay(object):
             else:
                 data = data[3:]
         else:
-            # decrypt data
             data = encrypt.encrypt_all(self._password, self._method, 0, data)
+            # decrypt data
             if not data:
+                logging.debug('UDP handle_server: data is empty after decrypt')
                 return
         header_result = parse_header(data)
         if header_result is None:
@@ -191,6 +194,9 @@ class UDPRelay(object):
 
     def _handle_client(self, sock):
         data, r_addr = sock.recvfrom(BUF_SIZE)
+        if not data:
+            logging.debug('UDP handle_client: data is empty')
+            return
         if not self._is_local:
             addrlen = len(r_addr[0])
             if addrlen > 255:
@@ -235,8 +241,12 @@ class UDPRelay(object):
     def _handle_events(self, events):
         for sock, fd, event in events:
             if sock == self._server_socket:
+                if event & eventloop.POLL_ERR:
+                    logging.error('UDP server_socket err')
                 self._handle_server()
             elif sock and (fd in self._sockets):
+                if event & eventloop.POLL_ERR:
+                    logging.error('UDP client_socket err')
                 self._handle_client(sock)
         now = time.time()
         if now - self._last_time > 3.5:

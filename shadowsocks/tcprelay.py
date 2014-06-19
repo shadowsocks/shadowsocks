@@ -589,9 +589,9 @@ class TCPRelay(object):
 
     def _handle_events(self, events):
         for sock, fd, event in events:
-            # if sock:
-            #     logging.debug('fd %d %s', fd,
-            #                   eventloop.EVENT_NAMES.get(event, event))
+            if sock:
+                logging.debug('fd %d %s', fd,
+                              eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
                     # TODO

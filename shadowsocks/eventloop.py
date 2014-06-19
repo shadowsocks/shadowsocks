@@ -199,9 +199,10 @@ class EventLoop(object):
             except (OSError, IOError) as e:
                 if errno_from_exception(e) == errno.EPIPE:
                     # Happens when the client closes the connection
+                    logging.error('poll:%s', e)
                     continue
                 else:
-                    logging.error(e)
+                    logging.error('poll:%s', e)
                     import traceback
                     traceback.print_exc()
                     continue
