@@ -433,7 +433,7 @@ class TCPRelayHandler(object):
                 self._on_remote_error()
             if self._stage == STAGE_DESTROYED:
                 return
-            if event & eventloop.POLL_IN:
+            if event & (eventloop.POLL_IN | eventloop.POLL_HUP):
                 self._on_remote_read()
             if self._stage == STAGE_DESTROYED:
                 return
@@ -444,7 +444,7 @@ class TCPRelayHandler(object):
                 self._on_local_error()
             if self._stage == STAGE_DESTROYED:
                 return
-            if event & eventloop.POLL_IN:
+            if event & (eventloop.POLL_IN | eventloop.POLL_HUP):
                 self._on_local_read()
             if self._stage == STAGE_DESTROYED:
                 return
