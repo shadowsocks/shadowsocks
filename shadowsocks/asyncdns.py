@@ -25,6 +25,7 @@ import time
 import os
 import socket
 import struct
+import re
 import logging
 import common
 import lru_cache
@@ -32,6 +33,8 @@ import eventloop
 
 
 CACHE_SWEEP_INTERVAL = 30
+
+VALID_HOSTNAME = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
 
 common.patch_socket()
 
@@ -230,9 +233,17 @@ def is_ip(address):
         try:
             socket.inet_pton(family, address)
             return True
-        except (OSError, IOError):
+        except (TypeError, OSError, IOError):
             pass
     return False
+
+
+def is_valid_hostname(hostname):
+    if len(hostname) > 255:
+        return False
+    if hostname[-1] == ".":
+        hostname = hostname[:-1]
+    return all(VALID_HOSTNAME.match(x) for x in hostname.split("."))
 
 
 class DNSResponse(object):
@@ -411,6 +422,9 @@ class DNSResolver(object):
             ip = self._cache[hostname]
             callback((hostname, ip), None)
         else:
+            if not is_valid_hostname(hostname):
+                callback(None, Exception('invalid hostname: %s' % hostname))
+                return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
                 self._hostname_status[hostname] = STATUS_IPV4
