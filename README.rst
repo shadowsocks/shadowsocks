@@ -10,6 +10,23 @@ A fast tunnel proxy that help you get through firewalls.
 Install
 -------
 
+You'll have a client on your local machine, and install a server on a
+remote server.
+
+Client
+~~~~~~
+
+-  `Windows <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#windows>`__
+   / `OS
+   X <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x>`__
+-  `Android <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android>`__
+   /
+   `iOS <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios>`__
+-  `OpenWRT <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt>`__
+
+Server
+~~~~~~
+
 Debian / Ubuntu:
 ^^^^^^^^^^^^^^^^
 
@@ -27,28 +44,10 @@ CentOS:
     easy_install pip
     pip install shadowsocks
 
-OS X:
-^^^^^
+Configuration
+-------------
 
-::
-
-    brew install swig
-    git clone https://github.com/clowwindy/M2Crypto.git
-    cd M2Crypto
-    pip install .
-    pip install shadowsocks
-
-Windows:
-^^^^^^^^
-
-Choose a `GUI
-client <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients>`__
-
-Usage
------
-
-Create a config file ``/etc/shadowsocks.json`` (or put it in other
-path). Example:
+On your server create a config file ``/etc/shadowsocks.json``. Example:
 
 ::
 
@@ -92,9 +91,12 @@ Run ``ssserver -c /etc/shadowsocks.json`` on your server. To run it in
 the background, use
 `Supervisor <https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor>`__.
 
-On your client machine, run ``sslocal -c /etc/shadowsocks.json``.
+On your client machine, use the same configuration as your server, and
+start your client.
 
-Change the proxy settings in your browser to
+If you use Chrome, it's recommended to use
+`SwitchySharp <https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm>`__.
+Change the proxy settings to
 
 ::
 
@@ -102,8 +104,18 @@ Change the proxy settings in your browser to
     hostname: 127.0.0.1
     port:     your local_port
 
-It's recommended to use shadowsocks with AutoProxy or Proxy
-SwitchySharp.
+If you can't install
+`SwitchySharp <https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm>`__,
+you can launch Chrome with the following arguments to force Chrome to
+use the proxy:
+
+::
+
+    Chrome.exe --proxy-server="socks5://127.0.0.1:1080" --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost"
+
+If you can't even download Chrome, find a friend to download a `Chrome
+Standalone <https://support.google.com/installer/answer/126299>`__
+installer for you.
 
 Command line args
 -----------------
@@ -115,6 +127,8 @@ You can use args to override settings from ``config.json``.
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb --workers 2
     ssserver -c /etc/shadowsocks/config.json
+
+List all available args with ``-h``.
 
 Wiki
 ----
@@ -137,7 +151,7 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see
 `Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
 
-.. |PyPI version| image:: https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+.. |PyPI version| image:: https://badge.fury.io/py/shadowsocks.svg
    :target: https://pypi.python.org/pypi/shadowsocks
-.. |Build Status| image:: https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
+.. |Build Status| image:: https://travis-ci.org/clowwindy/shadowsocks.svg?branch=master
    :target: https://travis-ci.org/clowwindy/shadowsocks
