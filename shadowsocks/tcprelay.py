@@ -30,6 +30,7 @@ import traceback
 import random
 import encrypt
 import eventloop
+import utils
 from common import parse_header
 
 
@@ -559,7 +560,7 @@ class TCPRelay(object):
         # we just need a sorted last_activity queue and it's faster than heapq
         # in fact we can do O(1) insertion/remove so we invent our own
         if self._timeouts:
-            logging.debug('sweeping timeouts')
+            logging.log(utils.VERBOSE_LEVEL, 'sweeping timeouts')
             now = time.time()
             length = len(self._timeouts)
             pos = self._timeout_offset
@@ -590,9 +591,9 @@ class TCPRelay(object):
 
     def _handle_events(self, events):
         for sock, fd, event in events:
-            # if sock:
-            #     logging.debug('fd %d %s', fd,
-            #                   eventloop.EVENT_NAMES.get(event, event))
+            if sock:
+                logging.log(utils.VERBOSE_LEVEL, 'fd %d %s', fd,
+                            eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
                     # TODO

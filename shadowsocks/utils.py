@@ -28,6 +28,9 @@ import getopt
 import logging
 
 
+VERBOSE_LEVEL = 5
+
+
 def check_python():
     info = sys.version_info
     if not (info[0] == 2 and info[1] >= 6):
@@ -106,6 +109,7 @@ def get_config(is_local):
             config = {}
 
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+        v_count = 0
         for key, value in optlist:
             if key == '-p':
                 config['server_port'] = int(value)
@@ -120,7 +124,10 @@ def get_config(is_local):
             elif key == '-b':
                 config['local_address'] = value
             elif key == '-v':
-                config['verbose'] = True
+                v_count += 1
+                print v_count
+                # '-vv' turns on more verbose mode
+                config['verbose'] = v_count
             elif key == '-t':
                 config['timeout'] = int(value)
             elif key == '--fast-open':
@@ -148,11 +155,14 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = config.get('local_address', '127.0.0.1')
 
-    if config['verbose']:
+    logging.getLogger('').handlers = []
+    logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
+    if config['verbose'] == 2:
+        level = VERBOSE_LEVEL
+    elif config['verbose']:
         level = logging.DEBUG
     else:
         level = logging.INFO
-    logging.getLogger('').handlers = []
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S', filemode='a+')
