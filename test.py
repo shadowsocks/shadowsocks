@@ -7,11 +7,11 @@ import signal
 import select
 import time
 from subprocess import Popen, PIPE
-from shadowsocks import encrypt_salsa20
 
-encrypt_salsa20.test()
-
-print 'encryption test passed'
+if 'salsa20' in sys.argv[-1]:
+    from shadowsocks import encrypt_salsa20
+    encrypt_salsa20.test()
+    print 'encryption test passed'
 
 p1 = Popen(['python', 'shadowsocks/server.py', '-c', sys.argv[-1]], stdin=PIPE,
            stdout=PIPE, stderr=PIPE, close_fds=True)
