@@ -512,12 +512,13 @@ class TCPRelay(object):
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(sa)
         server_socket.setblocking(False)
-        server_socket.listen(1024)
         if config['fast_open']:
             try:
                 server_socket.setsockopt(socket.SOL_TCP, 23, 5)
             except socket.error:
                 logging.error('warning: fast open is not available')
+                self._config['fast_open'] = False
+        server_socket.listen(1024)
         self._server_socket = server_socket
 
     def add_to_loop(self, loop):
