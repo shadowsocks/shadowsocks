@@ -1,3 +1,9 @@
+2.0.7 2014-06-21
+- Fix fastopen on local
+- Fallback when fastopen is not available
+- Add verbose logging mode -vv
+- Verify if hostname is valid
+
 2.0.6 2014-06-19
 - Fix CPU 100% on POLL_HUP
 - More friendly logging
