@@ -115,7 +115,7 @@ Also see [Troubleshooting]
 
 
 [Android]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
-[Build Status]:      https://travis-ci.org/clowwindy/shadowsocks.svg?branch=master
+[Build Status]:      https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Chrome Standalone]: https://support.google.com/installer/answer/126299
 [GUI client]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
@@ -124,7 +124,7 @@ Also see [Troubleshooting]
 [OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
 [OS X]:              https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
-[PyPI version]:      https://badge.fury.io/py/shadowsocks.svg
+[PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
 [Supervisor]:        https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
 [TCP_FASTOPEN]:      https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
 [Travis CI]:         https://travis-ci.org/clowwindy/shadowsocks

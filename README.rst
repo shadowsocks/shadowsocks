@@ -151,7 +151,7 @@ Mailing list: http://groups.google.com/group/shadowsocks
 Also see
 `Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
 
-.. |PyPI version| image:: https://badge.fury.io/py/shadowsocks.svg
+.. |PyPI version| image:: https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
    :target: https://pypi.python.org/pypi/shadowsocks
-.. |Build Status| image:: https://travis-ci.org/clowwindy/shadowsocks.svg?branch=master
+.. |Build Status| image:: https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
    :target: https://travis-ci.org/clowwindy/shadowsocks
