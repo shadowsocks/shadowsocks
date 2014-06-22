@@ -233,7 +233,7 @@ def is_ip(address):
         try:
             socket.inet_pton(family, address)
             return True
-        except (TypeError, OSError, IOError):
+        except (TypeError, ValueError, OSError, IOError):
             pass
     return False
 
