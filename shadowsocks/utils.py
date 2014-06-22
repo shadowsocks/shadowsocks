@@ -125,7 +125,6 @@ def get_config(is_local):
                 config['local_address'] = value
             elif key == '-v':
                 v_count += 1
-                print v_count
                 # '-vv' turns on more verbose mode
                 config['verbose'] = v_count
             elif key == '-t':
