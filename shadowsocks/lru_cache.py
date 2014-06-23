@@ -50,13 +50,14 @@ class LRUCache(collections.MutableMapping):
             least = self._last_visits[0]
             if now - least <= self.timeout:
                 break
+            if self.close_callback is not None:
+                for key in self._time_to_keys[least]:
+                    if self._store.__contains__(key):
+                        value = self._store[key]
+                        self.close_callback(value)
             for key in self._time_to_keys[least]:
                 heapq.heappop(self._last_visits)
                 if self._store.__contains__(key):
-                    value = self._store[key]
-                    if self.close_callback is not None:
-                        self.close_callback(value)
-
                     del self._store[key]
                     c += 1
             del self._time_to_keys[least]
