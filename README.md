@@ -107,11 +107,10 @@ MIT
 
 Bugs and Issues
 ----------------
-Please visit [Issue Tracker]
 
-Mailing list: http://groups.google.com/group/shadowsocks
-
-Also see [Troubleshooting]
+* [Troubleshooting]
+* [Issue Tracker]
+* [Mailing list]
 
 
 [Android]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
@@ -121,6 +120,7 @@ Also see [Troubleshooting]
 [GUI client]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
 [iOS]:               https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios
 [Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
+[Mailing list]:      http://groups.google.com/group/shadowsocks
 [OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
 [OS X]:              https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
