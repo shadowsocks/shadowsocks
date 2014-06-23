@@ -32,7 +32,7 @@ import lru_cache
 import eventloop
 
 
-CACHE_SWEEP_INTERVAL = 10
+CACHE_SWEEP_INTERVAL = 30
 
 VALID_HOSTNAME = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
 
@@ -267,21 +267,18 @@ class DNSResolver(object):
         self._hosts = {}
         self._hostname_status = {}
         self._hostname_to_cb = {}
-        self._cb_to_hostname = lru_cache.LRUCache(timeout=15,
-                                                  close_callback=self._timedout)
+        self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
         self._last_time = time.time()
         self._sock = None
         self._servers = None
-        self._server_index = 0
         self._parse_resolv()
         self._parse_hosts()
         # TODO monitor hosts change and reload hosts
         # TODO parse /etc/gai.conf and follow its rules
 
     def _parse_resolv(self):
-        servers = []
-        self._servers = servers
+        self._servers = []
         try:
             with open('/etc/resolv.conf', 'rb') as f:
                 content = f.readlines()
@@ -293,22 +290,11 @@ class DNSResolver(object):
                             if len(parts) >= 2:
                                 server = parts[1]
                                 if is_ip(server):
-                                    servers.append(server)
-                # TODO support more servers
-
+                                    self._servers.append(server)
         except IOError:
             pass
-        if not servers:
-            servers.append('8.8.8.8')
-        self._dns_server = (servers[0], 53)
-
-    def _timedout(self, hostname):
-        error = Exception('timed out when resolving %s with DNS %s' %
-                          (hostname, self._dns_server))
-        self._server_index += 1
-        self._server_index %= len(self._servers)
-        self._dns_server = (self._servers[self._server_index], 53)
-        self._call_callback(hostname, None, error=error)
+        if not self._servers:
+            self._servers = ['8.8.4.4', '8.8.8.8']
 
     def _parse_hosts(self):
         etc_path = '/etc/hosts'
@@ -389,7 +375,7 @@ class DNSResolver(object):
                 self._loop.add(self._sock, eventloop.POLL_IN)
             else:
                 data, addr = sock.recvfrom(1024)
-                if addr != self._dns_server:
+                if addr[0] not in self._servers:
                     logging.warn('received a packet other than our dns')
                     break
                 self._handle_data(data)
@@ -397,7 +383,6 @@ class DNSResolver(object):
         now = time.time()
         if now - self._last_time > CACHE_SWEEP_INTERVAL:
             self._cache.sweep()
-            self._cb_to_hostname.sweep()
             self._last_time = now
 
     def remove_callback(self, callback):
@@ -413,13 +398,14 @@ class DNSResolver(object):
                         del self._hostname_status[hostname]
 
     def _send_req(self, hostname, qtype):
-        logging.debug('resolving %s with type %d using server %s', hostname,
-                      qtype, self._dns_server)
         self._request_id += 1
         if self._request_id > 32768:
             self._request_id = 1
         req = build_request(hostname, qtype, self._request_id)
-        self._sock.sendto(req, self._dns_server)
+        for server in self._servers:
+            logging.debug('resolving %s with type %d using server %s', hostname,
+                          qtype, server)
+            self._sock.sendto(req, (server, 53))
 
     def resolve(self, hostname, callback):
         if not hostname:
