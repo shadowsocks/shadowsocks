@@ -4,7 +4,8 @@ How to contribute
 Before you submit issues, please read [Troubleshooting] and take a few minutes
 to read this guide.
 
-在你提交问题前，请先[自行诊断]一下，然后再提交，附上诊断过程中的问题和下列结果。
+在你提交问题前，请先[自行诊断]一下，然后再提交，附上诊断过程中的问题和下列结果，
+否则我们无法重现你的问题，也就帮不了你。
 
 Issues
 ------
