@@ -166,7 +166,8 @@ class TCPRelayHandler(object):
                 uncomplete = True
         except (OSError, IOError) as e:
             error_no = eventloop.errno_from_exception(e)
-            if error_no in (errno.EAGAIN, errno.EINPROGRESS):
+            if error_no in (errno.EAGAIN, errno.EINPROGRESS,
+                            errno.EWOULDBLOCK):
                 uncomplete = True
             else:
                 logging.error(e)
@@ -349,7 +350,7 @@ class TCPRelayHandler(object):
             data = self._local_sock.recv(BUF_SIZE)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
-                    (errno.ETIMEDOUT, errno.EAGAIN):
+                    (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
                 return
         if not data:
             self.destroy()
@@ -381,7 +382,7 @@ class TCPRelayHandler(object):
             data = self._remote_sock.recv(BUF_SIZE)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
-                    (errno.ETIMEDOUT, errno.EAGAIN):
+                    (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
                 return
         if not data:
             self.destroy()
@@ -610,7 +611,8 @@ class TCPRelay(object):
                                     self._is_local)
                 except (OSError, IOError) as e:
                     error_no = eventloop.errno_from_exception(e)
-                    if error_no in (errno.EAGAIN, errno.EINPROGRESS):
+                    if error_no in (errno.EAGAIN, errno.EINPROGRESS,
+                                    errno.EWOULDBLOCK):
                         continue
                     else:
                         logging.error(e)
