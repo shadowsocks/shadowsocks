@@ -143,13 +143,10 @@ MIT
 Bugs and Issues
 ---------------
 
-Please visit `Issue
-Tracker <https://github.com/clowwindy/shadowsocks/issues?state=open>`__
-
-Mailing list: http://groups.google.com/group/shadowsocks
-
-Also see
-`Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
+-  `Troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
+-  `Issue
+   Tracker <https://github.com/clowwindy/shadowsocks/issues?state=open>`__
+-  `Mailing list <http://groups.google.com/group/shadowsocks>`__
 
 .. |PyPI version| image:: https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
    :target: https://pypi.python.org/pypi/shadowsocks
