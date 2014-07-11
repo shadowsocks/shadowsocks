@@ -176,13 +176,14 @@ class UDPRelay(object):
             self._sockets.add(client.fileno())
             self._eventloop.add(client, eventloop.POLL_IN)
 
-        data = data[header_length:]
-        if not data:
-            return
         if self._is_local:
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
+        else:
+            data = data[header_length:]
+        if not data:
+            return
         try:
             client.sendto(data, (server_addr, server_port))
         except IOError as e:
