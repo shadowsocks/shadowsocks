@@ -71,6 +71,7 @@ import socket
 import logging
 import struct
 import errno
+import random
 import encrypt
 import eventloop
 import lru_cache
@@ -86,6 +87,7 @@ def client_key(a, b, c, d):
 
 class UDPRelay(object):
     def __init__(self, config, dns_resolver, is_local):
+        self._config = config
         if is_local:
             self._listen_addr = config['local_address']
             self._listen_port = config['local_port']
@@ -121,6 +123,15 @@ class UDPRelay(object):
         server_socket.setblocking(False)
         self._server_socket = server_socket
 
+    def _get_a_server(self):
+        server = self._config['server']
+        server_port = self._config['server_port']
+        if type(server_port) == list:
+            server_port = random.choice(server_port)
+        logging.debug('chosen server: %s:%d', server, server_port)
+        # TODO support multiple server IP
+        return server, server_port
+
     def _close_client(self, client):
         if hasattr(client, 'close'):
             self._sockets.remove(client.fileno())
@@ -154,7 +165,7 @@ class UDPRelay(object):
         addrtype, dest_addr, dest_port, header_length = header_result
 
         if self._is_local:
-            server_addr, server_port = self._remote_addr, self._remote_port
+            server_addr, server_port = self._get_a_server()
         else:
             server_addr, server_port = dest_addr, dest_port
 
