@@ -216,9 +216,12 @@ def encrypt_all(password, method, op, data):
         else:
             iv = data[:iv_len]
             data = data[iv_len:]
-        cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
-                                     key_as_bytes=0, d='md5', salt=None, i=1,
-                                     padding=1)
+        if method != 'salsa20-ctr':
+            cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
+                                         op, key_as_bytes=0, d='md5',
+                                         salt=None, i=1, padding=1)
+        else:
+            cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
         result.append(cipher.update(data))
         f = cipher.final()
         if f:
