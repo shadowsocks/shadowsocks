@@ -38,15 +38,27 @@ try:
 
         if local_ready and server_ready and p3 is None:
             time.sleep(1)
-            p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
-                       '--socks5-hostname', '127.0.0.1:1081'], close_fds=True)
+
             break
 
+    p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
+               '--socks5-hostname', '127.0.0.1:1081'], close_fds=True)
     if p3 is not None:
         r = p3.wait()
-        if r == 0:
-            print 'test passed'
-        sys.exit(r)
+        if r != 0:
+            sys.exit(r)
+    else:
+        sys.exit(1)
+
+    p4 = Popen(['socksify', 'dig', '@8.8.8.8', 'www.google.com'],
+               close_fds=True)
+    if p4 is not None:
+        r = p4.wait()
+        if r != 0:
+            sys.exit(r)
+    else:
+        sys.exit(1)
+    print 'test passed'
 
 finally:
     for p in [p1, p2]:
