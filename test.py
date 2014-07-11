@@ -66,5 +66,3 @@ finally:
             os.kill(p.pid, signal.SIGTERM)
         except OSError:
             pass
-   
-sys.exit(-1)
