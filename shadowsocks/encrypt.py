@@ -223,7 +223,4 @@ def encrypt_all(password, method, op, data):
         else:
             cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
         result.append(cipher.update(data))
-        f = cipher.final()
-        if f:
-            result.append(f)
         return ''.join(result)
