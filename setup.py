@@ -6,7 +6,7 @@ with open('README.rst') as f:
 
 setup(
     name="shadowsocks",
-    version="2.0.10",
+    version="2.0.11",
     license='MIT',
     description="A fast tunnel proxy that help you get through firewalls",
     author='clowwindy',
@@ -14,7 +14,7 @@ setup(
     url='https://github.com/clowwindy/shadowsocks',
     packages=['shadowsocks'],
     package_data={
-        'shadowsocks': ['README.rst', 'LICENSE', 'config.json']
+        'shadowsocks': ['README.rst', 'LICENSE']
     },
     install_requires=[],
     entry_points="""
