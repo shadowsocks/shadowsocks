@@ -60,9 +60,8 @@ def init_table(key, method=None):
         try:
             __import__('M2Crypto')
         except ImportError:
-            logging.error('M2Crypto is required to use encryption other than '
-                          'default method, please run `apt-get install '
-                          'python-m2crypto`')
+            logging.error(('M2Crypto is required to use %s, please run'
+                           ' `apt-get install python-m2crypto`') % method)
             sys.exit(1)
     if not method:
         if key in cached_tables:
