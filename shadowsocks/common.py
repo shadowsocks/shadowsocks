@@ -79,6 +79,21 @@ ADDRTYPE_IPV6 = 4
 ADDRTYPE_HOST = 3
 
 
+def pack_addr(address):
+    for family in (socket.AF_INET, socket.AF_INET6):
+        try:
+            r = socket.inet_pton(family, address)
+            if family == socket.AF_INET6:
+                return '\x04' + r
+            else:
+                return '\x01' + r
+        except (TypeError, ValueError, OSError, IOError):
+            pass
+    if len(address) > 255:
+        address = address[:255]  # TODO
+    return '\x03' + chr(len(address)) + address
+
+
 def parse_header(data):
     addrtype = ord(data[0])
     dest_addr = None

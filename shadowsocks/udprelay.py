@@ -75,7 +75,7 @@ import random
 import encrypt
 import eventloop
 import lru_cache
-from common import parse_header
+from common import parse_header, pack_addr
 
 
 BUF_SIZE = 65536
@@ -214,8 +214,7 @@ class UDPRelay(object):
             if addrlen > 255:
                 # drop
                 return
-            data = '\x03' + chr(addrlen) + r_addr[0] + \
-                   struct.pack('>H', r_addr[1]) + data
+            data = pack_addr(r_addr[0]) + struct.pack('>H', r_addr[1]) + data
             response = encrypt.encrypt_all(self._password, self._method, 1,
                                            data)
             if not response:
