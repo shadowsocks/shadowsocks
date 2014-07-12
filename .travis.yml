@@ -12,10 +12,10 @@ before_install:
   - pip install m2crypto salsa20
   - sudo tests/socksify/install.sh
 script:
-  - python test.py -c tests/table.json
-  - python test.py -c tests/aes.json
-  - python test.py -c tests/salsa20.json
-  - python test.py -c tests/server-multi-ports.json
-  - python test.py -c tests/server-multi-passwd.json
-  - python test.py -c tests/server-multi-passwd-table.json
-  - python test.py -c tests/workers.json
+  - python tests/test.py -c tests/table.json
+  - python tests/test.py -c tests/aes.json
+  - python tests/test.py -c tests/salsa20.json
+  - python tests/test.py -c tests/server-multi-ports.json
+  - python tests/test.py -c tests/server-multi-passwd.json
+  - python tests/test.py -c tests/server-multi-passwd-table.json
+  - python tests/test.py -c tests/workers.json

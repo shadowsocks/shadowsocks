@@ -8,6 +8,8 @@ import select
 import time
 from subprocess import Popen, PIPE
 
+sys.path.insert(0, '../')
+
 if 'salsa20' in sys.argv[-1]:
     from shadowsocks import encrypt_salsa20
     encrypt_salsa20.test()
