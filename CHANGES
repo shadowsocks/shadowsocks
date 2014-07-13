@@ -1,3 +1,6 @@
+2.0.11 2014-07-12
+- Prefers IP addresses over hostnames, more friendly with socksify and openvpn
+
 2.0.10 2014-07-11
 - Fix UDP on local
 
