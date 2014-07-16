@@ -267,7 +267,7 @@ def check_port_conflict(port, show_logging=True):
         db = mmap.mmap(services_file.fileno(), 0, access=mmap.ACCESS_READ)
         for protocal in ['tcp','udp']:
 
-            sub_index = db.find('%d/%s'% (port, protocal))
+            sub_index = db.find('%s/%s'% (port, protocal))
             if sub_index < 0:
                 break
 
