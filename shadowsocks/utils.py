@@ -239,3 +239,46 @@ def _decode_dict(data):
             value = _decode_dict(value)
         rv[key] = value
     return rv
+
+
+def check_port_conflict(port, show_logging=True):
+    """Check whether Shadowsock bind port conflicted with services
+       registered in services database from Linux /etc/services
+       If conflicted, show logging warning and return tuple that conflicted
+       else, return None
+
+    :port: int bind port (TCP/UDP)
+    :returns: None/tuple that conflicted
+
+    """
+    conflicted = []
+
+    root_path = os.path.abspath(os.path.dirname(__file__))
+    services_path = os.path.join(root_path, 'services.db')
+
+    if not os.path.isfile(services_path):
+        logging.warn('Services file does not existed')
+        return conflicted
+
+    import mmap
+    
+    with open(services_path) as services_file:
+
+        db = mmap.mmap(services_file.fileno(), 0, access=mmap.ACCESS_READ)
+        for protocal in ['tcp','udp']:
+
+            sub_index = db.find('%s/%s'% (port, protocal))
+            if sub_index < 0:
+                break
+
+            index = db.rfind('\n', max(sub_index-500, 0), sub_index)+1
+            db.seek(index)
+            line = db.readline()
+            if show_logging:
+                logging.warn('%s m)conflicting with: %s ', protocal.upper(),
+                                                           line.replace('\t', ' '))
+            conflicted.append((protocal, port))
+
+        db.close()
+
+    return conflicted
