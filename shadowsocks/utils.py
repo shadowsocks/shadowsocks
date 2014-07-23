@@ -84,10 +84,10 @@ def check_config(config):
 
 def get_config(is_local):
     if is_local:
-        shortopts = 's:b:p:k:l:m:c:t:v'
+        shortopts = 'hs:b:p:k:l:m:c:t:v'
         longopts = ['fast-open']
     else:
-        shortopts = 's:p:k:m:c:t:v'
+        shortopts = 'hs:p:k:m:c:t:v'
         longopts = ['fast-open', 'workers:']
     try:
         config_path = find_config()
@@ -133,6 +133,12 @@ def get_config(is_local):
                 config['fast_open'] = True
             elif key == '--workers':
                 config['workers'] = value
+            elif key == '-h':
+                if is_local:
+                    print_local_help()
+                else:
+                    print_server_help()
+                sys.exit(0)
     except getopt.GetoptError as e:
         print >>sys.stderr, e
         if is_local:
