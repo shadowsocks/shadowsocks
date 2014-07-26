@@ -84,10 +84,10 @@ def check_config(config):
 
 def get_config(is_local):
     if is_local:
-        shortopts = 'hs:b:p:k:l:m:c:t:v'
+        shortopts = 'hs:b:p:k:l:m:c:t:vq'
         longopts = ['fast-open']
     else:
-        shortopts = 'hs:p:k:m:c:t:v'
+        shortopts = 'hs:p:k:m:c:t:vq'
         longopts = ['fast-open', 'workers:']
     try:
         config_path = find_config()
@@ -139,6 +139,9 @@ def get_config(is_local):
                 else:
                     print_server_help()
                 sys.exit(0)
+            elif key == '-q':
+                v_count -= 1
+                config['verbose'] = v_count
     except getopt.GetoptError as e:
         print >>sys.stderr, e
         if is_local:
@@ -162,10 +165,14 @@ def get_config(is_local):
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
-    if config['verbose'] == 2:
+    if config['verbose'] >= 2:
         level = VERBOSE_LEVEL
-    elif config['verbose']:
+    elif config['verbose'] == 1:
         level = logging.DEBUG
+    elif config['verbose'] == -1:
+        level = logging.WARN
+    elif config['verbose'] <= -2:
+        level = logging.ERROR
     else:
         level = logging.INFO
     logging.basicConfig(level=level,
@@ -180,7 +187,7 @@ def get_config(is_local):
 def print_local_help():
     print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR]
                 -l LOCAL_PORT -k PASSWORD -m METHOD [-t TIMEOUT] [-c CONFIG]
-                [--fast-open] [-v]
+                [--fast-open] [-v] [-q]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -193,7 +200,8 @@ optional arguments:
   -t TIMEOUT            timeout in seconds
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
-  -v                    verbose mode
+  -v, -vv               verbose mode
+  -q, -qq               quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
 '''
@@ -201,7 +209,8 @@ Online help: <https://github.com/clowwindy/shadowsocks>
 
 def print_server_help():
     print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD
-                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v]
+                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open] [--workders]
+                [-v] [-q]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -213,7 +222,8 @@ optional arguments:
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS     number of workers, available on Unix/Linux
-  -v                    verbose mode
+  -v, -vv               verbose mode
+  -q, -qq               quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
 '''
