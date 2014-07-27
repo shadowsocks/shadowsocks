@@ -117,12 +117,11 @@ Bugs and Issues
 [Build Status]:      https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Chrome Standalone]: https://support.google.com/installer/answer/126299
-[GUI client]:        https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients
-[iOS]:               https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#ios
+[iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
 [Mailing list]:      http://groups.google.com/group/shadowsocks
 [OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
-[OS X]:              https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#os-x
+[OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
 [Supervisor]:        https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor
