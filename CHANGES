@@ -1,3 +1,7 @@
+2.1.0 2014-08-01
+- Does not ship config.json
+- Better error message
+
 2.0.12 2014-07-26
 - Support -q quiet mode
 - Exit 0 when showing help with -h
