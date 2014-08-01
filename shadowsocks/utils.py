@@ -83,6 +83,8 @@ def check_config(config):
 
 
 def get_config(is_local):
+    logging.basicConfig(level=logging.INFO,
+                        format='%(levelname)-s: %(message)s', filemode='a+')
     if is_local:
         shortopts = 'hs:b:p:k:l:m:c:t:vq'
         longopts = ['fast-open']
@@ -144,24 +146,36 @@ def get_config(is_local):
                 config['verbose'] = v_count
     except getopt.GetoptError as e:
         print >>sys.stderr, e
-        if is_local:
-            print_local_help()
-        else:
-            print_server_help()
+        print_help(is_local)
         sys.exit(2)
 
-    if not config['password'] and not config_path:
-        sys.exit('config not specified, please read '
-                 'https://github.com/clowwindy/shadowsocks')
+    if not config:
+        logging.error('config not specified')
+        print_help(is_local)
+        sys.exit(2)
 
     config['password'] = config.get('password', None)
-    config['method'] = config.get('method', None)
+    config['method'] = config.get('method', 'aes-256-cfb')
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
     config['workers'] = config.get('workers', 1)
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = config.get('local_address', '127.0.0.1')
+    config['local_port'] = config.get('local_port', 1080)
+    if is_local:
+        if config.get('server', None) is None:
+            logging.error('server addr not specified')
+            print_local_help()
+            sys.exit(2)
+    else:
+        config['server'] = config.get('server', '0.0.0.0')
+    config['server_port'] = config.get('server_port', 8388)
+
+    if not ('password' in config and config['password']):
+        logging.error('password not specified')
+        print_help(is_local)
+        sys.exit(2)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
@@ -184,20 +198,27 @@ def get_config(is_local):
     return config
 
 
+def print_help(is_local):
+    if is_local:
+        print_local_help()
+    else:
+        print_server_help()
+
+
 def print_local_help():
-    print '''usage: sslocal [-h] -s SERVER_ADDR -p SERVER_PORT [-b LOCAL_ADDR]
-                -l LOCAL_PORT -k PASSWORD -m METHOD [-t TIMEOUT] [-c CONFIG]
-                [--fast-open] [-v] [-q]
+    print '''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
+               [-b LOCAL_ADDR] [-l LOCAL_PORT] -k PASSWORD [-m METHOD]
+               [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] [-q]
 
 optional arguments:
   -h, --help            show this help message and exit
   -s SERVER_ADDR        server address
-  -p SERVER_PORT        server port
-  -b LOCAL_ADDR         local binding address, default is 127.0.0.1
-  -l LOCAL_PORT         local port
+  -p SERVER_PORT        server port, default: 8388
+  -b LOCAL_ADDR         local binding address, default: 127.0.0.1
+  -l LOCAL_PORT         local port, default: 1080
   -k PASSWORD           password
-  -m METHOD             encryption method, for example, aes-256-cfb
-  -t TIMEOUT            timeout in seconds
+  -m METHOD             encryption method, default: aes-256-cfb
+  -t TIMEOUT            timeout in seconds, default: 300
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
   -v, -vv               verbose mode
@@ -208,17 +229,17 @@ Online help: <https://github.com/clowwindy/shadowsocks>
 
 
 def print_server_help():
-    print '''usage: ssserver [-h] -s SERVER_ADDR -p SERVER_PORT -k PASSWORD
-                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open] [--workders]
-                [-v] [-q]
+    print '''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
+                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
+                [--workers WORKERS] [-v] [-q]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s SERVER_ADDR        server address
-  -p SERVER_PORT        server port
+  -s SERVER_ADDR        server address, default: 0.0.0.0
+  -p SERVER_PORT        server port, default: 8388
   -k PASSWORD           password
-  -m METHOD             encryption method, for example, aes-256-cfb
-  -t TIMEOUT            timeout in seconds
+  -m METHOD             encryption method, default: aes-256-cfb
+  -t TIMEOUT            timeout in seconds, default: 300
   -c CONFIG             path to config file
   --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS     number of workers, available on Unix/Linux
