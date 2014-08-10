@@ -6,7 +6,7 @@ with open('README.rst') as f:
 
 setup(
     name="shadowsocks",
-    version="3.0",
+    version="2.1.0",
     license='MIT',
     description="A fast tunnel proxy that help you get through firewalls",
     author='clowwindy',

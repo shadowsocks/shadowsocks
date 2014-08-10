@@ -232,7 +232,7 @@ def is_ip(address):
     for family in (socket.AF_INET, socket.AF_INET6):
         try:
             socket.inet_pton(family, address)
-            return True
+            return family
         except (TypeError, ValueError, OSError, IOError):
             pass
     return False
@@ -289,7 +289,7 @@ class DNSResolver(object):
                             parts = line.split()
                             if len(parts) >= 2:
                                 server = parts[1]
-                                if is_ip(server):
+                                if is_ip(server) == socket.AF_INET:
                                     self._servers.append(server)
         except IOError:
             pass
