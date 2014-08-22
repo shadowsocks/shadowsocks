@@ -1,14 +1,14 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          shadowsocks
-# Required-Start:    $network $local_fs
-# Required-Stop:
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: <Enter a short description of the software>
-# Description:       <Enter a long description of the software>
-#                    <...>
-#                    <...>
+# Short-Description: Fast tunnel proxy that helps you bypass firewalls
+# Description:       A secure socks5 proxy, designed to protect your Internet traffic.
+#		     This package contain local and server part of shadowsocks, a fast,
+#		     powerful tunnel proxy to bypass firewalls.
 ### END INIT INFO
 
 # Author: Shell.Xu <shell909090@gmail.com>
@@ -17,8 +17,8 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC=shadowsocks             # Introduce a short description here
 NAME=shadowsocks             # Introduce the short server's name here
-DAEMON=/usr/sbin/shadowsocks # Introduce the server's location here
-DAEMON_ARGS=""             # Arguments to run the daemon with
+DAEMON=/usr/bin/ssserver     # Introduce the server's location here
+DAEMON_ARGS=""               # Arguments to run the daemon with
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
