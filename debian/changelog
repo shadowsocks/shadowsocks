@@ -1,4 +1,4 @@
-python-shadowsocks (2.1.0-1) unstable; urgency=low
+shadowsocks (2.1.0-1) unstable; urgency=low
 
   * Initial release (Closes: 758900)
 

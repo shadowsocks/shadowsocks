@@ -1,4 +1,4 @@
-Source: python-shadowsocks
+Source: shadowsocks
 Section: python
 Priority: extra
 Maintainer: Shell.Xu <shell909090@gmail.com>
@@ -8,7 +8,7 @@ Homepage: https://github.com/clowwindy/shadowsocks
 #Vcs-Git: git://git.debian.org/collab-maint/shadowsocks.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/shadowsocks.git;a=summary
 
-Package: python-shadowsocks
+Package: shadowsocks
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-m2crypto
 Description: Fast tunnel proxy that helps you bypass firewalls
