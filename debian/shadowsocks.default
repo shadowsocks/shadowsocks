@@ -9,4 +9,4 @@ USERID="nobody"
 #
 
 # Additional options that are passed to the Daemon.
-DAEMON_OPTS="-c /etc/shadowsocks/config.json"
+DAEMON_OPTS="-q -c /etc/shadowsocks/config.json"
