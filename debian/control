@@ -10,7 +10,7 @@ Homepage: https://github.com/clowwindy/shadowsocks
 
 Package: shadowsocks
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-m2crypto
+Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-setuptools, python-m2crypto
 Description: Fast tunnel proxy that helps you bypass firewalls
  A secure socks5 proxy, designed to protect your Internet traffic.
  .

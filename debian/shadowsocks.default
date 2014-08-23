@@ -2,6 +2,8 @@
 # sourced by /etc/init.d/shadowsocks
 # installed at /etc/default/shadowsocks by the maintainer scripts
 
+USERID="nobody"
+
 #
 # This is a POSIX shell fragment
 #
