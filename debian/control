@@ -3,7 +3,7 @@ Section: python
 Priority: extra
 Maintainer: Shell.Xu <shell909090@gmail.com>
 Build-Depends: debhelper (>= 8), python, python-setuptools
-Standards-Version: 3.9.5
+Standards-Version: 3.9.4
 Homepage: https://github.com/clowwindy/shadowsocks
 Vcs-Git: git://github.com/shell909090/shadowsocks.git
 Vcs-Browser: http://github.com/shell909090/shadowsocks
