@@ -201,8 +201,9 @@ class TCPRelayHandler(object):
                 self._config['fast_open']:
             try:
                 self._fastopen_connected = True
-                remote_sock = self._create_remote_socket(self._chosen_server[0],
-                                                         self._chosen_server[1])
+                remote_sock = \
+                    self._create_remote_socket(self._chosen_server[0],
+                                               self._chosen_server[1])
                 self._loop.add(remote_sock, eventloop.POLL_ERR)
                 data = ''.join(self._data_to_write_to_local)
                 l = len(data)
@@ -497,8 +498,8 @@ class TCPRelay(object):
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers
-        self._timeout_offset = 0  # last checked position for timeout
-                                  # we trim the timeouts once a while
+        # we trim the timeouts once a while
+        self._timeout_offset = 0   # last checked position for timeout
         self._handler_to_timeouts = {}  # key: handler value: index in timeouts
 
         if is_local:
@@ -606,9 +607,9 @@ class TCPRelay(object):
                 try:
                     logging.debug('accept')
                     conn = self._server_socket.accept()
-                    TCPRelayHandler(self, self._fd_to_handlers, self._eventloop,
-                                    conn[0], self._config, self._dns_resolver,
-                                    self._is_local)
+                    TCPRelayHandler(self, self._fd_to_handlers,
+                                    self._eventloop, conn[0], self._config,
+                                    self._dns_resolver, self._is_local)
                 except (OSError, IOError) as e:
                     error_no = eventloop.errno_from_exception(e)
                     if error_no in (errno.EAGAIN, errno.EINPROGRESS,

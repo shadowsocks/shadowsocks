@@ -403,8 +403,8 @@ class DNSResolver(object):
             self._request_id = 1
         req = build_request(hostname, qtype, self._request_id)
         for server in self._servers:
-            logging.debug('resolving %s with type %d using server %s', hostname,
-                          qtype, server)
+            logging.debug('resolving %s with type %d using server %s',
+                          hostname, qtype, server)
             self._sock.sendto(req, (server, 53))
 
     def resolve(self, hostname, callback):

@@ -67,7 +67,8 @@ class Salsa20Cipher(object):
     def _next_stream(self):
         self._nonce &= 0xFFFFFFFFFFFFFFFF
         self._stream = salsa20.Salsa20_keystream(BLOCK_SIZE,
-                                                 struct.pack('<Q', self._nonce),
+                                                 struct.pack('<Q',
+                                                             self._nonce),
                                                  self._key)
         self._nonce += 1
 

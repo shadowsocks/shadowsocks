@@ -29,7 +29,7 @@ try:
         r, w, e = select.select(fdset, [], fdset)
         if e:
             break
-            
+
         for fd in r:
             line = fd.readline()
             sys.stdout.write(line)
