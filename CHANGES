@@ -1,7 +1,5 @@
 2.1.0 2014-08-10
 - Use only IPv4 DNS server
-
-2.1.0 2014-08-01
 - Does not ship config.json
 - Better error message
 
