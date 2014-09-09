@@ -224,7 +224,7 @@ def encrypt_all(password, method, op, data):
         if method == 'salsa20-ctr':
             cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
         elif method == 'rc4-sha256':
-            return encrypt_rc4_sha256.create_cipher(method, key, iv, op)
+            cipher = encrypt_rc4_sha256.create_cipher(method, key, iv, op)
         else:
             cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
                                          op, key_as_bytes=0, d='md5',
