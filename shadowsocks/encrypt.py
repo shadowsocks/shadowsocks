@@ -27,7 +27,7 @@ import string
 import struct
 import logging
 import encrypt_salsa20
-import encrypt_rc4_sha256
+import encrypt_rc4_md5
 
 
 def random_string(length):
@@ -116,7 +116,7 @@ method_supported = {
     'idea-cfb': (16, 8),
     'rc2-cfb': (16, 8),
     'rc4': (16, 0),
-    'rc4-sha256': (32, 16),
+    'rc4-md5': (16, 16),
     'seed-cfb': (16, 16),
     'salsa20-ctr': (32, 8),
 }
@@ -160,8 +160,8 @@ class Encryptor(object):
                 self.cipher_iv = iv[:m[1]]
             if method == 'salsa20-ctr':
                 return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
-            elif method == 'rc4-sha256':
-                return encrypt_rc4_sha256.create_cipher(method, key, iv, op)
+            elif method == 'rc4-md5':
+                return encrypt_rc4_md5.create_cipher(method, key, iv, op)
             else:
                 import M2Crypto.EVP
                 return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
@@ -223,8 +223,8 @@ def encrypt_all(password, method, op, data):
             data = data[iv_len:]
         if method == 'salsa20-ctr':
             cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
-        elif method == 'rc4-sha256':
-            cipher = encrypt_rc4_sha256.create_cipher(method, key, iv, op)
+        elif method == 'rc4-md5':
+            cipher = encrypt_rc4_md5.create_cipher(method, key, iv, op)
         else:
             cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
                                          op, key_as_bytes=0, d='md5',

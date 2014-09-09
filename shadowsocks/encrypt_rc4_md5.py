@@ -25,10 +25,11 @@ import hashlib
 
 def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
                   i=1, padding=1):
-    sha256 = hashlib.sha256()
-    sha256.update(key)
-    sha256.update(iv)
-    rc4_key = sha256.digest()
+    md5 = hashlib.md5()
+    md5.update(key)
+    md5.update(iv)
+    rc4_key = md5.digest()
+    print len(rc4_key)
 
     import M2Crypto.EVP
     return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,

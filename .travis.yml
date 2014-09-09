@@ -15,7 +15,7 @@ script:
   - pep8 .
   - python tests/test.py -c tests/table.json
   - python tests/test.py -c tests/aes.json
-  - python tests/test.py -c tests/rc4-sha256.json
+  - python tests/test.py -c tests/rc4-md5.json
   - python tests/test.py -c tests/salsa20.json
   - python tests/test.py -c tests/server-multi-ports.json
   - python tests/test.py -c tests/server-multi-passwd.json
