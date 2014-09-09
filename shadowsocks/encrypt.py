@@ -27,6 +27,7 @@ import string
 import struct
 import logging
 import encrypt_salsa20
+import encrypt_rc4_sha256
 
 
 def random_string(length):
@@ -115,6 +116,7 @@ method_supported = {
     'idea-cfb': (16, 8),
     'rc2-cfb': (16, 8),
     'rc4': (16, 0),
+    'rc4-sha256': (32, 16),
     'seed-cfb': (16, 16),
     'salsa20-ctr': (32, 8),
 }
@@ -156,13 +158,15 @@ class Encryptor(object):
             if op == 1:
                 # this iv is for cipher not decipher
                 self.cipher_iv = iv[:m[1]]
-            if method != 'salsa20-ctr':
+            if method == 'salsa20-ctr':
+                return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
+            elif method == 'rc4-sha256':
+                return encrypt_rc4_sha256.create_cipher(method, key, iv, op)
+            else:
                 import M2Crypto.EVP
                 return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
                                            op, key_as_bytes=0, d='md5',
                                            salt=None, i=1, padding=1)
-            else:
-                return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
 
         logging.error('method %s not supported' % method)
         sys.exit(1)
@@ -217,11 +221,13 @@ def encrypt_all(password, method, op, data):
         else:
             iv = data[:iv_len]
             data = data[iv_len:]
-        if method != 'salsa20-ctr':
+        if method == 'salsa20-ctr':
+            cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
+        elif method == 'rc4-sha256':
+            return encrypt_rc4_sha256.create_cipher(method, key, iv, op)
+        else:
             cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv,
                                          op, key_as_bytes=0, d='md5',
                                          salt=None, i=1, padding=1)
-        else:
-            cipher = encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
         result.append(cipher.update(data))
         return ''.join(result)
