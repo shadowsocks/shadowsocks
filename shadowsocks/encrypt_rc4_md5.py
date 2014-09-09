@@ -29,7 +29,6 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
     md5.update(key)
     md5.update(iv)
     rc4_key = md5.digest()
-    print len(rc4_key)
 
     import M2Crypto.EVP
     return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,
