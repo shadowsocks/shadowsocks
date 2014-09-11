@@ -324,7 +324,7 @@ class DNSResolver(object):
                                    socket.SOL_UDP)
         self._sock.setblocking(False)
         loop.add(self._sock, eventloop.POLL_IN)
-        loop.add_handler(self.handle_events)
+        loop.add_handler(self.handle_events, ref=False)
 
     def _call_callback(self, hostname, ip, error=None):
         callbacks = self._hostname_to_cb.get(hostname, [])

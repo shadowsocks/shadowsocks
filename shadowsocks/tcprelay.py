@@ -631,7 +631,15 @@ class TCPRelay(object):
         if now - self._last_time > TIMEOUT_PRECISION:
             self._sweep_timeout()
             self._last_time = now
+            if self._closed:
+                if self._server_socket:
+                    self._eventloop.remove(self._server_socket)
+                    self._server_socket.close()
+                    self._server_socket = None
+                if not self._fd_to_handlers:
+                    self._eventloop.remove_handler(self._handle_events)
 
-    def close(self):
+    def close(self, next_tick=False):
         self._closed = True
-        self._server_socket.close()
+        if not next_tick:
+            self._server_socket.close()

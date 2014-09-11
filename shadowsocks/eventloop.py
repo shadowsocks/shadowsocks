@@ -168,7 +168,7 @@ class EventLoop(object):
                             'package')
         self._fd_to_f = {}
         self._handlers = []
-        self.stopping = False
+        self._ref_handlers = []
         logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
@@ -189,17 +189,24 @@ class EventLoop(object):
         fd = f.fileno()
         self._impl.modify_fd(fd, mode)
 
-    def add_handler(self, handler):
+    def add_handler(self, handler, ref=True):
         self._handlers.append(handler)
+        if ref:
+            # when all ref handlers are removed, loop stops
+            self._ref_handlers.append(handler)
+
+    def remove_handler(self, handler):
+        self._handlers.remove(handler)
+        if handler in self._ref_handlers:
+            self._ref_handlers.remove(handler)
 
     def run(self):
-        while not self.stopping:
+        while self._ref_handlers:
             try:
                 events = self.poll(1)
             except (OSError, IOError) as e:
-                if errno_from_exception(e) == errno.EPIPE:
+                if errno_from_exception(e) in (errno.EPIPE, errno.EINTR):
                     # Happens when the client closes the connection
-                    logging.error('poll:%s', e)
                     continue
                 else:
                     logging.error('poll:%s', e)

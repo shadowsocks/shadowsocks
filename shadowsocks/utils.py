@@ -90,7 +90,7 @@ def get_config(is_local):
         longopts = ['fast-open']
     else:
         shortopts = 'hs:p:k:m:c:t:vq'
-        longopts = ['fast-open', 'workers:']
+        longopts = ['fast-open', 'workers=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -134,7 +134,7 @@ def get_config(is_local):
             elif key == '--fast-open':
                 config['fast_open'] = True
             elif key == '--workers':
-                config['workers'] = value
+                config['workers'] = int(value)
             elif key == '-h':
                 if is_local:
                     print_local_help()
