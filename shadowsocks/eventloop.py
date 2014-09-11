@@ -207,6 +207,7 @@ class EventLoop(object):
             except (OSError, IOError) as e:
                 if errno_from_exception(e) in (errno.EPIPE, errno.EINTR):
                     # Happens when the client closes the connection
+                    logging.debug('poll:%s', e)
                     continue
                 else:
                     logging.error('poll:%s', e)
