@@ -154,6 +154,7 @@ class SelectLoop(object):
 
 class EventLoop(object):
     def __init__(self):
+        self._iterating = False
         if hasattr(select, 'epoll'):
             self._impl = EpollLoop()
             model = 'epoll'
@@ -169,6 +170,7 @@ class EventLoop(object):
         self._fd_to_f = {}
         self._handlers = []
         self._ref_handlers = []
+        self._handlers_to_remove = []
         logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
@@ -196,11 +198,15 @@ class EventLoop(object):
             self._ref_handlers.append(handler)
 
     def remove_handler(self, handler):
-        self._handlers.remove(handler)
         if handler in self._ref_handlers:
             self._ref_handlers.remove(handler)
+        if self._iterating:
+            self._handlers_to_remove.append(handler)
+        else:
+            self._handlers.remove(handler)
 
     def run(self):
+        events = []
         while self._ref_handlers:
             try:
                 events = self.poll(1)
@@ -215,6 +221,7 @@ class EventLoop(object):
                     import traceback
                     traceback.print_exc()
                     continue
+            self._iterating = True
             for handler in self._handlers:
                 # TODO when there are a lot of handlers
                 try:
@@ -223,6 +230,10 @@ class EventLoop(object):
                     logging.error(e)
                     import traceback
                     traceback.print_exc()
+            for handler in self._handlers_to_remove:
+                self._handlers.remove(handler)
+                self._handlers_to_remove = []
+            self._iterating = False
 
 
 # from tornado
