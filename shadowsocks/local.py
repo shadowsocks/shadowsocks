@@ -24,6 +24,7 @@
 import sys
 import os
 import logging
+import signal
 import utils
 import encrypt
 import eventloop
@@ -58,6 +59,12 @@ def main():
         dns_resolver.add_to_loop(loop)
         tcp_server.add_to_loop(loop)
         udp_server.add_to_loop(loop)
+
+        def handler(signum, _):
+            logging.warn('received SIGQUIT, doing graceful shutting down..')
+            tcp_server.close(next_tick=True)
+            udp_server.close(next_tick=True)
+        signal.signal(signal.SIGQUIT, handler)
         loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)

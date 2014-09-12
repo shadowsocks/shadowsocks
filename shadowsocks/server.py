@@ -24,13 +24,13 @@
 import sys
 import os
 import logging
+import signal
 import utils
 import encrypt
 import eventloop
 import tcprelay
 import udprelay
 import asyncdns
-import signal
 
 
 def main():
