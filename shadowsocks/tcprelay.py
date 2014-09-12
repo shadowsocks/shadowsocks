@@ -508,6 +508,7 @@ class TCPRelay(object):
         else:
             listen_addr = config['server']
             listen_port = config['server_port']
+        self._listen_port = listen_port
 
         addrs = socket.getaddrinfo(listen_addr, listen_port, 0,
                                    socket.SOCK_STREAM, socket.SOL_TCP)
@@ -636,6 +637,7 @@ class TCPRelay(object):
                     self._eventloop.remove(self._server_socket)
                     self._server_socket.close()
                     self._server_socket = None
+                    logging.info('closed listen port %d', self._listen_port)
                 if not self._fd_to_handlers:
                     self._eventloop.remove_handler(self._handle_events)
 
