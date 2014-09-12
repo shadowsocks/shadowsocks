@@ -81,7 +81,7 @@ def main():
             logging.error(e)
             import traceback
             traceback.print_exc()
-            os._exit(0)
+            os._exit(1)
 
     if int(config['workers']) > 1:
         if os.name == 'posix':

@@ -70,7 +70,7 @@ def main():
         logging.error(e)
         import traceback
         traceback.print_exc()
-        os._exit(0)
+        os._exit(1)
 
 if __name__ == '__main__':
     main()
