@@ -264,11 +264,11 @@ class UDPRelay(object):
             self._cache.sweep()
             self._client_fd_to_server_addr.sweep()
             self._last_time = now
-            if self._closed:
-                self._server_socket.close()
-                for sock in self._sockets:
-                    sock.close()
-                self._eventloop.remove_handler(self._handle_events)
+        if self._closed:
+            self._server_socket.close()
+            for sock in self._sockets:
+                sock.close()
+            self._eventloop.remove_handler(self._handle_events)
 
     def close(self, next_tick=False):
         self._closed = True
