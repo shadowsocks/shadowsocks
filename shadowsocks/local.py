@@ -68,8 +68,9 @@ def main():
         loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)
-        import traceback
-        traceback.print_exc()
+        if config['verbose']:
+            import traceback
+            traceback.print_exc()
         os._exit(1)
 
 if __name__ == '__main__':
