@@ -218,6 +218,8 @@ def parse_response(data):
             response = DNSResponse()
             if qds:
                 response.hostname = qds[0][0]
+            for an in qds:
+                response.questions.append((an[1], an[2], an[3]))
             for an in ans:
                 response.answers.append((an[1], an[2], an[3]))
             return response
@@ -249,6 +251,7 @@ def is_valid_hostname(hostname):
 class DNSResponse(object):
     def __init__(self):
         self.hostname = None
+        self.questions = []  # each: (addr, type, class)
         self.answers = []  # each: (addr, type, class)
 
     def __str__(self):
@@ -358,7 +361,9 @@ class DNSResolver(object):
             else:
                 if ip:
                     self._cache[hostname] = ip
-                self._call_callback(hostname, ip)
+                    self._call_callback(hostname, ip)
+                elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
+                    self._call_callback(hostname, None)
 
     def handle_events(self, events):
         for sock, fd, event in events:
