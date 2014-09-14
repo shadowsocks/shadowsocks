@@ -363,7 +363,10 @@ class DNSResolver(object):
                     self._cache[hostname] = ip
                     self._call_callback(hostname, ip)
                 elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
-                    self._call_callback(hostname, None)
+                    for question in response.questions:
+                        if question[1] == QTYPE_AAAA:
+                            self._call_callback(hostname, None)
+                            break
 
     def handle_events(self, events):
         for sock, fd, event in events:
