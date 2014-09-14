@@ -33,7 +33,8 @@ import thread
 import threading
 import sys
 import asyncmgr
-
+import Config
+from socket import *
 
 class ServerPool(object):
 
@@ -44,12 +45,12 @@ class ServerPool(object):
         self.config = utils.get_config(False)
         utils.print_shadowsocks()
         self.dns_resolver = asyncdns.DNSResolver()
-
+        self.mgr = asyncmgr.ServerMgr()
         self.tcp_servers_pool = {}
         #self.udp_servers_pool = {}
 
         self.loop = eventloop.EventLoop()
-        thread.start_new_thread(ServerPool.run_server, (self.loop, self.dns_resolver))
+        thread.start_new_thread(ServerPool._loop, (self.loop, self.dns_resolver, self.mgr))
 
     @staticmethod
     def get_instance():
@@ -58,9 +59,8 @@ class ServerPool(object):
         return ServerPool.instance
 
     @staticmethod
-    def run_server(loop, dns_resolver):
+    def _loop(loop, dns_resolver, mgr):
         try:
-            mgr = asyncmgr.ServerMgr()
             mgr.add_to_loop(loop)
             dns_resolver.add_to_loop(loop)
             loop.run()
@@ -101,6 +101,24 @@ class ServerPool(object):
         except Exception, e:
             logging.warn(e)
             ret = e
+        return ret
+
+    def del_server(self, port):
+        port = int(port)
+        ret = True
+        if port not in self.tcp_servers_pool:
+            logging.info("stopped server at %s:%d already stop" % (self.config['server'], int(port)))
+            return True
+        logging.info("stopping server at %s:%d" % (self.config['server'], int(port)))
+        try:
+            udpsock = socket(AF_INET, SOCK_DGRAM)
+            udpsock.sendto('%s:%s:0:0' % (Config.MANAGE_PASS, port), (Config.MANAGE_BIND_IP, Config.MANAGE_PORT))
+            udpsock.close()
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
+            ret = e
+            logging.warn(e)
         return ret
 
     def cb_del_server(self, port):

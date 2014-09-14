@@ -1,5 +1,13 @@
 shadowsocks manyuser branch
 ===========
+Which people need this branch
+------------------
+1.share shadowsocks server
+
+2.create multi server by shadowsocks
+
+3.manage server (transfer / account)
+
 Install
 -------
 install MySQL 5.x.x
@@ -8,7 +16,7 @@ install MySQL 5.x.x
 
 create a database named `shadowsocks`
 
-import `shadowsocks.sql`
+import `shadowsocks.sql` into `shadowsocks`
 
 edit Config.py
 Example:
@@ -33,13 +41,18 @@ Example:
 
 	db start server at port [%s] pass [%s]
 
-User table colum
+Database user table column
 ------------------
 `passwd` server pass
+
 `port` server port
+
 `t` last keepalive time
+
 `u` upload transfer
+
 `d` download transer
+
 `transfer_enable` if u + d > transfer_enable this server will be stop (db_transfer.py del_server_out_of_bound_safe)
 
 Manage socket
@@ -49,9 +62,18 @@ Manage server work in UDP at `MANAGE_BIND_IP` `MANAGE_PORT`
 use `MANAGE_PASS:port:passwd:0` to del a server at port `port`
 
 use `MANAGE_PASS:port:passwd:1` to run a server at port `port` password is `passwd`
-eg:
 
-	udpCliSock.sendto('MANAGE_PASS:65535:123456:1', (MANAGE_BIND_IP, MANAGE_PORT))
+Python Eg:
+
+	udpsock.sendto('MANAGE_PASS:65535:123456:1', (MANAGE_BIND_IP, MANAGE_PORT))
+	
+PHP Eg:
+
+	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+	$msg = 'MANAGE_PASS:65535:123456:1';
+	$len = strlen($msg);
+	socket_sendto($sock, $msg, $len, 0, MANAGE_BIND_IP, MANAGE_PORT);
+	socket_close($sock);
 
 shadowsocks
 ===========
