@@ -539,6 +539,21 @@ class TCPRelay(object):
         self._eventloop.add(self._server_socket,
                             eventloop.POLL_IN | eventloop.POLL_ERR)
 
+    def remove_to_loop(self):
+        self._eventloop.remove(self._server_socket)
+        self._eventloop.remove_handler(self._handle_events)
+
+    def destroy(self):
+        #destroy all conn and server conn at this tcprelay
+        self.remove_to_loop()
+        for fd in self._fd_to_handlers.keys():
+            try:
+                self._fd_to_handlers[fd].destroy()
+            except Exception, e:
+                #already destroy
+                pass
+        self.close()
+        
     def remove_handler(self, handler):
         index = self._handler_to_timeouts.get(hash(handler), -1)
         if index >= 0:

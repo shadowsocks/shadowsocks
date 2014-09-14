@@ -1,3 +1,58 @@
+shadowsocks manyuser branch
+===========
+Install
+-------
+install MySQL 5.x.x
+
+`pip install cymysql`
+
+create a database named `shadowsocks`
+
+import `shadowsocks.sql`
+
+edit Config.py
+Example:
+
+	#Config
+	MYSQL_HOST = 'mdss.mengsky.net'
+	MYSQL_PORT = 3306
+	MYSQL_USER = 'ss'
+	MYSQL_PASS = 'ss'
+	MYSQL_DB = 'shadowsocks'
+
+	MANAGE_PASS = 'ss233333333'
+	#if you want manage in other server you should set this value to global ip
+	MANAGE_BIND_IP = '127.0.0.1'
+	#make sure this port is idle
+	MANAGE_PORT = 23333
+
+TestRun `cd shadowsocks` ` python server.py`
+
+if no exception server will startup. you will see such like
+Example:
+
+	db start server at port [%s] pass [%s]
+
+User table colum
+------------------
+`passwd` server pass
+`port` server port
+`t` last keepalive time
+`u` upload transfer
+`d` download transer
+`transfer_enable` if u + d > transfer_enable this server will be stop (db_transfer.py del_server_out_of_bound_safe)
+
+Manage socket
+------------------
+Manage server work in UDP at `MANAGE_BIND_IP` `MANAGE_PORT`
+
+use `MANAGE_PASS:port:passwd:0` to del a server at port `port`
+
+use `MANAGE_PASS:port:passwd:1` to run a server at port `port` password is `passwd`
+eg:
+
+	udpCliSock.sendto('MANAGE_PASS:65535:123456:1', (MANAGE_BIND_IP, MANAGE_PORT))
+
 shadowsocks
 ===========
 
