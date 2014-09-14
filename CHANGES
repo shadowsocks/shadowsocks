@@ -1,4 +1,7 @@
-2.2.1 2014-09-09
+2.2.2 2014-09-14
+- Fix when multiple DNS set, IPv6 only sites are broken
+
+2.2.1 2014-09-10
 - Support graceful shutdown
 - Fix some bugs
 
