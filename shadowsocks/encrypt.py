@@ -32,8 +32,7 @@ import crypto.salsa20_ctr
 import crypto.ctypes_openssl
 
 
-method_supported = {
-}
+method_supported = {}
 
 method_supported.update(crypto.m2.ciphers)
 method_supported.update(crypto.rc4_md5.ciphers)
