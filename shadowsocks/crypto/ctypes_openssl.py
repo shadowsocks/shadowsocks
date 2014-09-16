@@ -54,12 +54,24 @@ def load_openssl():
     loaded = True
 
 
+def load_ctr_cipher(cipher_name):
+    func_name = 'EVP_' + cipher_name.replace('-', '_')
+    cipher = getattr(libcrypto, func_name, None)
+    if cipher:
+        cipher.restype = c_void_p
+        return cipher()
+    return None
+
+
 class CtypesCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
         if not loaded:
             load_openssl()
         self._ctx = None
-        cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
+        if 'ctr' in cipher_name:
+            cipher = load_ctr_cipher(cipher_name)
+        else:
+            cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
         if not cipher:
             raise Exception('cipher %s not found in libcrypto' % cipher_name)
         key_ptr = c_char_p(key)
@@ -91,6 +103,9 @@ class CtypesCrypto(object):
 
 
 ciphers = {
+    'aes-128-ctr': (16, 16, CtypesCrypto),
+    'aes-192-ctr': (24, 16, CtypesCrypto),
+    'aes-256-ctr': (32, 16, CtypesCrypto),
     'aes-128-cfb8': (16, 16, CtypesCrypto),
     'aes-192-cfb8': (24, 16, CtypesCrypto),
     'aes-256-cfb8': (32, 16, CtypesCrypto),
