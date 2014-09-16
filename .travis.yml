@@ -15,6 +15,7 @@ script:
   - pep8 .
   - python tests/test.py -c tests/table.json
   - python tests/test.py -c tests/aes.json
+  - python tests/test.py -c tests/aes-ctr.json
   - python tests/test.py -c tests/aes-cfb1.json
   - python tests/test.py -c tests/aes-cfb8.json
   - python tests/test.py -c tests/rc4-md5.json
