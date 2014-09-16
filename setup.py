@@ -12,7 +12,7 @@ setup(
     author='clowwindy',
     author_email='clowwindy42@gmail.com',
     url='https://github.com/clowwindy/shadowsocks',
-    packages=['shadowsocks'],
+    packages=['shadowsocks', 'shadowsocks.crypto'],
     package_data={
         'shadowsocks': ['README.rst', 'LICENSE']
     },

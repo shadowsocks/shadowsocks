@@ -20,7 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import hashlib
+
+
+__all__ = ['ciphers']
 
 
 def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
@@ -33,3 +37,8 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
     import M2Crypto.EVP
     return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,
                                d='md5', salt=None, i=1, padding=1)
+
+
+ciphers = {
+    'rc4-md5': (16, 16, create_cipher),
+}

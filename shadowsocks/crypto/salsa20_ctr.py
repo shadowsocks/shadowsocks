@@ -149,5 +149,10 @@ def test():
     assert ''.join(results) == plain
 
 
+ciphers = {
+    'salsa20-ctr': (32, 8, Salsa20Cipher),
+}
+
+
 if __name__ == '__main__':
     test()

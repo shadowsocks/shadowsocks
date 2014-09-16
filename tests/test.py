@@ -11,8 +11,8 @@ from subprocess import Popen, PIPE
 sys.path.insert(0, './')
 
 if 'salsa20' in sys.argv[-1]:
-    from shadowsocks import encrypt_salsa20
-    encrypt_salsa20.test()
+    from shadowsocks.crypto import salsa20_ctr
+    salsa20_ctr.test()
     print 'encryption test passed'
 
 p1 = Popen(['python', 'shadowsocks/server.py', '-c', sys.argv[-1]], stdin=PIPE,
