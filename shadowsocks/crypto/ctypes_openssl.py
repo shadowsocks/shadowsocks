@@ -91,6 +91,7 @@ class CtypesCrypto(object):
         libcrypto.EVP_CipherUpdate(self._ctx, byref(buf),
                                    byref(cipher_out_len), c_char_p(data),
                                    len(data))
+        # buf is copied to a str object when we access buf.raw
         return buf.raw[:cipher_out_len.value]
 
     def __del__(self):
