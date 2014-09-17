@@ -114,3 +114,48 @@ ciphers = {
     'aes-192-cfb1': (24, 16, CtypesCrypto),
     'aes-256-cfb1': (32, 16, CtypesCrypto),
 }
+
+
+def test():
+    from os import urandom
+    import random
+    import time
+
+    BLOCK_SIZE = 16384
+    rounds = 1 * 1024
+    plain = urandom(BLOCK_SIZE * rounds)
+    import M2Crypto.EVP
+    # cipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 1,
+    #                key_as_bytes=0, d='md5', salt=None, i=1,
+    #                padding=1)
+    # decipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 0,
+    #                key_as_bytes=0, d='md5', salt=None, i=1,
+    #                padding=1)
+    cipher = CtypesCrypto('aes-128-cfb', 'k' * 32, 'i' * 16, 1)
+    decipher = CtypesCrypto('aes-128-cfb', 'k' * 32, 'i' * 16, 0)
+
+    # cipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
+    # decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
+    results = []
+    pos = 0
+    print 'salsa20 test start'
+    start = time.time()
+    while pos < len(plain):
+        l = random.randint(100, 32768)
+        c = cipher.update(plain[pos:pos + l])
+        results.append(c)
+        pos += l
+    pos = 0
+    c = ''.join(results)
+    results = []
+    while pos < len(plain):
+        l = random.randint(100, 32768)
+        results.append(decipher.update(c[pos:pos + l]))
+        pos += l
+    end = time.time()
+    print 'speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start))
+    assert ''.join(results) == plain
+
+
+if __name__ == '__main__':
+    test()

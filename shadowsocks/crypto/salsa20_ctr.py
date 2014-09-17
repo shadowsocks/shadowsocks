@@ -112,6 +112,11 @@ class Salsa20Cipher(object):
         return ''.join(results)
 
 
+ciphers = {
+    'salsa20-ctr': (32, 8, Salsa20Cipher),
+}
+
+
 def test():
     from os import urandom
     import random
@@ -147,11 +152,6 @@ def test():
     end = time.time()
     print 'speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start))
     assert ''.join(results) == plain
-
-
-ciphers = {
-    'salsa20-ctr': (32, 8, Salsa20Cipher),
-}
 
 
 if __name__ == '__main__':
