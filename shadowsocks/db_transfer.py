@@ -29,14 +29,14 @@ class DbTransfer(object):
         dt_transfer = {}
         for id in curr_transfer.keys():
             if id in last_transfer:
-                if last_transfer[id][0] == curr_transfer[id][0] and \
-                last_transfer[id][1] == curr_transfer[id][1]:
+                if last_transfer[id][0] == curr_transfer[id][0] and last_transfer[id][1] == curr_transfer[id][1]:
                     continue
                 elif curr_transfer[id][0] == 0 and curr_transfer[id][1] == 0:
                     continue
                 elif last_transfer[id][0] <= curr_transfer[id][0] and \
                 last_transfer[id][1] <= curr_transfer[id][1]:
-                    dt_transfer[id] = [curr_transfer[id][0] - last_transfer[id][0] ,curr_transfer[id][1] - last_transfer[id][1]]
+                    dt_transfer[id] = [curr_transfer[id][0] - last_transfer[id][0],
+                                       curr_transfer[id][1] - last_transfer[id][1]]
                 else:
                     dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
             else:
@@ -64,7 +64,8 @@ class DbTransfer(object):
                     ' END, t = ' + str(int(last_time)) + \
                     ' WHERE port IN (%s)' % query_sub_in
         #print query_sql
-        conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER, passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
+        conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
+                               passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
         cur = conn.cursor()
         cur.execute(query_sql)
         cur.close()
@@ -74,7 +75,8 @@ class DbTransfer(object):
     @staticmethod
     def pull_db_all_user():
         #数据库所有用户信息
-        conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER, passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
+        conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
+                               passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
         cur = conn.cursor()
         cur.execute("SELECT port, u, d, transfer_enable, passwd, switch, enable FROM user")
         rows = []
@@ -88,7 +90,7 @@ class DbTransfer(object):
     def del_server_out_of_bound_safe(rows):
     #停止超流量的服务
         for row in rows:
-            if ServerPool.get_instance().server_is_run(row[0]) is True:
+            if ServerPool.get_instance().server_is_run(row[0]) > 0:
                 if row[1] + row[2] >= row[3]:
                     logging.info('db stop server at port [%s]' % (row[0]))
                     ServerPool.get_instance().del_server(row[0])

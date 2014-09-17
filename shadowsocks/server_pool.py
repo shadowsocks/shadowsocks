@@ -47,6 +47,7 @@ class ServerPool(object):
         self.dns_resolver = asyncdns.DNSResolver()
         self.mgr = asyncmgr.ServerMgr()
         self.tcp_servers_pool = {}
+        self.tcp_ipv6_servers_pool = {}
         #self.udp_servers_pool = {}
 
         self.loop = eventloop.EventLoop()
@@ -72,83 +73,106 @@ class ServerPool(object):
 
     def server_is_run(self, port):
         port = int(port)
+        ret = 0
         if port in self.tcp_servers_pool:
-            return True
-        return False
+            ret = 1
+        if port in self.tcp_ipv6_servers_pool:
+            ret |= 2
+        return ret
 
     def new_server(self, port, password):
         ret = True
         port = int(port)
-        if self.server_is_run(port):
-            logging.info("server already at %s:%d" %(self.config['server'], port))
-            return 'this port server is already running'
 
-        a_config = self.config.copy()
-        a_config['server_port'] = port
-        a_config['password'] = password
-        logging.info("starting server at %s:%d" %(a_config['server'], port))
-        try:
-            tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
-            #udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
-        except Exception, e:
-            logging.warn(e)
-            return e
-        try:
-            #add is safe
-            tcp_server.add_to_loop(self.loop)
-            self.tcp_servers_pool.update({port: tcp_server})
-            #self.udp_servers_pool.update({port: tcp_server})
-        except Exception, e:
-            logging.warn(e)
-            ret = e
-        return ret
+        if 'server' in self.config:
+            if port in self.tcp_servers_pool:
+                logging.info("server already at %s:%d" % (self.config['server'], port))
+                return 'this port server is already running'
+            else:
+                a_config = self.config.copy()
+                a_config['server_port'] = port
+                a_config['password'] = password
+                try:
+                    logging.info("starting server at %s:%d" % (a_config['server'], port))
+                    tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
+                    tcp_server.add_to_loop(self.loop)
+                    self.tcp_servers_pool.update({port: tcp_server})
+                    #udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
+                except Exception, e:
+                    logging.warn(e)
+
+        if 'server_ipv6' in self.config:
+            if port in self.tcp_ipv6_servers_pool:
+                logging.info("server already at %s:%d" % (self.config['server_ipv6'], port))
+                return 'this port server is already running'
+            else:
+                a_config = self.config.copy()
+                a_config['server'] = a_config['server_ipv6']
+                a_config['server_port'] = port
+                a_config['password'] = password
+                try:
+                    logging.info("starting server at %s:%d" % (a_config['server'], port))
+                    tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
+                    tcp_server.add_to_loop(self.loop)
+                    self.tcp_ipv6_servers_pool.update({port: tcp_server})
+                    #udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
+                except Exception, e:
+                    logging.warn(e)
+        return True
 
     def del_server(self, port):
         port = int(port)
-        ret = True
-        if port not in self.tcp_servers_pool:
-            logging.info("stopped server at %s:%d already stop" % (self.config['server'], int(port)))
-            return True
-        logging.info("stopping server at %s:%d" % (self.config['server'], int(port)))
+        logging.info("del server at %d" % int(port))
         try:
             udpsock = socket(AF_INET, SOCK_DGRAM)
             udpsock.sendto('%s:%s:0:0' % (Config.MANAGE_PASS, port), (Config.MANAGE_BIND_IP, Config.MANAGE_PORT))
             udpsock.close()
         except Exception, e:
-            import traceback
-            traceback.print_exc()
-            ret = e
             logging.warn(e)
-        return ret
+        return True
 
     def cb_del_server(self, port):
         port = int(port)
-        ret = True
+
         if port not in self.tcp_servers_pool:
             logging.info("stopped server at %s:%d already stop" % (self.config['server'], int(port)))
-            return True
-        logging.info("stopped server at %s:%d" % (self.config['server'], int(port)))
-        try:
-            self.tcp_servers_pool[int(port)].destroy()
-            del self.tcp_servers_pool[int(port)]
-            #del self.udp_servers_pool[int(port)]
-        except Exception, e:
-            ret = e
-            logging.warn(e)
-            import traceback
-            traceback.print_exc()
-        return ret
+        else:
+            logging.info("stopped server at %s:%d" % (self.config['server'], int(port)))
+            try:
+                self.tcp_servers_pool[int(port)].destroy()
+                del self.tcp_servers_pool[int(port)]
+                #del self.udp_servers_pool[int(port)]
+            except Exception, e:
+                logging.warn(e)
+
+        if port not in self.tcp_ipv6_servers_pool:
+            logging.info("stopped server at %s:%d already stop" % (self.config['server_ipv6'], int(port)))
+        else:
+            logging.info("stopped server at %s:%d" % (self.config['server_ipv6'], int(port)))
+            try:
+                self.tcp_servers_pool[int(port)].destroy()
+                del self.tcp_servers_pool[int(port)]
+            except Exception, e:
+                logging.warn(e)
+
+        return True
 
     def get_server_transfer(self, port):
         port = int(port)
+        ret = [0, 0]
         if port in self.tcp_servers_pool:
-            return [self.tcp_servers_pool[port].server_transfer_ul, self.tcp_servers_pool[port].server_transfer_dl]
-        return [0,0]
+            ret[0] = self.tcp_servers_pool[port].server_transfer_ul
+            ret[1] = self.tcp_servers_pool[port].server_transfer_dl
+        if port in self.tcp_ipv6_servers_pool:
+            ret[0] += self.tcp_ipv6_servers_pool[port].server_transfer_ul
+            ret[1] += self.tcp_ipv6_servers_pool[port].server_transfer_dl
+        return ret
 
     def get_servers_transfer(self):
+        servers = self.tcp_servers_pool.copy()
+        servers.update(self.tcp_ipv6_servers_pool)
         ret = {}
-        for server_port in self.tcp_servers_pool.keys():
-            ret[server_port] = [self.tcp_servers_pool[server_port].server_transfer_ul
-                                     ,self.tcp_servers_pool[server_port].server_transfer_dl]
+        for port in servers.keys():
+            ret[port] = self.get_server_transfer(port)
         return ret
 

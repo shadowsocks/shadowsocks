@@ -10,6 +10,7 @@ import db_transfer
 
 if __name__ == '__main__':
     #server_pool.ServerPool.get_instance()
+    #server_pool.ServerPool.get_instance().new_server(2333, '2333')
     thread.start_new_thread(db_transfer.DbTransfer.thread_db, ())
     while True:
         time.sleep(99999)
