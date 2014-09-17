@@ -36,7 +36,7 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None, i=1,
                   padding=1):
 
     import M2Crypto.EVP
-    return M2Crypto.EVP.Cipher('rc4', key, iv, op, key_as_bytes=0,
+    return M2Crypto.EVP.Cipher(alg.replace('-', '_'), key, iv, op, key_as_bytes=0,
                                d='md5', salt=None, i=1, padding=1)
 
 
