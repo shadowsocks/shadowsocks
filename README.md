@@ -102,6 +102,7 @@ List all available args with `-h`.
 Wiki
 ----
 
+You can find all the documentation in the wiki:
 https://github.com/clowwindy/shadowsocks/wiki
 
 License
