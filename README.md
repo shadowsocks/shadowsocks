@@ -75,6 +75,17 @@ PHP Eg:
 	socket_sendto($sock, $msg, $len, 0, MANAGE_BIND_IP, MANAGE_PORT);
 	socket_close($sock);
 
+NOTICE
+------------------
+If error such like `2014-09-18 09:02:37 ERROR    [Errno 24] Too many open files`
+
+edit /etc/security/limits.conf
+
+Add:
+
+	*                soft    nofile          8192
+	*                hard    nofile          65535
+
 shadowsocks
 ===========
 
