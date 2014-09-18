@@ -80,6 +80,15 @@ class ServerPool(object):
             ret |= 2
         return ret
 
+    def server_run_status(self, port):
+        if 'server' in self.config:
+            if port not self.tcp_servers_pool:
+                return False
+        if 'server_ipv6' in self.config:
+            if port not self.tcp_ipv6_servers_pool:
+                return False
+        return True
+
     def new_server(self, port, password):
         ret = True
         port = int(port)
