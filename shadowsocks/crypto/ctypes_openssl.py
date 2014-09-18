@@ -26,6 +26,8 @@ __all__ = ['ciphers']
 
 loaded = False
 
+buf_size = 2048
+
 
 def load_openssl():
     global loaded, libcrypto, CDLL, c_char_p, c_int, c_long, byref,\
@@ -50,7 +52,7 @@ def load_openssl():
     libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
     libcrypto.EVP_CIPHER_CTX_free.argtypes = (c_void_p,)
 
-    buf = create_string_buffer(65536)
+    buf = create_string_buffer(buf_size)
     loaded = True
 
 
@@ -87,10 +89,14 @@ class CtypesCrypto(object):
             raise Exception('can not initialize cipher context')
 
     def update(self, data):
+        global buf_size, buf
         cipher_out_len = c_long(0)
+        l = len(data)
+        if buf_size < l:
+            buf_size = l * 2
+            buf = create_string_buffer(buf_size)
         libcrypto.EVP_CipherUpdate(self._ctx, byref(buf),
-                                   byref(cipher_out_len), c_char_p(data),
-                                   len(data))
+                                   byref(cipher_out_len), c_char_p(data), l)
         # buf is copied to a str object when we access buf.raw
         return buf.raw[:cipher_out_len.value]
 
