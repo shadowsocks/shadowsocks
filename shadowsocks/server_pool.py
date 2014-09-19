@@ -82,10 +82,10 @@ class ServerPool(object):
 
     def server_run_status(self, port):
         if 'server' in self.config:
-            if port not self.tcp_servers_pool:
+            if port not in self.tcp_servers_pool:
                 return False
         if 'server_ipv6' in self.config:
-            if port not self.tcp_ipv6_servers_pool:
+            if port not in self.tcp_ipv6_servers_pool:
                 return False
         return True
 
