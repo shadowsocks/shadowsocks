@@ -1,8 +1,6 @@
 {
     "server": "127.0.0.1",
-    "server_port": 8384,
     "local_port": 1081,
-    "password": "foobar4",
     "port_password": {
         "8381": "foobar1",
         "8382": "foobar2",

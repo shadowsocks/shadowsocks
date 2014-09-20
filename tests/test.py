@@ -10,15 +10,24 @@ from subprocess import Popen, PIPE
 
 sys.path.insert(0, './')
 
+if sys.argv[-3] == '-c':
+    client_config = sys.argv[-1]
+    server_config = sys.argv[-2]
+elif sys.argv[-2] == '-c':
+    client_config = sys.argv[-1]
+    server_config = sys.argv[-1]
+else:
+    raise Exception('usage: test.py -c server_conf [client_conf]')
+
 if 'salsa20' in sys.argv[-1]:
     from shadowsocks.crypto import salsa20_ctr
     salsa20_ctr.test()
     print 'encryption test passed'
 
-p1 = Popen(['python', 'shadowsocks/server.py', '-c', sys.argv[-1]], stdin=PIPE,
-           stdout=PIPE, stderr=PIPE, close_fds=True)
-p2 = Popen(['python', 'shadowsocks/local.py', '-c', sys.argv[-1]], stdin=PIPE,
-           stdout=PIPE, stderr=PIPE, close_fds=True)
+p1 = Popen(['python', 'shadowsocks/server.py', '-c', server_config],
+           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+p2 = Popen(['python', 'shadowsocks/local.py', '-c', client_config],
+           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 p3 = None
 
 try:
