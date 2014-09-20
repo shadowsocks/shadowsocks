@@ -186,7 +186,7 @@ def get_config(is_local):
     if 'local_port' in config:
         config['local_port'] = int(config['local_port'])
 
-    if 'server_port' in config:
+    if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
 
     logging.getLogger('').handlers = []
