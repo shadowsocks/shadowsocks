@@ -71,7 +71,8 @@ def main():
         def child_handler(signum, _):
             logging.warn('received SIGQUIT, doing graceful shutting down..')
             map(lambda s: s.close(next_tick=True), tcp_servers + udp_servers)
-        signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), child_handler)
+        signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
+                      child_handler)
         try:
             loop = eventloop.EventLoop()
             dns_resolver.add_to_loop(loop)
