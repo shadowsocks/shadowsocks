@@ -41,7 +41,7 @@ def main():
     utils.print_shadowsocks()
 
     if config['port_password']:
-        if config['server_port'] or config['password']:
+        if config['password']:
             logging.warn('warning: port_password should not be used with '
                          'server_port and password. server_port and password '
                          'will be ignored')
