@@ -1,3 +1,8 @@
+2.3 2014-09-23
+- Support CFB1, CFB8 and CTR mode of AES
+- Do not require password config when using port_password
+- Use SIGTERM instead of SIGQUIT on Windows
+
 2.2.2 2014-09-14
 - Fix when multiple DNS set, IPv6 only sites are broken
 
