@@ -184,7 +184,7 @@ class EventLoop(object):
 
     def remove(self, f):
         fd = f.fileno()
-        self._fd_to_f[fd] = None
+        del self._fd_to_f[fd]
         self._impl.remove_fd(fd)
 
     def modify(self, f, mode):
