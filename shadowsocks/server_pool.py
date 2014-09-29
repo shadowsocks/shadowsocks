@@ -159,8 +159,8 @@ class ServerPool(object):
         else:
             logging.info("stopped server at %s:%d" % (self.config['server_ipv6'], int(port)))
             try:
-                self.tcp_servers_pool[int(port)].destroy()
-                del self.tcp_servers_pool[int(port)]
+                self.tcp_ipv6_servers_pool[int(port)].destroy()
+                del self.tcp_ipv6_servers_pool[int(port)]
             except Exception, e:
                 logging.warn(e)
 
