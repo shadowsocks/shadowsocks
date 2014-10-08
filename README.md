@@ -35,6 +35,12 @@ source list.
     easy_install pip
     pip install shadowsocks
 
+#### Windows:
+
+Download OpenSSL for Windows and install. Then
+
+    pip install shadowsocks
+
 Configuration
 -------------
 
