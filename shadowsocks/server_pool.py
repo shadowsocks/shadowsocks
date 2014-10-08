@@ -160,19 +160,20 @@ class ServerPool(object):
             except Exception, e:
                 logging.warn(e)
 
-        if port not in self.tcp_ipv6_servers_pool:
-            logging.info("stopped server at %s:%d already stop" % (self.config['server_ipv6'], port))
-        else:
-            logging.info("stopped server at %s:%d" % (self.config['server_ipv6'], port))
-            try:
-                self.tcp_ipv6_servers_pool[port].destroy()
-                del self.tcp_ipv6_servers_pool[port]
-                #self.udp_ipv6_servers_pool[port].destroy()
-                #del self.udp_ipv6_servers_pool[port]
-            except Exception, e:
-                logging.warn(e)
+        if 'server_ipv6' in self.config:
+            if port not in self.tcp_ipv6_servers_pool:
+                logging.info("stopped server at %s:%d already stop" % (self.config['server_ipv6'], port))
+            else:
+                logging.info("stopped server at %s:%d" % (self.config['server_ipv6'], port))
+                try:
+                    self.tcp_ipv6_servers_pool[port].destroy()
+                    del self.tcp_ipv6_servers_pool[port]
+                    #self.udp_ipv6_servers_pool[port].destroy()
+                    #del self.udp_ipv6_servers_pool[port]
+                except Exception, e:
+                    logging.warn(e)
 
-        return True
+            return True
 
     def get_server_transfer(self, port):
         port = int(port)
