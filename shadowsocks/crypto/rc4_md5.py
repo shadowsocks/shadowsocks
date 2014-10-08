@@ -26,17 +26,27 @@ import hashlib
 
 __all__ = ['ciphers']
 
+m2_not_found = False
+
 
 def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
                   i=1, padding=1):
+    global m2_not_found
+
     md5 = hashlib.md5()
     md5.update(key)
     md5.update(iv)
     rc4_key = md5.digest()
 
-    import M2Crypto.EVP
-    return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,
-                               d='md5', salt=None, i=1, padding=1)
+    if not m2_not_found:
+        try:
+            import M2Crypto.EVP
+            return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,
+                                       d='md5', salt=None, i=1, padding=1)
+        except:
+            m2_not_found = True
+    import ctypes_openssl
+    return ctypes_openssl.CtypesCrypto('rc4', rc4_key, '', op)
 
 
 ciphers = {

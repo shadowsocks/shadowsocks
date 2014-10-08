@@ -34,10 +34,11 @@ import crypto.ctypes_openssl
 
 method_supported = {}
 
-method_supported.update(crypto.m2.ciphers)
 method_supported.update(crypto.rc4_md5.ciphers)
 method_supported.update(crypto.salsa20_ctr.ciphers)
 method_supported.update(crypto.ctypes_openssl.ciphers)
+# let M2Crypto override ctypes_openssl
+method_supported.update(crypto.m2.ciphers)
 
 
 def random_string(length):

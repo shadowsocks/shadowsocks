@@ -35,7 +35,12 @@ def load_openssl():
     from ctypes import CDLL, c_char_p, c_int, c_long, byref,\
         create_string_buffer, c_void_p
     from ctypes.util import find_library
-    libcrypto_path = find_library('crypto')
+    for p in ('crypto', 'eay32', 'libeay32'):
+        libcrypto_path = find_library(p)
+        if libcrypto_path:
+            break
+    else:
+        raise Exception('libcrypto(OpenSSL) not found')
     logging.info('loading libcrypto from %s', libcrypto_path)
     libcrypto = CDLL(libcrypto_path)
     libcrypto.EVP_get_cipherbyname.restype = c_void_p
@@ -56,7 +61,7 @@ def load_openssl():
     loaded = True
 
 
-def load_ctr_cipher(cipher_name):
+def load_cipher(cipher_name):
     func_name = 'EVP_' + cipher_name.replace('-', '_')
     cipher = getattr(libcrypto, func_name, None)
     if cipher:
@@ -70,10 +75,9 @@ class CtypesCrypto(object):
         if not loaded:
             load_openssl()
         self._ctx = None
-        if 'ctr' in cipher_name:
-            cipher = load_ctr_cipher(cipher_name)
-        else:
-            cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
+        cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
+        if not cipher:
+            cipher = load_cipher(cipher_name)
         if not cipher:
             raise Exception('cipher %s not found in libcrypto' % cipher_name)
         key_ptr = c_char_p(key)
@@ -110,6 +114,12 @@ class CtypesCrypto(object):
 
 
 ciphers = {
+    'aes-128-cfb': (16, 16, CtypesCrypto),
+    'aes-192-cfb': (24, 16, CtypesCrypto),
+    'aes-256-cfb': (32, 16, CtypesCrypto),
+    'aes-128-ofb': (16, 16, CtypesCrypto),
+    'aes-192-ofb': (24, 16, CtypesCrypto),
+    'aes-256-ofb': (32, 16, CtypesCrypto),
     'aes-128-ctr': (16, 16, CtypesCrypto),
     'aes-192-ctr': (24, 16, CtypesCrypto),
     'aes-256-ctr': (32, 16, CtypesCrypto),
@@ -119,6 +129,16 @@ ciphers = {
     'aes-128-cfb1': (16, 16, CtypesCrypto),
     'aes-192-cfb1': (24, 16, CtypesCrypto),
     'aes-256-cfb1': (32, 16, CtypesCrypto),
+    'bf-cfb': (16, 8, CtypesCrypto),
+    'camellia-128-cfb': (16, 16, CtypesCrypto),
+    'camellia-192-cfb': (24, 16, CtypesCrypto),
+    'camellia-256-cfb': (32, 16, CtypesCrypto),
+    'cast5-cfb': (16, 8, CtypesCrypto),
+    'des-cfb': (8, 8, CtypesCrypto),
+    'idea-cfb': (16, 8, CtypesCrypto),
+    'rc2-cfb': (16, 8, CtypesCrypto),
+    'rc4': (16, 0, CtypesCrypto),
+    'seed-cfb': (16, 16, CtypesCrypto),
 }
 
 
