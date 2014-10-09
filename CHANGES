@@ -1,3 +1,6 @@
+2.3.1 2014-10-09
+- Does not require M2Crypto any more
+
 2.3 2014-09-23
 - Support CFB1, CFB8 and CTR mode of AES
 - Do not require password config when using port_password
