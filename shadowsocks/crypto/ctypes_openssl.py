@@ -56,6 +56,8 @@ def load_openssl():
 
     libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
     libcrypto.EVP_CIPHER_CTX_free.argtypes = (c_void_p,)
+    if hasattr(libcrypto, 'OpenSSL_add_all_ciphers'):
+        libcrypto.OpenSSL_add_all_ciphers()
 
     buf = create_string_buffer(buf_size)
     loaded = True
