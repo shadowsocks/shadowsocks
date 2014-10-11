@@ -23,7 +23,7 @@ remote server.
 
 #### Debian / Ubuntu:
 
-    apt-get install python-pip python-m2crypto
+    apt-get install python-pip
     pip install shadowsocks
 
 Or simply `apt-get install shadowsocks` if you have [Debian sid] in your
@@ -31,15 +31,16 @@ source list.
 
 #### CentOS:
 
-    yum install m2crypto python-setuptools
+    yum install python-setuptools
     easy_install pip
     pip install shadowsocks
 
 #### Windows:
 
-Download OpenSSL for Windows and install. Then
-
-    pip install shadowsocks
+Download OpenSSL for Windows and install. Then install shadowsocks via
+easy_install and pip as Linux. If you don't know how to use them, you can
+directly download [the package], and use `python shadowsocks/server.py`
+instead of `ssserver` command below.
 
 Configuration
 -------------
@@ -128,6 +129,7 @@ Bugs and Issues
 [Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Chrome Standalone]: https://support.google.com/installer/answer/126299
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
+[the package]:       https://pypi.python.org/pypi/shadowsocks
 [Encryption]:        https://github.com/clowwindy/shadowsocks/wiki/Encryption
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
