@@ -1,3 +1,6 @@
+2.3.2 2014-10-11
+- Fix OpenSSL on Windows
+
 2.3.1 2014-10-09
 - Does not require M2Crypto any more
 
