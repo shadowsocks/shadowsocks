@@ -36,9 +36,9 @@ VERBOSE_LEVEL = 5
 
 def check_python():
     info = sys.version_info
-    # if not (info[0] == 2 and info[1] >= 6):
-    #     print('Python 2.6 or 2.7 required')
-    #     sys.exit(1)
+    if info[0] == 2 and not info[1] >= 6:
+        print('Python 2.6+ required')
+        sys.exit(1)
 
 
 def print_shadowsocks():
