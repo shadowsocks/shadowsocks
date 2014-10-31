@@ -21,19 +21,20 @@
 # SOFTWARE.
 
 import logging
+from ctypes import CDLL, c_char_p, c_int, c_long, byref,\
+    create_string_buffer, c_void_p
 
 __all__ = ['ciphers']
 
+libcrypto = None
 loaded = False
 
 buf_size = 2048
 
 
 def load_openssl():
-    global loaded, libcrypto, CDLL, c_char_p, c_int, c_long, byref,\
-        create_string_buffer, c_void_p, buf
-    from ctypes import CDLL, c_char_p, c_int, c_long, byref,\
-        create_string_buffer, c_void_p
+    global loaded, libcrypto, buf
+
     from ctypes.util import find_library
     for p in ('crypto', 'eay32', 'libeay32'):
         libcrypto_path = find_library(p)
@@ -152,7 +153,7 @@ def test():
     BLOCK_SIZE = 16384
     rounds = 1 * 1024
     plain = urandom(BLOCK_SIZE * rounds)
-    import M2Crypto.EVP
+    # import M2Crypto.EVP
     # cipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 1,
     #                key_as_bytes=0, d='md5', salt=None, i=1,
     #                padding=1)
