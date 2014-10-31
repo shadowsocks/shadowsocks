@@ -4,9 +4,10 @@ import sys
 import time
 
 
-before = time.time()
+if __name__ == '__main__':
+    before = time.time()
 
-for line in sys.stdin:
-    if 'HTTP/1.1 ' in line:
-        diff = time.time() - before
-        print 'headline %dms' % (diff * 1000)
+    for line in sys.stdin:
+        if 'HTTP/1.1 ' in line:
+            diff = time.time() - before
+            print 'headline %dms' % (diff * 1000)
