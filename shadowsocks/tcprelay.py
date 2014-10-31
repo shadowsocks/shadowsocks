@@ -21,6 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import time
 import socket
 import errno
@@ -29,7 +32,7 @@ import logging
 import traceback
 import random
 
-from shadowsocks import encrypt, eventloop, utils
+from shadowsocks import encrypt, eventloop, utils, common
 from shadowsocks.common import parse_header
 
 
@@ -231,13 +234,13 @@ class TCPRelayHandler(object):
     def _handle_stage_hello(self, data):
         try:
             if self._is_local:
-                cmd = ord(data[1])
+                cmd = common.ord(data[1])
                 if cmd == CMD_UDP_ASSOCIATE:
                     logging.debug('UDP associate')
                     if self._local_sock.family == socket.AF_INET6:
-                        header = '\x05\x00\x00\x04'
+                        header = b'\x05\x00\x00\x04'
                     else:
-                        header = '\x05\x00\x00\x01'
+                        header = b'\x05\x00\x00\x01'
                     addr, port = self._local_sock.getsockname()
                     addr_to_send = socket.inet_pton(self._local_sock.family,
                                                     addr)
@@ -265,7 +268,7 @@ class TCPRelayHandler(object):
             self._stage = STAGE_DNS
             if self._is_local:
                 # forward address to remote
-                self._write_to_sock('\x05\x00\x00\x01\x00\x00\x00\x00\x10\x10',
+                self._write_to_sock(b'\x05\x00\x00\x01\x00\x00\x00\x00\x10\x10',
                                     self._local_sock)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)
@@ -366,7 +369,7 @@ class TCPRelayHandler(object):
             return
         elif is_local and self._stage == STAGE_INIT:
             # TODO check auth method
-            self._write_to_sock('\x05\00', self._local_sock)
+            self._write_to_sock(b'\x05\00', self._local_sock)
             self._stage = STAGE_HELLO
             return
         elif self._stage == STAGE_REPLY:
@@ -411,7 +414,7 @@ class TCPRelayHandler(object):
     def _on_remote_write(self):
         self._stage = STAGE_STREAM
         if self._data_to_write_to_remote:
-            data = ''.join(self._data_to_write_to_remote)
+            data = b''.join(self._data_to_write_to_remote)
             self._data_to_write_to_remote = []
             self._write_to_sock(data, self._remote_sock)
         else:

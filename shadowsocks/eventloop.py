@@ -24,6 +24,8 @@
 # from ssloop
 # https://github.com/clowwindy/ssloop
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
 
 import os
 import socket
@@ -100,7 +102,7 @@ class KqueueLoop(object):
                 results[fd] |= POLL_IN
             elif e.filter == select.KQ_FILTER_WRITE:
                 results[fd] |= POLL_OUT
-        return results.iteritems()
+        return results.items()
 
     def add_fd(self, fd, mode):
         self._fds[fd] = mode

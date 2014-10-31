@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
 
 import hashlib
 
@@ -50,5 +52,5 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
 
 
 ciphers = {
-    'rc4-md5': (16, 16, create_cipher),
+    b'rc4-md5': (16, 16, create_cipher),
 }

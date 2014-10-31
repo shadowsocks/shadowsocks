@@ -20,6 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import os
 import sys
 import hashlib
@@ -74,23 +77,20 @@ def init_table(key, method=None):
                                          string.maketrans('', ''))
         cached_tables[key] = [encrypt_table, decrypt_table]
     else:
-        try:
-            Encryptor(key, method)  # test if the settings if OK
-        except Exception as e:
-            logging.error(e)
-            sys.exit(1)
+        Encryptor(key, method)  # test if the settings if OK
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
-    password = str(password)
+    if hasattr(password, 'encode'):
+        password = password.encode('utf-8')
     r = cached_keys.get(password, None)
     if r:
         return r
     m = []
     i = 0
-    while len(''.join(m)) < (key_len + iv_len):
+    while len(b''.join(m)) < (key_len + iv_len):
         md5 = hashlib.md5()
         data = password
         if i > 0:
@@ -98,7 +98,7 @@ def EVP_BytesToKey(password, key_len, iv_len):
         md5.update(data)
         m.append(md5.digest())
         i += 1
-    ms = ''.join(m)
+    ms = b''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
     cached_keys[password] = (key, iv)
@@ -107,13 +107,13 @@ def EVP_BytesToKey(password, key_len, iv_len):
 
 class Encryptor(object):
     def __init__(self, key, method=None):
-        if method == 'table':
+        if method == b'table':
             method = None
         self.key = key
         self.method = method
         self.iv = None
         self.iv_sent = False
-        self.cipher_iv = ''
+        self.cipher_iv = b''
         self.decipher = None
         if method:
             self.cipher = self.get_cipher(key, method, 1, iv=random_string(32))
@@ -130,7 +130,8 @@ class Encryptor(object):
         return len(self.cipher_iv)
 
     def get_cipher(self, password, method, op, iv=None):
-        password = password.encode('utf-8')
+        if hasattr(password, 'encode'):
+            password = password.encode('utf-8')
         method = method.lower()
         m = self.get_cipher_param(method)
         if m:
@@ -176,7 +177,7 @@ class Encryptor(object):
 
 
 def encrypt_all(password, method, op, data):
-    if method is not None and method.lower() == 'table':
+    if method is not None and method.lower() == b'table':
         method = None
     if not method:
         [encrypt_table, decrypt_table] = init_table(password)

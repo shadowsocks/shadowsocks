@@ -21,16 +21,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import socket
 import struct
 import logging
+
+
+def compat_ord(s):
+    if type(s) == int:
+        return s
+    return _ord(s)
+
+
+def compat_chr(d):
+    if bytes == str:
+        return _chr(d)
+    return bytes([d])
+
+
+_ord = ord
+_chr = chr
+ord = compat_ord
+chr = compat_chr
 
 
 def inet_ntop(family, ipstr):
     if family == socket.AF_INET:
         return socket.inet_ntoa(ipstr)
     elif family == socket.AF_INET6:
-        v6addr = ':'.join(('%02X%02X' % (ord(i), ord(j)))
+        v6addr = b':'.join((b'%02X%02X' % (ord(i), ord(j)))
                           for i, j in zip(ipstr[::2], ipstr[1::2]))
         return v6addr
 
@@ -39,15 +60,15 @@ def inet_pton(family, addr):
     if family == socket.AF_INET:
         return socket.inet_aton(addr)
     elif family == socket.AF_INET6:
-        if '.' in addr:  # a v4 addr
-            v4addr = addr[addr.rindex(':') + 1:]
+        if b'.' in addr:  # a v4 addr
+            v4addr = addr[addr.rindex(b':') + 1:]
             v4addr = socket.inet_aton(v4addr)
-            v4addr = map(lambda x: ('%02X' % ord(x)), v4addr)
-            v4addr.insert(2, ':')
-            newaddr = addr[:addr.rindex(':') + 1] + ''.join(v4addr)
+            v4addr = map(lambda x: (b'%02X' % ord(x)), v4addr)
+            v4addr.insert(2, b':')
+            newaddr = addr[:addr.rindex(b':') + 1] + b''.join(v4addr)
             return inet_pton(family, newaddr)
         dbyts = [0] * 8  # 8 groups
-        grps = addr.split(':')
+        grps = addr.split(b':')
         for i, v in enumerate(grps):
             if v:
                 dbyts[i] = int(v, 16)
@@ -58,7 +79,7 @@ def inet_pton(family, addr):
                     else:
                         break
                 break
-        return ''.join((chr(i // 256) + chr(i % 256)) for i in dbyts)
+        return b''.join((chr(i // 256) + chr(i % 256)) for i in dbyts)
     else:
         raise RuntimeError("What family?")
 

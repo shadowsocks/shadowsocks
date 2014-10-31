@@ -21,11 +21,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import sys
 import os
 import logging
 import signal
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from shadowsocks import utils, encrypt, eventloop, tcprelay, udprelay, asyncdns
 
 

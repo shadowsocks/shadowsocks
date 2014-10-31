@@ -21,6 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import os
 import json
 import sys
@@ -33,9 +36,9 @@ VERBOSE_LEVEL = 5
 
 def check_python():
     info = sys.version_info
-    if not (info[0] == 2 and info[1] >= 6):
-        print 'Python 2.6 or 2.7 required'
-        sys.exit(1)
+    # if not (info[0] == 2 and info[1] >= 6):
+    #     print('Python 2.6 or 2.7 required')
+    #     sys.exit(1)
 
 
 def print_shadowsocks():
@@ -45,7 +48,7 @@ def print_shadowsocks():
         version = pkg_resources.get_distribution('shadowsocks').version
     except Exception:
         pass
-    print 'shadowsocks %s' % version
+    print('shadowsocks %s' % version)
 
 
 def find_config():
@@ -76,7 +79,7 @@ def check_config(config):
     if config.get('timeout', 300) > 600:
         logging.warn('warning: your timeout %d seems too long' %
                      int(config.get('timeout')))
-    if config.get('password') in ['mypassword', 'barfoo!']:
+    if config.get('password') in ['mypassword']:
         logging.error('DON\'T USE DEFAULT PASSWORD! Please change it in your '
                       'config.json!')
         exit(1)
@@ -102,7 +105,8 @@ def get_config(is_local):
             logging.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
-                    config = json.load(f, object_hook=_decode_dict)
+                    config = json.loads(f.read().decode('utf8'),
+                                        object_hook=_decode_dict)
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -145,7 +149,7 @@ def get_config(is_local):
                 v_count -= 1
                 config['verbose'] = v_count
     except getopt.GetoptError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         print_help(is_local)
         sys.exit(2)
 
@@ -218,7 +222,7 @@ def print_help(is_local):
 
 
 def print_local_help():
-    print '''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
+    print('''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
                [-b LOCAL_ADDR] [-l LOCAL_PORT] -k PASSWORD [-m METHOD]
                [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] [-q]
 
@@ -237,11 +241,11 @@ optional arguments:
   -q, -qq               quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
-'''
+''')
 
 
 def print_server_help():
-    print '''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
+    print('''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
                 -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
                 [--workers WORKERS] [-v] [-q]
 
@@ -259,13 +263,13 @@ optional arguments:
   -q, -qq               quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
-'''
+''')
 
 
 def _decode_list(data):
     rv = []
     for item in data:
-        if isinstance(item, unicode):
+        if hasattr(item, 'encode'):
             item = item.encode('utf-8')
         elif isinstance(item, list):
             item = _decode_list(item)
@@ -277,10 +281,8 @@ def _decode_list(data):
 
 def _decode_dict(data):
     rv = {}
-    for key, value in data.iteritems():
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if isinstance(value, unicode):
+    for key, value in data.items():
+        if hasattr(value, 'encode'):
             value = value.encode('utf-8')
         elif isinstance(value, list):
             value = _decode_list(value)

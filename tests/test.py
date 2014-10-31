@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import sys
 import os
 import signal
@@ -22,7 +25,7 @@ else:
 if 'salsa20' in sys.argv[-1]:
     from shadowsocks.crypto import salsa20_ctr
     salsa20_ctr.test()
-    print 'encryption test passed'
+    print('encryption test passed')
 
 p1 = Popen(['python', 'shadowsocks/server.py', '-c', server_config],
            stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
@@ -69,7 +72,7 @@ try:
             sys.exit(r)
     else:
         sys.exit(1)
-    print 'test passed'
+    print('test passed')
 
 finally:
     for p in [p1, p2]:

@@ -20,6 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import time
 import struct
 import logging
@@ -39,13 +42,13 @@ def run_imports():
     if not imported:
         imported = True
         try:
-            __import__('numpy')
+            numpy = __import__('numpy')
         except ImportError:
             logging.error('can not import numpy, using SLOW XOR')
             logging.error('please install numpy if you use salsa20')
             slow_xor = True
         try:
-            __import__('salsa20')
+            salsa20 = __import__('salsa20')
         except ImportError:
             logging.error('you have to install salsa20 before you use salsa20')
             sys.exit(1)
@@ -116,7 +119,7 @@ class Salsa20Cipher(object):
 
 
 ciphers = {
-    'salsa20-ctr': (32, 8, Salsa20Cipher),
+    b'salsa20-ctr': (32, 8, Salsa20Cipher),
 }
 
 
@@ -138,7 +141,7 @@ def test():
     decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     results = []
     pos = 0
-    print 'salsa20 test start'
+    print('salsa20 test start')
     start = time.time()
     while pos < len(plain):
         l = random.randint(100, 32768)
@@ -153,7 +156,7 @@ def test():
         results.append(decipher.update(c[pos:pos + l]))
         pos += l
     end = time.time()
-    print 'speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start))
+    print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
     assert ''.join(results) == plain
 
 
