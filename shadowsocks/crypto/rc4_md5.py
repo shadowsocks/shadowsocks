@@ -47,7 +47,7 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
                                        d='md5', salt=None, i=1, padding=1)
         except:
             m2_not_found = True
-    import ctypes_openssl
+    from shadowsocks.crypto import ctypes_openssl
     return ctypes_openssl.CtypesCrypto('rc4', rc4_key, '', op)
 
 
