@@ -105,14 +105,14 @@ def pack_addr(address):
         try:
             r = socket.inet_pton(family, address)
             if family == socket.AF_INET6:
-                return '\x04' + r
+                return b'\x04' + r
             else:
-                return '\x01' + r
+                return b'\x01' + r
         except (TypeError, ValueError, OSError, IOError):
             pass
     if len(address) > 255:
         address = address[:255]  # TODO
-    return '\x03' + chr(len(address)) + address
+    return b'\x03' + chr(len(address)) + address
 
 
 def parse_header(data):
