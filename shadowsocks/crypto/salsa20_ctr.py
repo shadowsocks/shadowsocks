@@ -75,12 +75,10 @@ def py_xor_str(a, b):
     if bytes == str:
         for i in range(0, len(a)):
             c.append(chr(ord(a[i]) ^ ord(b[i])))
+        return ''.join(c)
     else:
         for i in range(0, len(a)):
             c.append(a[i] ^ b[i])
-    if bytes == str:
-        return ''.join(c)
-    else:
         return bytes(c)
 
 
