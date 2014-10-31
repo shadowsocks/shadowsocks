@@ -26,5 +26,4 @@ script:
   - python tests/test.py -c tests/salsa20.json
   - python tests/test.py -c tests/server-multi-ports.json
   - python tests/test.py -c tests/server-multi-passwd.json tests/server-multi-passwd-client-side.json
-  - python tests/test.py -c tests/server-multi-passwd-table.json
   - python tests/test.py -c tests/workers.json
