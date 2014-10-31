@@ -43,12 +43,13 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
     if not m2_not_found:
         try:
             import M2Crypto.EVP
-            return M2Crypto.EVP.Cipher('rc4', rc4_key, '', op, key_as_bytes=0,
-                                       d='md5', salt=None, i=1, padding=1)
+            return M2Crypto.EVP.Cipher(b'rc4', rc4_key, b'', op,
+                                       key_as_bytes=0, d='md5', salt=None, i=1,
+                                       padding=1)
         except:
             m2_not_found = True
     from shadowsocks.crypto import ctypes_openssl
-    return ctypes_openssl.CtypesCrypto('rc4', rc4_key, '', op)
+    return ctypes_openssl.CtypesCrypto(b'rc4', rc4_key, b'', op)
 
 
 ciphers = {
