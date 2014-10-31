@@ -2,6 +2,9 @@ language: python
 python:
   - 2.6
   - 2.7
+  - 3.2
+  - 3.3
+  - 3.4
   - pypy
 cache:
   directories:
@@ -15,7 +18,6 @@ script:
   - pep8 .
   - pyflakes .
   - python tests/nose_plugin.py
-  - python tests/test.py -c tests/table.json
   - python tests/test.py -c tests/aes.json
   - python tests/test.py -c tests/aes-ctr.json
   - python tests/test.py -c tests/aes-cfb1.json
