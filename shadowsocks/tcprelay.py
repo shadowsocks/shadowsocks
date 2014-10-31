@@ -268,7 +268,8 @@ class TCPRelayHandler(object):
             self._stage = STAGE_DNS
             if self._is_local:
                 # forward address to remote
-                self._write_to_sock(b'\x05\x00\x00\x01\x00\x00\x00\x00\x10\x10',
+                self._write_to_sock((b'\x05\x00\x00\x01'
+                                     b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)

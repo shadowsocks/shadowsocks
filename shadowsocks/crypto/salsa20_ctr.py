@@ -72,7 +72,7 @@ def numpy_xor(a, b):
 
 def py_xor_str(a, b):
     c = []
-    for i in xrange(0, len(a)):
+    for i in range(0, len(a)):
         c.append(chr(ord(a[i]) ^ ord(b[i])))
     return ''.join(c)
 

@@ -52,7 +52,7 @@ def inet_ntop(family, ipstr):
         return socket.inet_ntoa(ipstr)
     elif family == socket.AF_INET6:
         v6addr = b':'.join((b'%02X%02X' % (ord(i), ord(j)))
-                          for i, j in zip(ipstr[::2], ipstr[1::2]))
+                           for i, j in zip(ipstr[::2], ipstr[1::2]))
         return v6addr
 
 

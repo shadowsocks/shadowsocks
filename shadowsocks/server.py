@@ -70,7 +70,8 @@ def main():
     def run_server():
         def child_handler(signum, _):
             logging.warn('received SIGQUIT, doing graceful shutting down..')
-            list(map(lambda s: s.close(next_tick=True), tcp_servers + udp_servers))
+            list(map(lambda s: s.close(next_tick=True),
+                     tcp_servers + udp_servers))
         signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
                       child_handler)
         try:
