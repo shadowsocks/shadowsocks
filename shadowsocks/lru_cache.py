@@ -65,6 +65,7 @@ class LRUCache(collections.MutableMapping):
                 if self._store.__contains__(key):
                     if now - self._keys_to_last_time[key] > self.timeout:
                         del self._store[key]
+                        del self._keys_to_last_time[key]
                         c += 1
             del self._time_to_keys[least]
         if c:
