@@ -13,7 +13,7 @@ before_install:
   - sudo tests/socksify/install.sh
 script:
   - pep8 .
-  - nosetests shadowsocks/*
+  - python tests/nose_plugin.py
   - python tests/test.py -c tests/table.json
   - python tests/test.py -c tests/aes.json
   - python tests/test.py -c tests/aes-ctr.json
