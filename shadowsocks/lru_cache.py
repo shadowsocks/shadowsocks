@@ -3,8 +3,15 @@
 
 import collections
 import logging
-import heapq
 import time
+
+
+# this LRUCache is optimized for concurrency, not QPS
+# n: concurrency, keys stored in the cache
+# m: visits not timed out, proportional to QPS * timeout
+# get & set is O(1), not O(n). thus we can support very large n
+# TODO: if timeout or QPS is too large, then this cache is not very efficient,
+#       as sweep() causes long pause
 
 
 class LRUCache(collections.MutableMapping):
@@ -16,24 +23,24 @@ class LRUCache(collections.MutableMapping):
         self._store = {}
         self._time_to_keys = collections.defaultdict(list)
         self._keys_to_last_time = {}
-        self._last_visits = []
+        self._last_visits = collections.deque()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
-        # O(logm)
+        # O(1)
         t = time.time()
         self._keys_to_last_time[key] = t
         self._time_to_keys[t].append(key)
-        heapq.heappush(self._last_visits, t)
+        self._last_visits.append(t)
         return self._store[key]
 
     def __setitem__(self, key, value):
-        # O(logm)
+        # O(1)
         t = time.time()
         self._keys_to_last_time[key] = t
         self._store[key] = value
         self._time_to_keys[t].append(key)
-        heapq.heappush(self._last_visits, t)
+        self._last_visits.append(t)
 
     def __delitem__(self, key):
         # O(1)
@@ -61,7 +68,7 @@ class LRUCache(collections.MutableMapping):
                             value = self._store[key]
                             self.close_callback(value)
             for key in self._time_to_keys[least]:
-                heapq.heappop(self._last_visits)
+                self._last_visits.popleft()
                 if self._store.__contains__(key):
                     if now - self._keys_to_last_time[key] > self.timeout:
                         del self._store[key]
