@@ -68,7 +68,9 @@ def load_openssl():
 
 
 def load_cipher(cipher_name):
-    func_name = 'EVP_' + cipher_name.replace('-', '_')
+    func_name = b'EVP_' + cipher_name.replace(b'-', b'_')
+    if bytes != str:
+        func_name = str(func_name, 'utf-8')
     cipher = getattr(libcrypto, func_name, None)
     if cipher:
         cipher.restype = c_void_p
@@ -163,14 +165,14 @@ def test():
     # decipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 0,
     #                key_as_bytes=0, d='md5', salt=None, i=1,
     #                padding=1)
-    cipher = CtypesCrypto('aes-128-cfb', b'k' * 32, b'i' * 16, 1)
-    decipher = CtypesCrypto('aes-128-cfb', b'k' * 32, b'i' * 16, 0)
+    cipher = CtypesCrypto(b'aes-128-cfb', b'k' * 32, b'i' * 16, 1)
+    decipher = CtypesCrypto(b'aes-128-cfb', b'k' * 32, b'i' * 16, 0)
 
     # cipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     # decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     results = []
     pos = 0
-    print('salsa20 test start')
+    print('openssl test start')
     start = time.time()
     while pos < len(plain):
         l = random.randint(100, 32768)
@@ -178,7 +180,7 @@ def test():
         results.append(c)
         pos += l
     pos = 0
-    c = ''.join(results)
+    c = b''.join(results)
     results = []
     while pos < len(plain):
         l = random.randint(100, 32768)
@@ -186,7 +188,7 @@ def test():
         pos += l
     end = time.time()
     print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
-    assert ''.join(results) == plain
+    assert b''.join(results) == plain
 
 
 if __name__ == '__main__':

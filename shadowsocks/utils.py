@@ -87,7 +87,7 @@ def check_config(config):
 
 def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)-s: %(message)s', filemode='a+')
+                        format='%(levelname)-s: %(message)s')
     if is_local:
         shortopts = 'hs:b:p:k:l:m:c:t:vq'
         longopts = ['fast-open']
