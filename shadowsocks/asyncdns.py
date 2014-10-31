@@ -27,14 +27,13 @@ import socket
 import struct
 import re
 import logging
-import common
-import lru_cache
-import eventloop
+
+from shadowsocks import common, lru_cache, eventloop
 
 
 CACHE_SWEEP_INTERVAL = 30
 
-VALID_HOSTNAME = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+VALID_HOSTNAME = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
 
 common.patch_socket()
 

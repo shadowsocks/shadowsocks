@@ -25,12 +25,8 @@ import sys
 import os
 import logging
 import signal
-import utils
-import encrypt
-import eventloop
-import tcprelay
-import udprelay
-import asyncdns
+
+from shadowsocks import utils, encrypt, eventloop, tcprelay, udprelay, asyncdns
 
 
 def main():

@@ -28,10 +28,9 @@ import struct
 import logging
 import traceback
 import random
-import encrypt
-import eventloop
-import utils
-from common import parse_header
+
+from shadowsocks import encrypt, eventloop, utils
+from shadowsocks.common import parse_header
 
 
 TIMEOUTS_CLEAN_SIZE = 512

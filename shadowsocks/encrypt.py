@@ -26,19 +26,17 @@ import hashlib
 import string
 import struct
 import logging
-import crypto.m2
-import crypto.rc4_md5
-import crypto.salsa20_ctr
-import crypto.ctypes_openssl
+
+from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr, ctypes_openssl
 
 
 method_supported = {}
 
-method_supported.update(crypto.rc4_md5.ciphers)
-method_supported.update(crypto.salsa20_ctr.ciphers)
-method_supported.update(crypto.ctypes_openssl.ciphers)
+method_supported.update(rc4_md5.ciphers)
+method_supported.update(salsa20_ctr.ciphers)
+method_supported.update(ctypes_openssl.ciphers)
 # let M2Crypto override ctypes_openssl
-method_supported.update(crypto.m2.ciphers)
+method_supported.update(m2.ciphers)
 
 
 def random_string(length):
