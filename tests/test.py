@@ -22,11 +22,6 @@ elif sys.argv[-2] == '-c':
 else:
     raise Exception('usage: test.py -c server_conf [client_conf]')
 
-if 'salsa20' in sys.argv[-1]:
-    from shadowsocks.crypto import salsa20_ctr
-    salsa20_ctr.test()
-    print('encryption test passed')
-
 p1 = Popen(['python', 'shadowsocks/server.py', '-c', server_config],
            stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 p2 = Popen(['python', 'shadowsocks/local.py', '-c', client_config],
@@ -44,6 +39,8 @@ try:
 
         for fd in r:
             line = fd.readline()
+            if bytes != str:
+                line = str(line, 'utf8')
             sys.stdout.write(line)
             if line.find('starting local') >= 0:
                 local_ready = True
