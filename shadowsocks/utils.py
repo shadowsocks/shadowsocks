@@ -39,6 +39,12 @@ def check_python():
     if info[0] == 2 and not info[1] >= 6:
         print('Python 2.6+ required')
         sys.exit(1)
+    if info[0] == 3 and not info[1] >= 3:
+        print('Python 3.3+ required')
+        sys.exit(1)
+    else:
+        print('Python version not supported')
+        sys.exit(1)
 
 
 def print_shadowsocks():
