@@ -163,8 +163,8 @@ def test():
     # decipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 0,
     #                key_as_bytes=0, d='md5', salt=None, i=1,
     #                padding=1)
-    cipher = CtypesCrypto('aes-128-cfb', 'k' * 32, 'i' * 16, 1)
-    decipher = CtypesCrypto('aes-128-cfb', 'k' * 32, 'i' * 16, 0)
+    cipher = CtypesCrypto('aes-128-cfb', b'k' * 32, b'i' * 16, 1)
+    decipher = CtypesCrypto('aes-128-cfb', b'k' * 32, b'i' * 16, 0)
 
     # cipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     # decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
