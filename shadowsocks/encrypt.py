@@ -204,4 +204,4 @@ def encrypt_all(password, method, op, data):
             data = data[iv_len:]
         cipher = m(method, key, iv, op)
         result.append(cipher.update(data))
-        return ''.join(result)
+        return b''.join(result)
