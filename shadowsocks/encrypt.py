@@ -34,12 +34,18 @@ from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr, ctypes_openssl
 
 
 method_supported = {}
-
 method_supported.update(rc4_md5.ciphers)
 method_supported.update(salsa20_ctr.ciphers)
 method_supported.update(ctypes_openssl.ciphers)
 # let M2Crypto override ctypes_openssl
 method_supported.update(m2.ciphers)
+
+if hasattr(string, 'maketrans'):
+    maketrans = string.maketrans
+    translate = string.translate
+else:
+    maketrans = bytes.maketrans
+    translate = bytes.translate
 
 
 def random_string(length):
@@ -47,7 +53,6 @@ def random_string(length):
         import M2Crypto.Rand
         return M2Crypto.Rand.rand_bytes(length)
     except ImportError:
-        # TODO really strong enough on Linux?
         return os.urandom(length)
 
 
@@ -60,7 +65,7 @@ def get_table(key):
     m.update(key)
     s = m.digest()
     (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
+    table = [c for c in maketrans(b'', b'')]
     for i in range(1, 1024):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
     return table
@@ -72,9 +77,8 @@ def init_table(key, method=None):
     if not method:
         if key in cached_tables:
             return cached_tables[key]
-        encrypt_table = ''.join(get_table(key))
-        decrypt_table = string.maketrans(encrypt_table,
-                                         string.maketrans('', ''))
+        encrypt_table = b''.join(get_table(key))
+        decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
         cached_tables[key] = [encrypt_table, decrypt_table]
     else:
         Encryptor(key, method)  # test if the settings if OK
@@ -108,6 +112,8 @@ def EVP_BytesToKey(password, key_len, iv_len):
 class Encryptor(object):
     def __init__(self, key, method=None):
         if method == b'table':
+            if bytes != str:
+                raise Exception('table is not supported on Python 3')
             method = None
         self.key = key
         self.method = method
@@ -151,7 +157,7 @@ class Encryptor(object):
         if len(buf) == 0:
             return buf
         if not self.method:
-            return string.translate(buf, self.encrypt_table)
+            return translate(buf, self.encrypt_table)
         else:
             if self.iv_sent:
                 return self.cipher.update(buf)
@@ -163,7 +169,7 @@ class Encryptor(object):
         if len(buf) == 0:
             return buf
         if not self.method:
-            return string.translate(buf, self.decrypt_table)
+            return translate(buf, self.decrypt_table)
         else:
             if self.decipher is None:
                 decipher_iv_len = self.get_cipher_param(self.method)[1]
@@ -182,9 +188,9 @@ def encrypt_all(password, method, op, data):
     if not method:
         [encrypt_table, decrypt_table] = init_table(password)
         if op:
-            return string.translate(data, encrypt_table)
+            return translate(data, encrypt_table)
         else:
-            return string.translate(data, decrypt_table)
+            return translate(data, decrypt_table)
     else:
         result = []
         method = method.lower()
