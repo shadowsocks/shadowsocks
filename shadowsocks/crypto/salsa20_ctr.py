@@ -28,6 +28,9 @@ import sys
 slow_xor = False
 imported = False
 
+salsa20 = None
+numpy = None
+
 BLOCK_SIZE = 16384
 
 
@@ -36,13 +39,13 @@ def run_imports():
     if not imported:
         imported = True
         try:
-            import numpy
+            __import__('numpy')
         except ImportError:
             logging.error('can not import numpy, using SLOW XOR')
             logging.error('please install numpy if you use salsa20')
             slow_xor = True
         try:
-            import salsa20
+            __import__('salsa20')
         except ImportError:
             logging.error('you have to install salsa20 before you use salsa20')
             sys.exit(1)
@@ -123,7 +126,7 @@ def test():
 
     rounds = 1 * 1024
     plain = urandom(BLOCK_SIZE * rounds)
-    import M2Crypto.EVP
+    # import M2Crypto.EVP
     # cipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 1,
     #                key_as_bytes=0, d='md5', salt=None, i=1,
     #                padding=1)
