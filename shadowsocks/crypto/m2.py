@@ -79,31 +79,36 @@ def run_method(method):
     util.run_cipher(cipher, decipher)
 
 
-def test_aes_128_cfb():
+def check_env():
+    # skip this test on pypy and Python 3
+    try:
+        import __pypy__
+        from nose.plugins.skip import SkipTest
+        raise SkipTest
+    except ImportError:
+        __pypy__ = None
     if bytes != str:
         from nose.plugins.skip import SkipTest
         raise SkipTest
+
+
+def test_aes_128_cfb():
+    check_env()
     run_method(b'aes-128-cfb')
 
 
 def test_aes_256_cfb():
-    if bytes != str:
-        from nose.plugins.skip import SkipTest
-        raise SkipTest
+    check_env()
     run_method(b'aes-256-cfb')
 
 
 def test_bf_cfb():
-    if bytes != str:
-        from nose.plugins.skip import SkipTest
-        raise SkipTest
+    check_env()
     run_method(b'bf-cfb')
 
 
 def test_rc4():
-    if bytes != str:
-        from nose.plugins.skip import SkipTest
-        raise SkipTest
+    check_env()
     run_method(b'rc4')
 
 
