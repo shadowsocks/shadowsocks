@@ -80,18 +80,30 @@ def run_method(method):
 
 
 def test_aes_128_cfb():
+    if bytes != str:
+        from nose.plugins.skip import SkipTest
+        raise SkipTest
     run_method(b'aes-128-cfb')
 
 
 def test_aes_256_cfb():
+    if bytes != str:
+        from nose.plugins.skip import SkipTest
+        raise SkipTest
     run_method(b'aes-256-cfb')
 
 
 def test_bf_cfb():
+    if bytes != str:
+        from nose.plugins.skip import SkipTest
+        raise SkipTest
     run_method(b'bf-cfb')
 
 
 def test_rc4():
+    if bytes != str:
+        from nose.plugins.skip import SkipTest
+        raise SkipTest
     run_method(b'rc4')
 
 
