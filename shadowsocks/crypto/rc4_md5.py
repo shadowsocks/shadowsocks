@@ -28,28 +28,22 @@ import hashlib
 
 __all__ = ['ciphers']
 
-m2_not_found = False
-
 
 def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
                   i=1, padding=1):
-    global m2_not_found
-
     md5 = hashlib.md5()
     md5.update(key)
     md5.update(iv)
     rc4_key = md5.digest()
 
-    if not m2_not_found:
-        try:
-            import M2Crypto.EVP
-            return M2Crypto.EVP.Cipher(b'rc4', rc4_key, b'', op,
-                                       key_as_bytes=0, d='md5', salt=None, i=1,
-                                       padding=1)
-        except:
-            m2_not_found = True
-    from shadowsocks.crypto import ctypes_openssl
-    return ctypes_openssl.CtypesCrypto(b'rc4', rc4_key, b'', op)
+    try:
+        from shadowsocks.crypto import ctypes_openssl
+        return ctypes_openssl.CtypesCrypto(b'rc4', rc4_key, b'', op)
+    except:
+        import M2Crypto.EVP
+        return M2Crypto.EVP.Cipher(b'rc4', rc4_key, b'', op,
+                                   key_as_bytes=0, d='md5', salt=None, i=1,
+                                   padding=1)
 
 
 ciphers = {
