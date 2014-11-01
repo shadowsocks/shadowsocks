@@ -68,3 +68,32 @@ if has_m2:
     }
 else:
     ciphers = {}
+
+
+def run_method(method):
+    from shadowsocks.crypto import util
+
+    cipher = create_cipher(method, b'k' * 32, b'i' * 16, 1)
+    decipher = create_cipher(method, b'k' * 32, b'i' * 16, 0)
+
+    util.run_cipher(cipher, decipher)
+
+
+def test_aes_128_cfb():
+    run_method(b'aes-128-cfb')
+
+
+def test_aes_256_cfb():
+    run_method(b'aes-256-cfb')
+
+
+def test_bf_cfb():
+    run_method(b'bf-cfb')
+
+
+def test_rc4():
+    run_method(b'rc4')
+
+
+if __name__ == '__main__':
+    test_aes_128_cfb()

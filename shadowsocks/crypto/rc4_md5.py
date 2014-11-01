@@ -55,3 +55,16 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
 ciphers = {
     b'rc4-md5': (16, 16, create_cipher),
 }
+
+
+def test():
+    from shadowsocks.crypto import util
+
+    cipher = create_cipher(b'salsa20-ctr', b'k' * 32, b'i' * 8, 1)
+    decipher = create_cipher(b'salsa20-ctr', b'k' * 32, b'i' * 8, 1)
+
+    util.run_cipher(cipher, decipher)
+
+
+if __name__ == '__main__':
+    test()

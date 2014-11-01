@@ -129,40 +129,12 @@ ciphers = {
 
 
 def test():
-    from os import urandom
-    import random
-
-    rounds = 1 * 1024
-    plain = urandom(BLOCK_SIZE * rounds)
-    # import M2Crypto.EVP
-    # cipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 1,
-    #                key_as_bytes=0, d='md5', salt=None, i=1,
-    #                padding=1)
-    # decipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 0,
-    #                key_as_bytes=0, d='md5', salt=None, i=1,
-    #                padding=1)
+    from shadowsocks.crypto import util
 
     cipher = Salsa20Cipher(b'salsa20-ctr', b'k' * 32, b'i' * 8, 1)
     decipher = Salsa20Cipher(b'salsa20-ctr', b'k' * 32, b'i' * 8, 1)
-    results = []
-    pos = 0
-    print('salsa20 test start')
-    start = time.time()
-    while pos < len(plain):
-        l = random.randint(100, 32768)
-        c = cipher.update(plain[pos:pos + l])
-        results.append(c)
-        pos += l
-    pos = 0
-    c = b''.join(results)
-    results = []
-    while pos < len(plain):
-        l = random.randint(100, 32768)
-        results.append(decipher.update(c[pos:pos + l]))
-        pos += l
-    end = time.time()
-    print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
-    assert b''.join(results) == plain
+
+    util.run_cipher(cipher, decipher)
 
 
 if __name__ == '__main__':
