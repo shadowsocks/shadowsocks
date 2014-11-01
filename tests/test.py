@@ -82,8 +82,8 @@ try:
             if line.find('starting server') >= 0:
                 server_ready = True
 
-        if local_ready and server_ready and p3 is None:
-            time.sleep(1)
+        if stage == 1:
+            time.sleep(2)
 
             p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
                         '--socks5-hostname', '127.0.0.1:1081',
