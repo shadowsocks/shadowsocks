@@ -1,3 +1,6 @@
+2.4.1 2014-11-01
+- Fix setup.py for non-utf8 locales on Python 3
+
 2.4 2014-11-01
 - Python 3 support
 - Performance improvement
