@@ -1,3 +1,8 @@
+2.4 2014-11-01
+- Python 3 support
+- Performance improvement
+- Fix LRU cache behavior
+
 2.3.2 2014-10-11
 - Fix OpenSSL on Windows
 
