@@ -83,10 +83,11 @@ def check_env():
     # skip this test on pypy and Python 3
     try:
         import __pypy__
+        del __pypy__
         from nose.plugins.skip import SkipTest
         raise SkipTest
     except ImportError:
-        __pypy__ = None
+        pass
     if bytes != str:
         from nose.plugins.skip import SkipTest
         raise SkipTest
