@@ -150,7 +150,7 @@ ciphers = {
 }
 
 
-def test():
+def run_method(method):
     from os import urandom
     import random
     import time
@@ -165,8 +165,8 @@ def test():
     # decipher = M2Crypto.EVP.Cipher('aes_128_cfb', 'k' * 32, 'i' * 16, 0,
     #                key_as_bytes=0, d='md5', salt=None, i=1,
     #                padding=1)
-    cipher = CtypesCrypto(b'aes-128-cfb', b'k' * 32, b'i' * 16, 1)
-    decipher = CtypesCrypto(b'aes-128-cfb', b'k' * 32, b'i' * 16, 0)
+    cipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 1)
+    decipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 0)
 
     # cipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
     # decipher = Salsa20Cipher('salsa20-ctr', 'k' * 32, 'i' * 8, 1)
@@ -191,5 +191,33 @@ def test():
     assert b''.join(results) == plain
 
 
+def test_aes_128_cfb():
+    run_method(b'aes-128-cfb')
+
+
+def test_aes_256_cfb():
+    run_method(b'aes-256-cfb')
+
+
+def test_aes_128_cfb8():
+    run_method(b'aes-128-cfb8')
+
+
+def test_aes_256_ofb():
+    run_method(b'aes-256-ofb')
+
+
+def test_aes_256_ctr():
+    run_method(b'aes-256-ctr')
+
+
+def test_bf_cfb():
+    run_method(b'bf-cfb')
+
+
+def test_rc4():
+    run_method(b'rc4')
+
+
 if __name__ == '__main__':
-    test()
+    test_aes_128_cfb()
