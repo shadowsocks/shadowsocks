@@ -17,6 +17,7 @@ script:
   - pep8 .
   - pyflakes .
   - python tests/nose_plugin.py -v
+  - python setup.py sdist
   - python tests/test.py -c tests/aes.json
   - python tests/test.py -c tests/aes-ctr.json
   - python tests/test.py -c tests/aes-cfb1.json

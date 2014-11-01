@@ -47,6 +47,16 @@ p1 = Popen(['python', 'shadowsocks/server.py', '-c', server_config],
 p2 = Popen(['python', 'shadowsocks/local.py', '-c', client_config],
            stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 p3 = None
+p4 = None
+p3_fin = False
+p4_fin = False
+
+# 1 shadowsocks started
+# 2 curl started
+# 3 curl finished
+# 4 dig started
+# 5 dig finished
+stage = 1
 
 try:
     local_ready = False
@@ -59,6 +69,11 @@ try:
 
         for fd in r:
             line = fd.readline()
+            if not line:
+                if stage == 2 and fd == p3.stdout:
+                    stage = 3
+                if stage == 4 and fd == p4.stdout:
+                    stage = 5
             if bytes != str:
                 line = str(line, 'utf8')
             sys.stdout.write(line)
@@ -70,27 +85,38 @@ try:
         if local_ready and server_ready and p3 is None:
             time.sleep(1)
 
+            p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
+                        '--socks5-hostname', '127.0.0.1:1081',
+                        '-m', '15', '--connect-timeout', '10'],
+                       stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+            if p3 is not None:
+                fdset.append(p3.stdout)
+                fdset.append(p3.stderr)
+                stage = 2
+            else:
+                sys.exit(1)
+
+        if stage == 3 and p3 is not None:
+            fdset.remove(p3.stdout)
+            fdset.remove(p3.stderr)
+            r = p3.wait()
+            if r != 0:
+                sys.exit(1)
+            p4 = Popen(['socksify', 'dig', '@8.8.8.8', 'www.google.com'],
+                       stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+            if p4 is not None:
+                fdset.append(p4.stdout)
+                fdset.append(p4.stderr)
+                stage = 4
+            else:
+                sys.exit(1)
+
+        if stage == 5:
+            r = p4.wait()
+            if r != 0:
+                sys.exit(1)
+            print('test passed')
             break
-
-    p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
-               '--socks5-hostname', '127.0.0.1:1081'], close_fds=True)
-    if p3 is not None:
-        r = p3.wait()
-        if r != 0:
-            sys.exit(r)
-    else:
-        sys.exit(1)
-
-    p4 = Popen(['socksify', 'dig', '@8.8.8.8', 'www.google.com'],
-               close_fds=True)
-    if p4 is not None:
-        r = p4.wait()
-        if r != 0:
-            sys.exit(r)
-    else:
-        sys.exit(1)
-    print('test passed')
-
 finally:
     for p in [p1, p2]:
         try:
