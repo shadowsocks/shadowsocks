@@ -1,7 +1,8 @@
+import codecs
 from setuptools import setup
 
 
-with open('README.rst') as f:
+with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
