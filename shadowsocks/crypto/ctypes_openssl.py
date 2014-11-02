@@ -49,8 +49,6 @@ def load_openssl():
     libcrypto = CDLL(libcrypto_path)
     libcrypto.EVP_get_cipherbyname.restype = c_void_p
     libcrypto.EVP_CIPHER_CTX_new.restype = c_void_p
-    libcrypto.EVP_CIPHER_CTX_new.argtypes = (c_void_p, c_void_p, c_char_p,
-                                             c_char_p)
 
     libcrypto.EVP_CipherInit_ex.argtypes = (c_void_p, c_void_p, c_char_p,
                                             c_char_p, c_char_p, c_int)
@@ -90,8 +88,7 @@ class CtypesCrypto(object):
             raise Exception('cipher %s not found in libcrypto' % cipher_name)
         key_ptr = c_char_p(key)
         iv_ptr = c_char_p(iv)
-        self._ctx = libcrypto.EVP_CIPHER_CTX_new(cipher, None,
-                                                 key_ptr, iv_ptr)
+        self._ctx = libcrypto.EVP_CIPHER_CTX_new()
         if not self._ctx:
             raise Exception('can not create cipher context')
         r = libcrypto.EVP_CipherInit_ex(self._ctx, cipher, None,
