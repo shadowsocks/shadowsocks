@@ -10,7 +10,7 @@ A fast tunnel proxy that helps you bypass firewalls.
 Install
 -------
 
-You'll have a client on your local machine, and install a server on a
+You'll have a client on your local side, and setup a server on a
 remote server.
 
 ### Client
