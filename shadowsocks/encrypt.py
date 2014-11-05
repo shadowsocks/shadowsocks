@@ -51,7 +51,7 @@ def random_string(length):
 cached_keys = {}
 
 
-def test_cipher(key, method=None):
+def try_cipher(key, method=None):
     Encryptor(key, method)
 
 
