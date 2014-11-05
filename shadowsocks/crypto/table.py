@@ -170,7 +170,7 @@ def test_encryption():
     from shadowsocks.crypto import util
 
     cipher = TableCipher(b'table', b'test', b'', 1)
-    decipher = TableCipher(b'rc4-md5', b'test', b'', 0)
+    decipher = TableCipher(b'table', b'test', b'', 0)
 
     util.run_cipher(cipher, decipher)
 
