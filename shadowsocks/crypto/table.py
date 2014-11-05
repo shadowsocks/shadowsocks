@@ -78,6 +78,7 @@ ciphers = {
 
 
 def test_table_result():
+    from shadowsocks.common import ord
     target1 = [
         [60, 53, 84, 138, 217, 94, 88, 23, 39, 242, 219, 35, 12, 157, 165, 181,
          255, 143, 83, 247, 162, 16, 31, 209, 190, 171, 115, 65, 38, 41, 21,
@@ -150,15 +151,15 @@ def test_table_result():
          184, 22, 104, 254, 234, 253, 187, 226, 247, 188, 156, 151, 40, 108,
          51, 83, 178, 52, 3, 31, 255, 195, 53, 235, 126, 167, 120]]
 
-    encrypt_table = ''.join(get_table('foobar!'))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
+    encrypt_table = b''.join(get_table(b'foobar!'))
+    decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
 
     for i in range(0, 256):
         assert (target1[0][i] == ord(encrypt_table[i]))
         assert (target1[1][i] == ord(decrypt_table[i]))
 
-    encrypt_table = ''.join(get_table('barfoo!'))
-    decrypt_table = string.maketrans(encrypt_table, string.maketrans('', ''))
+    encrypt_table = b''.join(get_table(b'barfoo!'))
+    decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
 
     for i in range(0, 256):
         assert (target2[0][i] == ord(encrypt_table[i]))
@@ -175,4 +176,5 @@ def test_encryption():
 
 
 if __name__ == '__main__':
+    test_table_result()
     test_encryption()
