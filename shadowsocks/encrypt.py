@@ -77,7 +77,7 @@ def EVP_BytesToKey(password, key_len, iv_len):
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
     cached_keys[password] = (key, iv)
-    return (key, iv)
+    return key, iv
 
 
 class Encryptor(object):
@@ -148,7 +148,10 @@ def encrypt_all(password, method, op, data):
     result = []
     method = method.lower()
     (key_len, iv_len, m) = method_supported[method]
-    (key, _) = EVP_BytesToKey(password, key_len, iv_len)
+    if key_len > 0:
+        key, _ = EVP_BytesToKey(password, key_len, iv_len)
+    else:
+        key = password
     if op:
         iv = random_string(iv_len)
         result.append(iv)
