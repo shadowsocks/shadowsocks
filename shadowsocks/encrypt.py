@@ -65,9 +65,10 @@ def get_table(key):
     m.update(key)
     s = m.digest()
     (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in maketrans(b'', b'')]
+    table = maketrans(b'', b'')
+    table = [table[i: i + 1] for i in range(len(table))]
     for i in range(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
+        table.sort(key=lambda x: int(a % (ord(x) + i)))
     return table
 
 
@@ -75,11 +76,11 @@ def init_table(key, method=None):
     if method is not None and method == 'table':
         method = None
     if not method:
-        if key in cached_tables:
-            return cached_tables[key]
-        encrypt_table = b''.join(get_table(key))
-        decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
-        cached_tables[key] = [encrypt_table, decrypt_table]
+        if key not in cached_tables:
+            encrypt_table = b''.join(get_table(key))
+            decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
+            cached_tables[key] = [encrypt_table, decrypt_table]
+        return cached_tables[key]
     else:
         Encryptor(key, method)  # test if the settings if OK
 
@@ -112,8 +113,6 @@ def EVP_BytesToKey(password, key_len, iv_len):
 class Encryptor(object):
     def __init__(self, key, method=None):
         if method == b'table':
-            if bytes != str:
-                raise Exception('table is not supported on Python 3')
             method = None
         self.key = key
         self.method = method
