@@ -46,7 +46,7 @@ def main():
 
     utils.print_shadowsocks()
 
-    encrypt.init_table(config['password'], config['method'])
+    encrypt.test_cipher(config['password'], config['method'])
 
     try:
         logging.info("starting local at %s:%d" %

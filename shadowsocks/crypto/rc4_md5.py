@@ -55,7 +55,7 @@ def test():
     from shadowsocks.crypto import util
 
     cipher = create_cipher(b'rc4-md5', b'k' * 32, b'i' * 16, 1)
-    decipher = create_cipher(b'rc4-md5', b'k' * 32, b'i' * 16, 1)
+    decipher = create_cipher(b'rc4-md5', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

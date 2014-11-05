@@ -26,11 +26,9 @@ from __future__ import absolute_import, division, print_function, \
 import os
 import sys
 import hashlib
-import string
-import struct
 import logging
 
-from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr, ctypes_openssl
+from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr, ctypes_openssl, table
 
 
 method_supported = {}
@@ -39,13 +37,7 @@ method_supported.update(salsa20_ctr.ciphers)
 method_supported.update(ctypes_openssl.ciphers)
 # let M2Crypto override ctypes_openssl
 method_supported.update(m2.ciphers)
-
-if hasattr(string, 'maketrans'):
-    maketrans = string.maketrans
-    translate = string.translate
-else:
-    maketrans = bytes.maketrans
-    translate = bytes.translate
+method_supported.update(table.ciphers)
 
 
 def random_string(length):
@@ -56,33 +48,11 @@ def random_string(length):
         return os.urandom(length)
 
 
-cached_tables = {}
 cached_keys = {}
 
 
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = maketrans(b'', b'')
-    table = [table[i: i + 1] for i in range(len(table))]
-    for i in range(1, 1024):
-        table.sort(key=lambda x: int(a % (ord(x) + i)))
-    return table
-
-
-def init_table(key, method=None):
-    if method is not None and method == 'table':
-        method = None
-    if not method:
-        if key not in cached_tables:
-            encrypt_table = b''.join(get_table(key))
-            decrypt_table = maketrans(encrypt_table, maketrans(b'', b''))
-            cached_tables[key] = [encrypt_table, decrypt_table]
-        return cached_tables[key]
-    else:
-        Encryptor(key, method)  # test if the settings if OK
+def test_cipher(key, method=None):
+    Encryptor(key, method)
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
@@ -111,96 +81,80 @@ def EVP_BytesToKey(password, key_len, iv_len):
 
 
 class Encryptor(object):
-    def __init__(self, key, method=None):
-        if method == b'table':
-            method = None
+    def __init__(self, key, method):
         self.key = key
         self.method = method
         self.iv = None
         self.iv_sent = False
         self.cipher_iv = b''
         self.decipher = None
-        if method:
-            self.cipher = self.get_cipher(key, method, 1, iv=random_string(32))
-        else:
-            self.encrypt_table, self.decrypt_table = init_table(key)
-            self.cipher = None
-
-    def get_cipher_param(self, method):
         method = method.lower()
-        m = method_supported.get(method, None)
+        self._method_info = self.get_method_info(method)
+        if self._method_info:
+            self.cipher = self.get_cipher(key, method, 1,
+                                          random_string(self._method_info[1]))
+        else:
+            logging.error('method %s not supported' % method)
+            sys.exit(1)
+
+    def get_method_info(self, method):
+        method = method.lower()
+        m = method_supported.get(method)
         return m
 
     def iv_len(self):
         return len(self.cipher_iv)
 
-    def get_cipher(self, password, method, op, iv=None):
+    def get_cipher(self, password, method, op, iv):
         if hasattr(password, 'encode'):
             password = password.encode('utf-8')
-        method = method.lower()
-        m = self.get_cipher_param(method)
-        if m:
+        m = self._method_info
+        if m[0] > 0:
             key, iv_ = EVP_BytesToKey(password, m[0], m[1])
-            if iv is None:
-                iv = iv_
-            iv = iv[:m[1]]
-            if op == 1:
-                # this iv is for cipher not decipher
-                self.cipher_iv = iv[:m[1]]
-            return m[2](method, key, iv, op)
+        else:
+            # key_length == 0 indicates we should use the key directly
+            key, iv = password, b''
 
-        logging.error('method %s not supported' % method)
-        sys.exit(1)
+        iv = iv[:m[1]]
+        if op == 1:
+            # this iv is for cipher not decipher
+            self.cipher_iv = iv[:m[1]]
+        return m[2](method, key, iv, op)
 
     def encrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if not self.method:
-            return translate(buf, self.encrypt_table)
+        if self.iv_sent:
+            return self.cipher.update(buf)
         else:
-            if self.iv_sent:
-                return self.cipher.update(buf)
-            else:
-                self.iv_sent = True
-                return self.cipher_iv + self.cipher.update(buf)
+            self.iv_sent = True
+            return self.cipher_iv + self.cipher.update(buf)
 
     def decrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if not self.method:
-            return translate(buf, self.decrypt_table)
-        else:
-            if self.decipher is None:
-                decipher_iv_len = self.get_cipher_param(self.method)[1]
-                decipher_iv = buf[:decipher_iv_len]
-                self.decipher = self.get_cipher(self.key, self.method, 0,
-                                                iv=decipher_iv)
-                buf = buf[decipher_iv_len:]
-                if len(buf) == 0:
-                    return buf
-            return self.decipher.update(buf)
+        if self.decipher is None:
+            decipher_iv_len = self._method_info[1]
+            decipher_iv = buf[:decipher_iv_len]
+            self.decipher = self.get_cipher(self.key, self.method, 0,
+                                            iv=decipher_iv)
+            buf = buf[decipher_iv_len:]
+            if len(buf) == 0:
+                return buf
+        return self.decipher.update(buf)
 
 
 def encrypt_all(password, method, op, data):
-    if method is not None and method.lower() == b'table':
-        method = None
-    if not method:
-        [encrypt_table, decrypt_table] = init_table(password)
-        if op:
-            return translate(data, encrypt_table)
-        else:
-            return translate(data, decrypt_table)
+    result = []
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    (key, _) = EVP_BytesToKey(password, key_len, iv_len)
+    if op:
+        iv = random_string(iv_len)
+        result.append(iv)
     else:
-        result = []
-        method = method.lower()
-        (key_len, iv_len, m) = method_supported[method]
-        (key, _) = EVP_BytesToKey(password, key_len, iv_len)
-        if op:
-            iv = random_string(iv_len)
-            result.append(iv)
-        else:
-            iv = data[:iv_len]
-            data = data[iv_len:]
-        cipher = m(method, key, iv, op)
-        result.append(cipher.update(data))
-        return b''.join(result)
+        iv = data[:iv_len]
+        data = data[iv_len:]
+    cipher = m(method, key, iv, op)
+    result.append(cipher.update(data))
+    return b''.join(result)

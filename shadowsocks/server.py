@@ -54,7 +54,7 @@ def main():
         else:
             config['port_password'][str(server_port)] = config['password']
 
-    encrypt.init_table(config['password'], config['method'])
+    encrypt.test_cipher(config['password'], config['method'])
     tcp_servers = []
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()

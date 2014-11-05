@@ -68,15 +68,15 @@ def find_config():
 
 
 def check_config(config):
-    if config.get('local_address', '') in ['0.0.0.0']:
+    if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen 0.0.0.0, which is not safe')
-    if config.get('server', '') in ['127.0.0.1', 'localhost']:
+    if config.get('server', '') in [b'127.0.0.1', b'localhost']:
         logging.warn('warning: server set to listen %s:%s, are you sure?' %
                      (config['server'], config['server_port']))
-    if (config.get('method', '') or '').lower() == '':
+    if (config.get('method', '') or '').lower() == b'table':
         logging.warn('warning: table is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
-    if (config.get('method', '') or '').lower() == 'rc4':
+    if (config.get('method', '') or '').lower() == b'rc4':
         logging.warn('warning: RC4 is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
     if config.get('timeout', 300) < 100:
@@ -85,7 +85,7 @@ def check_config(config):
     if config.get('timeout', 300) > 600:
         logging.warn('warning: your timeout %d seems too long' %
                      int(config.get('timeout')))
-    if config.get('password') in ['mypassword']:
+    if config.get('password') in [b'mypassword']:
         logging.error('DON\'T USE DEFAULT PASSWORD! Please change it in your '
                       'config.json!')
         exit(1)
