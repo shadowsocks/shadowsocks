@@ -21,19 +21,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from __future__ import absolute_import, division, print_function, \
-    with_statement
+from __future__ import (
+    absolute_import, division, print_function, with_statement,
+)
 
 import os
 import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes
 
 
 VERBOSE_LEVEL = 5
 
+if sys.version_info[0] == 2:
+    import codecs
+    open = codecs.open
 
 def check_python():
     info = sys.version_info
@@ -110,10 +113,9 @@ def get_config(is_local):
 
         if config_path:
             logging.info('loading config from %s' % config_path)
-            with open(config_path, 'rb') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 try:
-                    config = json.loads(f.read().decode('utf8'),
-                                        object_hook=_decode_dict)
+                    config = json.load(f)
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -127,15 +129,15 @@ def get_config(is_local):
             if key == '-p':
                 config['server_port'] = int(value)
             elif key == '-k':
-                config['password'] = to_bytes(value)
+                config['password'] = value
             elif key == '-l':
                 config['local_port'] = int(value)
             elif key == '-s':
-                config['server'] = to_bytes(value)
+                config['server'] = value
             elif key == '-m':
-                config['method'] = to_bytes(value)
+                config['method'] = value
             elif key == '-b':
-                config['local_address'] = to_bytes(value)
+                config['local_address'] = value
             elif key == '-v':
                 v_count += 1
                 # '-vv' turns on more verbose mode
@@ -271,29 +273,3 @@ optional arguments:
 
 Online help: <https://github.com/clowwindy/shadowsocks>
 ''')
-
-
-def _decode_list(data):
-    rv = []
-    for item in data:
-        if hasattr(item, 'encode'):
-            item = item.encode('utf-8')
-        elif isinstance(item, list):
-            item = _decode_list(item)
-        elif isinstance(item, dict):
-            item = _decode_dict(item)
-        rv.append(item)
-    return rv
-
-
-def _decode_dict(data):
-    rv = {}
-    for key, value in data.items():
-        if hasattr(value, 'encode'):
-            value = value.encode('utf-8')
-        elif isinstance(value, list):
-            value = _decode_list(value)
-        elif isinstance(value, dict):
-            value = _decode_dict(value)
-        rv[key] = value
-    return rv
