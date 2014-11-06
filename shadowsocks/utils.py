@@ -29,6 +29,7 @@ import json
 import sys
 import getopt
 import logging
+from shadowsocks.common import to_bytes
 
 
 VERBOSE_LEVEL = 5
@@ -126,15 +127,15 @@ def get_config(is_local):
             if key == '-p':
                 config['server_port'] = int(value)
             elif key == '-k':
-                config['password'] = value
+                config['password'] = to_bytes(value)
             elif key == '-l':
                 config['local_port'] = int(value)
             elif key == '-s':
-                config['server'] = value
+                config['server'] = to_bytes(value)
             elif key == '-m':
-                config['method'] = value
+                config['method'] = to_bytes(value)
             elif key == '-b':
-                config['local_address'] = value
+                config['local_address'] = to_bytes(value)
             elif key == '-v':
                 v_count += 1
                 # '-vv' turns on more verbose mode

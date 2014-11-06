@@ -47,6 +47,10 @@ ord = compat_ord
 chr = compat_chr
 
 
+def to_bytes(s):
+    return s.encode('utf-8')
+
+
 def inet_ntop(family, ipstr):
     if family == socket.AF_INET:
         return socket.inet_ntoa(ipstr)
