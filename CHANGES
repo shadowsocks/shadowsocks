@@ -1,3 +1,8 @@
+2.4.2 2014-11-06
+- Fix command line arguments on Python 3
+- Support table on Python 3
+- Fix TCP Fast Open on Python 3
+
 2.4.1 2014-11-01
 - Fix setup.py for non-utf8 locales on Python 3
 
