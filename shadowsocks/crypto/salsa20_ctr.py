@@ -123,7 +123,7 @@ class Salsa20Cipher(object):
 
 
 ciphers = {
-    b'salsa20-ctr': (32, 8, Salsa20Cipher),
+    'salsa20-ctr': (32, 8, Salsa20Cipher),
 }
 
 

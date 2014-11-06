@@ -73,7 +73,7 @@ class TableCipher(object):
 
 
 ciphers = {
-    b'table': (0, 0, TableCipher)
+    'table': (0, 0, TableCipher)
 }
 
 
