@@ -29,23 +29,39 @@ import os
 import signal
 import select
 import time
+import argparse
 from subprocess import Popen, PIPE
 
 sys.path.insert(0, './')
 
-if sys.argv[-3] == '-c':
-    client_config = sys.argv[-1]
-    server_config = sys.argv[-2]
-elif sys.argv[-2] == '-c':
-    client_config = sys.argv[-1]
-    server_config = sys.argv[-1]
-else:
-    raise Exception('usage: test.py -c server_conf [client_conf]')
+python = 'python'
 
-p1 = Popen(['python', 'shadowsocks/server.py', '-c', server_config],
-           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-p2 = Popen(['python', 'shadowsocks/local.py', '-c', client_config],
-           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+parser = argparse.ArgumentParser(description='test Shadowsocks')
+parser.add_argument('-c', '--client-conf', type=str, default=None)
+parser.add_argument('-s', '--server-conf', type=str, default=None)
+parser.add_argument('-a', '--client-args', type=str, default=None)
+parser.add_argument('-b', '--server-args', type=str, default=None)
+
+config = parser.parse_args()
+
+client_args = [python, 'shadowsocks/local.py']
+server_args = [python, 'shadowsocks/server.py']
+
+if config.client_conf:
+    client_args.extend(['-c', config.client_conf])
+    if config.server_conf:
+        server_args.extend(['-c', config.server_conf])
+    else:
+        server_args.extend(['-c', config.client_conf])
+if config.client_args:
+    client_args.extend(config.client_args.split())
+    if config.server_args:
+        server_args.extend(config.server_args.split())
+    else:
+        server_args.extend(config.client_args.split())
+
+p1 = Popen(server_args, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+p2 = Popen(client_args, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 p3 = None
 p4 = None
 p3_fin = False
