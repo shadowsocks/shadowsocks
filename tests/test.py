@@ -32,8 +32,6 @@ import time
 import argparse
 from subprocess import Popen, PIPE
 
-sys.path.insert(0, './')
-
 python = 'python'
 
 parser = argparse.ArgumentParser(description='test Shadowsocks')
