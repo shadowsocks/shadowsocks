@@ -241,7 +241,7 @@ class TCPRelayHandler(object):
                         header = b'\x05\x00\x00\x04'
                     else:
                         header = b'\x05\x00\x00\x01'
-                    addr, port = self._local_sock.getsockname()
+                    addr, port = self._local_sock.getsockname()[:2]
                     addr_to_send = socket.inet_pton(self._local_sock.family,
                                                     addr)
                     port_to_send = struct.pack('>H', port)

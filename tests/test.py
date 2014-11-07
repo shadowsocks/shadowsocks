@@ -42,8 +42,8 @@ parser.add_argument('-b', '--server-args', type=str, default=None)
 
 config = parser.parse_args()
 
-client_args = [python, 'shadowsocks/local.py']
-server_args = [python, 'shadowsocks/server.py']
+client_args = [python, 'shadowsocks/local.py', '-v']
+server_args = [python, 'shadowsocks/server.py', '-v']
 
 if config.client_conf:
     client_args.extend(['-c', config.client_conf])
