@@ -407,7 +407,7 @@ class TCPRelayHandler(object):
 
     def _on_local_write(self):
         if self._data_to_write_to_local:
-            data = ''.join(self._data_to_write_to_local)
+            data = b''.join(self._data_to_write_to_local)
             self._data_to_write_to_local = []
             self._write_to_sock(data, self._local_sock)
         else:
