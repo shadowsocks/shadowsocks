@@ -1,3 +1,7 @@
+2.4.3 2014-11-10
+- Fix an issue on Python 3
+- Fix an issue with IPv6
+
 2.4.2 2014-11-06
 - Fix command line arguments on Python 3
 - Support table on Python 3
