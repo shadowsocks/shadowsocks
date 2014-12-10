@@ -4,7 +4,7 @@
     "local_port":1081,
     "password":"salsa20_password",
     "timeout":60,
-    "method":"salsa20",
+    "method":"salsa20-ctr",
     "local_address":"127.0.0.1",
     "fast_open":false
 }
