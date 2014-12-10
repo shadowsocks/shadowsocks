@@ -1,3 +1,6 @@
+2.5 2014-12-11
+- Add salsa20 and chacha20
+
 2.4.3 2014-11-10
 - Fix an issue on Python 3
 - Fix an issue with IPv6
