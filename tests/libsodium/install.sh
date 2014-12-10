@@ -6,4 +6,5 @@ if [ ! -d libsodium-1.0.1 ]; then
 fi
 pushd libsodium-1.0.1
 ./configure && make && make install || exit 1
+sudo ldconfig
 popd
