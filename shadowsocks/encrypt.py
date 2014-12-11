@@ -165,11 +165,20 @@ def encrypt_all(password, method, op, data):
     return b''.join(result)
 
 
+CIPHERS_TO_TEST = [
+    b'aes-128-cfb',
+    b'aes-256-cfb',
+    b'rc4-md5',
+    b'salsa20',
+    b'chacha20',
+    b'table',
+]
+
+
 def test_encryptor():
     from os import urandom
     plain = urandom(10240)
-    for method in method_supported.keys():
-        logging.warn('testing %s' % method.decode('utf-8'))
+    for method in CIPHERS_TO_TEST:
         encryptor = Encryptor(b'key', method)
         cipher = encryptor.encrypt(plain)
         decryptor = Encryptor(b'key', method)
@@ -180,7 +189,7 @@ def test_encryptor():
 def test_encrypt_all():
     from os import urandom
     plain = urandom(10240)
-    for method in method_supported.keys():
+    for method in CIPHERS_TO_TEST:
         cipher = encrypt_all(b'key', method, 1, plain)
         plain2 = encrypt_all(b'key', method, 0, cipher)
         assert plain == plain2
