@@ -181,8 +181,8 @@ def test_encryptor():
     for method in CIPHERS_TO_TEST:
         logging.warn(method)
         encryptor = Encryptor(b'key', method)
-        cipher = encryptor.encrypt(plain)
         decryptor = Encryptor(b'key', method)
+        cipher = encryptor.encrypt(plain)
         plain2 = decryptor.decrypt(cipher)
         assert plain == plain2
 
