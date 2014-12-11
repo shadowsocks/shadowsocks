@@ -32,18 +32,22 @@ import time
 import argparse
 from subprocess import Popen, PIPE
 
-python = 'python'
+python = ['python']
 
 parser = argparse.ArgumentParser(description='test Shadowsocks')
 parser.add_argument('-c', '--client-conf', type=str, default=None)
 parser.add_argument('-s', '--server-conf', type=str, default=None)
 parser.add_argument('-a', '--client-args', type=str, default=None)
 parser.add_argument('-b', '--server-args', type=str, default=None)
+parser.add_argument('--with-coverage', action='store_true', default=None)
 
 config = parser.parse_args()
 
-client_args = [python, 'shadowsocks/local.py', '-v']
-server_args = [python, 'shadowsocks/server.py', '-v']
+if config.with_coverage:
+    python = ['coverage', 'run', '-a']
+
+client_args = python + ['shadowsocks/local.py', '-v']
+server_args = python + ['shadowsocks/server.py', '-v']
 
 if config.client_conf:
     client_args.extend(['-c', config.client_conf])
@@ -134,6 +138,6 @@ try:
 finally:
     for p in [p1, p2]:
         try:
-            os.kill(p.pid, signal.SIGTERM)
+            os.kill(p.pid, signal.SIGQUIT)
         except OSError:
             pass
