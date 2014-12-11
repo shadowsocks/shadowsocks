@@ -199,5 +199,5 @@ def test_encrypt_all():
 
 
 if __name__ == '__main__':
-    #test_encrypt_all()
+    test_encrypt_all()
     test_encryptor()
