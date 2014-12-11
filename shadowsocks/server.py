@@ -104,6 +104,7 @@ def main():
                     for pid in children:
                         try:
                             os.kill(pid, signum)
+                            os.waitpid(pid, 0)
                         except OSError:  # child may already exited
                             pass
                     sys.exit()
