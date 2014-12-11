@@ -62,7 +62,8 @@ def EVP_BytesToKey(password, key_len, iv_len):
     # so that we make the same key and iv as nodejs version
     if hasattr(password, 'encode'):
         password = password.encode('utf-8')
-    r = cached_keys.get(password, None)
+    cached_key = '%s-%d-%d' % (password, key_len, iv_len)
+    r = cached_keys.get(cached_key, None)
     if r:
         return r
     m = []
@@ -78,7 +79,7 @@ def EVP_BytesToKey(password, key_len, iv_len):
     ms = b''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
-    cached_keys[password] = (key, iv)
+    cached_keys[cached_key] = (key, iv)
     return key, iv
 
 
@@ -198,5 +199,5 @@ def test_encrypt_all():
 
 
 if __name__ == '__main__':
-    test_encrypt_all()
+    #test_encrypt_all()
     test_encryptor()
