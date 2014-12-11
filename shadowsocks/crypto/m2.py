@@ -33,6 +33,8 @@ try:
     __import__('M2Crypto')
 except ImportError:
     has_m2 = False
+if bytes != str:
+    has_m2 = False
 
 
 def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None, i=1,
