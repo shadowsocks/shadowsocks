@@ -473,7 +473,7 @@ def test():
             # TODO: what can we assert?
             print(result, error)
             counter += 1
-            if counter == 10:
+            if counter == 9:
                 loop.remove_handler(dns_resolver.handle_events)
                 dns_resolver.close()
         a_callback = callback
@@ -487,7 +487,6 @@ def test():
     dns_resolver.resolve('ipv6.google.com', make_callback())
     dns_resolver.resolve('www.facebook.com', make_callback())
     dns_resolver.resolve('ns2.google.com', make_callback())
-    dns_resolver.resolve('not.existed.google.com', make_callback())
     dns_resolver.resolve('invalid.@!#$%^&$@.hostname', make_callback())
     dns_resolver.resolve('toooooooooooooooooooooooooooooooooooooooooooooooooo'
                          'ooooooooooooooooooooooooooooooooooooooooooooooooooo'
