@@ -163,3 +163,29 @@ def encrypt_all(password, method, op, data):
     cipher = m(method, key, iv, op)
     result.append(cipher.update(data))
     return b''.join(result)
+
+
+def test_encryptor():
+    from os import urandom
+    plain = urandom(10240)
+    for method in method_supported.keys():
+        logging.warn('testing %s' % method.decode('utf-8'))
+        encryptor = Encryptor(b'key', method)
+        cipher = encryptor.encrypt(plain)
+        decryptor = Encryptor(b'key', method)
+        plain2 = decryptor.decrypt(cipher)
+        assert plain == plain2
+
+
+def test_encrypt_all():
+    from os import urandom
+    plain = urandom(10240)
+    for method in method_supported.keys():
+        cipher = encrypt_all(b'key', method, 1, plain)
+        plain2 = encrypt_all(b'key', method, 0, cipher)
+        assert plain == plain2
+
+
+if __name__ == '__main__':
+    test_encrypt_all()
+    test_encryptor()
