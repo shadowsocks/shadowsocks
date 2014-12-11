@@ -86,13 +86,13 @@ class LRUCache(collections.MutableMapping):
                 break
             if self.close_callback is not None:
                 for key in self._time_to_keys[least]:
-                    if self._store.__contains__(key):
+                    if key in self._store:
                         if now - self._keys_to_last_time[key] > self.timeout:
                             value = self._store[key]
                             self.close_callback(value)
             for key in self._time_to_keys[least]:
                 self._last_visits.popleft()
-                if self._store.__contains__(key):
+                if key in self._store:
                     if now - self._keys_to_last_time[key] > self.timeout:
                         del self._store[key]
                         del self._keys_to_last_time[key]
