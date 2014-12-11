@@ -44,7 +44,7 @@ parser.add_argument('--with-coverage', action='store_true', default=None)
 config = parser.parse_args()
 
 if config.with_coverage:
-    python = ['coverage', 'run', '-a']
+    python = ['coverage', 'run', '-p', '-a']
 
 client_args = python + ['shadowsocks/local.py', '-v']
 server_args = python + ['shadowsocks/server.py', '-v']

@@ -34,4 +34,4 @@ script:
   - python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json
   - python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
   - python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
-  - coverage report --include=shadowsocks/*
+  - coverage combine && coverage report --include=shadowsocks/*
