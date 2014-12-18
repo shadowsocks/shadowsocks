@@ -514,7 +514,7 @@ class TCPRelayHandler(object):
         # 1. destroy won't make another destroy() call inside
         # 2. destroy releases resources so it prevents future call to destroy
         # 3. destroy won't raise any exceptions
-        # if any of the promises are broken, it indicates a bug have been
+        # if any of the promises are broken, it indicates a bug has been
         # introduced! mostly likely memory leaks, etc
         if self._stage == STAGE_DESTROYED:
             # this couldn't happen
