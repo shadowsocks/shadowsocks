@@ -66,7 +66,7 @@ CMD_UDP_ASSOCIATE = 3
 
 # for each handler, it could be at one of several stages:
 
-# local:
+# sslocal:
 # stage 0 SOCKS hello received from local, send hello to local
 # stage 1 addr received from local, query DNS for remote
 # stage 2 UDP assoc
@@ -74,7 +74,7 @@ CMD_UDP_ASSOCIATE = 3
 # stage 4 still connecting, more data from local received
 # stage 5 remote connected, piping local and remote
 
-# remote:
+# ssserver:
 # stage 0 just jump to stage 1
 # stage 1 addr received from local, query DNS for remote
 # stage 3 DNS resolved, connect to remote
