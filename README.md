@@ -37,7 +37,7 @@ source list.
 
 #### Windows:
 
-Download OpenSSL for Windows and install. Then install shadowsocks via
+Download [OpenSSL for Windows] and install. Then install shadowsocks via
 easy_install and pip as Linux. If you don't know how to use them, you can
 directly download [the package], and use `python shadowsocks/server.py`
 instead of `ssserver` command below.
@@ -134,6 +134,7 @@ Bugs and Issues
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
 [Mailing list]:      http://groups.google.com/group/shadowsocks
+[OpenSSL for Windows]: http://slproweb.com/products/Win32OpenSSL.html
 [OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
