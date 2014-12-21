@@ -70,9 +70,9 @@ def find_config():
 
 def check_config(config):
     if config.get('local_address', '') in [b'0.0.0.0']:
-        logging.warn('warning: local set to listen 0.0.0.0, which is not safe')
+        logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
     if config.get('server', '') in [b'127.0.0.1', b'localhost']:
-        logging.warn('warning: server set to listen %s:%s, are you sure?' %
+        logging.warn('warning: server set to listen on %s:%s, are you sure?' %
                      (config['server'], config['server_port']))
     if (config.get('method', '') or '').lower() == b'table':
         logging.warn('warning: table is not safe; please use a safer cipher, '
@@ -96,11 +96,11 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hs:b:p:k:l:m:c:t:vq'
-        longopts = ['fast-open']
+        shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
+        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=']
     else:
-        shortopts = 'hs:p:k:m:c:t:vq'
-        longopts = ['fast-open', 'workers=']
+        shortopts = 'hd:s:p:k:m:c:t:vq'
+        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -146,12 +146,18 @@ def get_config(is_local):
                 config['fast_open'] = True
             elif key == '--workers':
                 config['workers'] = int(value)
-            elif key == '-h':
+            elif key in ('-h', '--help'):
                 if is_local:
                     print_local_help()
                 else:
                     print_server_help()
                 sys.exit(0)
+            elif key == '-d':
+                config['daemon'] = value
+            elif key == '--pid-file':
+                config['pid-file'] = value
+            elif key == '--log-file':
+                config['log-file'] = value
             elif key == '-q':
                 v_count -= 1
                 config['verbose'] = v_count
@@ -170,6 +176,9 @@ def get_config(is_local):
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
+    config['workers'] = config.get('workers', 1)
+    config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
+    config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
     config['workers'] = config.get('workers', 1)
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = config.get('local_address', '127.0.0.1')
@@ -231,21 +240,29 @@ def print_help(is_local):
 def print_local_help():
     print('''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
                [-b LOCAL_ADDR] [-l LOCAL_PORT] -k PASSWORD [-m METHOD]
-               [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] [-q]
+               [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] -[d] [-q]
+A fast tunnel proxy that helps you bypass firewalls.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -s SERVER_ADDR        server address
-  -p SERVER_PORT        server port, default: 8388
-  -b LOCAL_ADDR         local binding address, default: 127.0.0.1
-  -l LOCAL_PORT         local port, default: 1080
-  -k PASSWORD           password
-  -m METHOD             encryption method, default: aes-256-cfb
-  -t TIMEOUT            timeout in seconds, default: 300
-  -c CONFIG             path to config file
-  --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
-  -v, -vv               verbose mode
-  -q, -qq               quiet mode, only show warnings/errors
+You can supply configurations via either config file or command line arguments.
+
+Proxy options:
+  -h, --help             show this help message and exit
+  -c CONFIG              path to config file
+  -s SERVER_ADDR         server address
+  -p SERVER_PORT         server port, default: 8388
+  -b LOCAL_ADDR          local binding address, default: 127.0.0.1
+  -l LOCAL_PORT          local port, default: 1080
+  -k PASSWORD            password
+  -m METHOD              encryption method, default: aes-256-cfb
+  -t TIMEOUT             timeout in seconds, default: 300
+  --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
+
+General options:
+  -d start/stop/restart  daemon mode
+  --pid-file PID_FILE    pid file for daemon mode
+  --log-file LOG_FILE    log file for daemon mode
+  -v, -vv                verbose mode
+  -q, -qq                quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
 ''')
@@ -254,20 +271,28 @@ Online help: <https://github.com/clowwindy/shadowsocks>
 def print_server_help():
     print('''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
                 -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
-                [--workers WORKERS] [-v] [-q]
+                [--workers WORKERS] [-v] [-d start] [-q]
+A fast tunnel proxy that helps you bypass firewalls.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -s SERVER_ADDR        server address, default: 0.0.0.0
-  -p SERVER_PORT        server port, default: 8388
-  -k PASSWORD           password
-  -m METHOD             encryption method, default: aes-256-cfb
-  -t TIMEOUT            timeout in seconds, default: 300
-  -c CONFIG             path to config file
-  --fast-open           use TCP_FASTOPEN, requires Linux 3.7+
-  --workers WORKERS     number of workers, available on Unix/Linux
-  -v, -vv               verbose mode
-  -q, -qq               quiet mode, only show warnings/errors
+You can supply configurations via either config file or command line arguments.
+
+Proxy options:
+  -h, --help             show this help message and exit
+  -c CONFIG              path to config file
+  -s SERVER_ADDR         server address, default: 0.0.0.0
+  -p SERVER_PORT         server port, default: 8388
+  -k PASSWORD            password
+  -m METHOD              encryption method, default: aes-256-cfb
+  -t TIMEOUT             timeout in seconds, default: 300
+  --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
+  --workers WORKERS      number of workers, available on Unix/Linux
+
+General options:
+  -d start/stop/restart  daemon mode
+  --pid-file PID_FILE    pid file for daemon mode
+  --log-file LOG_FILE    log file for daemon mode
+  -v, -vv                verbose mode
+  -q, -qq                quiet mode, only show warnings/errors
 
 Online help: <https://github.com/clowwindy/shadowsocks>
 ''')

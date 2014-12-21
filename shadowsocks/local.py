@@ -30,7 +30,8 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, encrypt, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import utils, daemon, encrypt, eventloop, tcprelay, udprelay,\
+    asyncdns
 
 
 def main():
@@ -43,6 +44,8 @@ def main():
         os.chdir(p)
 
     config = utils.get_config(True)
+
+    daemon.daemon_exec(config)
 
     utils.print_shadowsocks()
 
