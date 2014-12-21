@@ -126,6 +126,9 @@ def daemon_start(pid_file, log_file):
     print('started')
     os.kill(ppid, signal.SIGTERM)
 
+    os.setsid()
+    signal.signal(signal.SIG_IGN, signal.SIGHUP)
+
     sys.stdin.close()
     try:
         freopen(log_file, 'a', sys.stdout)
