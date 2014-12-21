@@ -81,8 +81,8 @@ To run in the foreground:
 
 To run in the background:
 
-    sudo ssserver -c /etc/shadowsocks.json -d start
-    sudo ssserver -c /etc/shadowsocks.json -d stop
+    ssserver -c /etc/shadowsocks.json -d start
+    ssserver -c /etc/shadowsocks.json -d stop
 
 On your client machine, use the same configuration as your server. Check the
 README of your client for more information.
