@@ -98,8 +98,6 @@ Check the options via `-h`.You can use args to override settings from
     ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/shadowsocks.pid
     ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/shadowsocks.pid
 
-List all available args with `-h`.
-
 Documentation
 -------------
 

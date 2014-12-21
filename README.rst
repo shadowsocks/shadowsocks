@@ -127,10 +127,8 @@ Check the options via ``-h``.You can use args to override settings from
 
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb --workers 2
-    ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/pid
-    ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/pid
-
-List all available args with ``-h``.
+    ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/shadowsocks.pid
+    ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/shadowsocks.pid
 
 Documentation
 -------------
