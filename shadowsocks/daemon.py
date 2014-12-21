@@ -105,11 +105,14 @@ def daemon_start(pid_file, log_file):
     assert pid != -1
 
     def handle_exit(signum, _):
-        sys.exit(0)
+        if signum == signal.SIGTERM:
+            sys.exit(0)
+        sys.exit(1)
 
     if pid > 0:
         # parent waits for its child
         signal.signal(signal.SIGINT, handle_exit)
+        signal.signal(signal.SIGTERM, handle_exit)
         time.sleep(5)
         sys.exit(0)
 
@@ -121,11 +124,16 @@ def daemon_start(pid_file, log_file):
         sys.exit(1)
 
     print('started')
-    os.kill(ppid, signal.SIGINT)
+    os.kill(ppid, signal.SIGTERM)
 
     sys.stdin.close()
-    freopen(log_file, 'a', sys.stdout)
-    freopen(log_file, 'a', sys.stderr)
+    try:
+        freopen(log_file, 'a', sys.stdout)
+        freopen(log_file, 'a', sys.stderr)
+    except IOError as e:
+        logging.error(e)
+        os.kill(ppid, signal.SIGINT)
+        sys.exit(1)
 
 
 def daemon_stop(pid_file):

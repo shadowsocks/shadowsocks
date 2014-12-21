@@ -18,6 +18,7 @@ script:
   - pyflakes .
   - coverage run tests/nose_plugin.py -v
   - python setup.py sdist
+  - tests/test_daemon.sh
   - python tests/test.py --with-coverage -c tests/aes.json
   - python tests/test.py --with-coverage -c tests/aes-ctr.json
   - python tests/test.py --with-coverage -c tests/aes-cfb1.json
