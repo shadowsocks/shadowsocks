@@ -50,9 +50,10 @@ CentOS:
 Windows:
 ^^^^^^^^
 
-Download OpenSSL for Windows and install. Then install shadowsocks via
-easy\_install and pip as Linux. If you don't know how to use them, you
-can directly download `the
+Download `OpenSSL for
+Windows <http://slproweb.com/products/Win32OpenSSL.html>`__ and install.
+Then install shadowsocks via easy\_install and pip as Linux. If you
+don't know how to use them, you can directly download `the
 package <https://pypi.python.org/pypi/shadowsocks>`__, and use
 ``python shadowsocks/server.py`` instead of ``ssserver`` command below.
 
@@ -71,8 +72,7 @@ On your server create a config file ``/etc/shadowsocks.json``. Example:
         "password":"mypassword",
         "timeout":300,
         "method":"aes-256-cfb",
-        "fast_open": false,
-        "workers": 1
+        "fast_open": false
     }
 
 Explanation of the fields:
@@ -99,51 +99,41 @@ Explanation of the fields:
 | workers          | number of workers, available on Unix/Linux                                                              |
 +------------------+---------------------------------------------------------------------------------------------------------+
 
-Run ``ssserver -c /etc/shadowsocks.json`` on your server. To run it in
-the background, use
-`Supervisor <https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor>`__.
+On your server:
 
-On your client machine, use the same configuration as your server, and
-start your client.
-
-If you use Chrome, it's recommended to use
-`SwitchySharp <https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm>`__.
-Change the proxy settings to
+To run in the foreground:
 
 ::
 
-    protocol: socks5
-    hostname: 127.0.0.1
-    port:     your local_port
+    ssserver -c /etc/shadowsocks.json
 
-If you can't install
-`SwitchySharp <https://chrome.google.com/webstore/detail/proxy-switchysharp/dpplabbmogkhghncfbfdeeokoefdjegm>`__,
-you can launch Chrome with the following arguments to force Chrome to
-use the proxy:
+To run in the background:
 
 ::
 
-    Chrome.exe --proxy-server="socks5://127.0.0.1:1080" --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost"
+    sudo ssserver -c /etc/shadowsocks.json -d start
+    sudo ssserver -c /etc/shadowsocks.json -d stop
 
-If you can't even download Chrome, find a friend to download a `Chrome
-Standalone <https://support.google.com/installer/answer/126299>`__
-installer for you.
+On your client machine, use the same configuration as your server. Check
+the README of your client for more information.
 
-Command line args
------------------
+Command Line Options
+--------------------
 
-You can use args to override settings from ``config.json``.
+Check the options via ``-h``.You can use args to override settings from
+``config.json``.
 
 ::
 
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb --workers 2
-    ssserver -c /etc/shadowsocks/config.json
+    ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/pid
+    ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/pid
 
 List all available args with ``-h``.
 
-Wiki
-----
+Documentation
+-------------
 
 You can find all the documentation in the wiki:
 https://github.com/clowwindy/shadowsocks/wiki

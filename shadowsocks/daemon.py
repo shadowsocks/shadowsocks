@@ -37,7 +37,7 @@ from shadowsocks import common
 def daemon_exec(config):
     if 'daemon' in config:
         if os.name != 'posix':
-            raise Exception('daemon mode is only supported in unix')
+            raise Exception('daemon mode is only supported on Unix')
         command = config['daemon']
         if not command:
             command = 'start'
