@@ -123,11 +123,11 @@ def daemon_start(pid_file, log_file):
         os.kill(ppid, signal.SIGINT)
         sys.exit(1)
 
-    print('started')
-    os.kill(ppid, signal.SIGTERM)
-
     os.setsid()
     signal.signal(signal.SIG_IGN, signal.SIGHUP)
+
+    print('started')
+    os.kill(ppid, signal.SIGTERM)
 
     sys.stdin.close()
     try:
