@@ -68,6 +68,11 @@ def main():
             tcp_server.close(next_tick=True)
             udp_server.close(next_tick=True)
         signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
+
+        def int_handler(signum, _):
+            sys.exit(1)
+        signal.signal(signal.SIGINT, int_handler)
+
         loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)
