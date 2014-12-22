@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function test {
+function run_test {
     expected=$1
     shift
     echo "running test: $command $@"
@@ -20,23 +20,23 @@ do
 
 command="coverage run -p -a shadowsocks/$module.py"
 
-test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
 
-test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
 
-test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 1 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 1 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
 
-test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 0 -c tests/aes.json -d restart --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d restart --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
 
-test 0 -c tests/aes.json -d restart --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d restart --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 0 -c tests/aes.json -d stop --pid-file /tmp/shadowsocks.pid --log-file /tmp/shadowsocks.log
 
-test 1 -c tests/aes.json -d start --pid-file /tmp/not_exist/shadowsocks.pid --log-file /tmp/shadowsocks.log
-test 1 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/not_exist/shadowsocks.log
+run_test 1 -c tests/aes.json -d start --pid-file /tmp/not_exist/shadowsocks.pid --log-file /tmp/shadowsocks.log
+run_test 1 -c tests/aes.json -d start --pid-file /tmp/shadowsocks.pid --log-file /tmp/not_exist/shadowsocks.log
 
 done
