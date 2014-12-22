@@ -7,7 +7,7 @@ function run_test {
     echo "running test: $command $@"
     printf '\e[0m'
 
-    $command $@
+    $command "$@"
     status=$?
     if [ $status -ne 0 ]; then
         printf '\e[0;31m'
@@ -45,7 +45,6 @@ run_test python tests/test.py --with-coverage -c tests/workers.json
 run_test python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json
 run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
 run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
-coverage combine && coverage report --include=shadowsocks/*
 coverage combine && coverage report --include=shadowsocks/*
 rm -rf htmlcov
 coverage html --include=shadowsocks/*
