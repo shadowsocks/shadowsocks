@@ -25,6 +25,7 @@ function run_test {
 }
 
 coverage erase
+mkdir tmp
 run_test pep8 .
 run_test pyflakes .
 run_test coverage run tests/nose_plugin.py -v
@@ -47,6 +48,7 @@ run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0
 run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
 coverage combine && coverage report --include=shadowsocks/*
 rm -rf htmlcov
+rm -rf tmp
 coverage html --include=shadowsocks/*
 
 exit $result
