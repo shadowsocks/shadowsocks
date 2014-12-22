@@ -118,6 +118,7 @@ def main():
                     sys.exit()
                 signal.signal(signal.SIGTERM, handler)
                 signal.signal(signal.SIGQUIT, handler)
+                signal.signal(signal.SIGINT, handler)
 
                 # master
                 for a_tcp_server in tcp_servers:
