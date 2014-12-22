@@ -46,6 +46,13 @@ run_test python tests/test.py --with-coverage -c tests/workers.json
 run_test python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json
 run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
 run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
+
+if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
+    if [ 3 -eq `cat /proc/sys/net/ipv4/tcp_fastopen` ] ; then
+        run_test python tests/test.py --with-coverage -c tests/fastopen.json
+    fi
+fi
+
 coverage combine && coverage report --include=shadowsocks/*
 rm -rf htmlcov
 rm -rf tmp

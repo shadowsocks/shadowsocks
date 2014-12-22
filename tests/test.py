@@ -138,9 +138,7 @@ try:
 finally:
     for p in [p1, p2]:
         try:
-            print('kill', file=sys.stderr)
             os.kill(p.pid, signal.SIGINT)
-            print('waitpid', file=sys.stderr)
             os.waitpid(p.pid, 0)
         except OSError:
             pass
