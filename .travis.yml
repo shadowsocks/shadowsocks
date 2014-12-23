@@ -15,5 +15,6 @@ before_install:
   - pip install m2crypto salsa20 pep8 pyflakes nose coverage
   - sudo tests/socksify/install.sh
   - sudo tests/libsodium/install.sh
+  - sudo tests/setup_tc.sh
 script:
   - ./.jenkins.sh
