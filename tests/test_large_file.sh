@@ -35,8 +35,8 @@ sleep 3
 time curl -o tmp/expected $URL
 time curl -o tmp/result --socks5-hostname 127.0.0.1:1081 $URL
 
-kill $LOCAL
-kill $SERVER
+kill -s SIGINT $LOCAL
+kill -s SIGINT $SERVER
 
 type tc 2> /dev/null && tc qdisc del dev lo root
 
