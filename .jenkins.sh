@@ -55,6 +55,8 @@ fi
 
 run_test tests/test_large_file.sh
 
+run_test tests/test_command.sh
+
 coverage combine && coverage report --include=shadowsocks/*
 rm -rf htmlcov
 rm -rf tmp
