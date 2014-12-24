@@ -1,7 +1,9 @@
 shadowsocks
 ===========
 
-[![PyPI version]][PyPI] [![Build Status]][Travis CI] 
+[![PyPI version]][PyPI]
+[![Build Status]][Travis CI]
+[![Coverage Status]][Coverage]
 
 A fast tunnel proxy that helps you bypass firewalls.
 
@@ -119,6 +121,8 @@ Bugs and Issues
 [Android]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
 [Build Status]:      https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
 [Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[Coverage Status]:   http://192.81.132.184/result/shadowsocks
+[Coverage]:          http://192.81.132.184/job/Shadowsocks/ws/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
 [the package]:       https://pypi.python.org/pypi/shadowsocks
 [Encryption]:        https://github.com/clowwindy/shadowsocks/wiki/Encryption

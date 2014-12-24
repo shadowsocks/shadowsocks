@@ -9,29 +9,12 @@ cache:
     - dante-1.4.0
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq build-essential libssl-dev swig python-m2crypto python-numpy dnsutils
+  - sudo apt-get install -qq build-essential libssl-dev swig python-m2crypto python-numpy dnsutils iproute nginx
+  - sudo dd if=/dev/urandom of=/usr/share/nginx/www/file bs=1M count=10
+  - sudo service nginx restart
   - pip install m2crypto salsa20 pep8 pyflakes nose coverage
   - sudo tests/socksify/install.sh
   - sudo tests/libsodium/install.sh
+  - sudo tests/setup_tc.sh
 script:
-  - pep8 .
-  - pyflakes .
-  - coverage run tests/nose_plugin.py -v
-  - python setup.py sdist
-  - tests/test_daemon.sh
-  - python tests/test.py --with-coverage -c tests/aes.json
-  - python tests/test.py --with-coverage -c tests/aes-ctr.json
-  - python tests/test.py --with-coverage -c tests/aes-cfb1.json
-  - python tests/test.py --with-coverage -c tests/aes-cfb8.json
-  - python tests/test.py --with-coverage -c tests/rc4-md5.json
-  - python tests/test.py --with-coverage -c tests/salsa20.json
-  - python tests/test.py --with-coverage -c tests/chacha20.json
-  - python tests/test.py --with-coverage -c tests/salsa20-ctr.json
-  - python tests/test.py --with-coverage -c tests/table.json
-  - python tests/test.py --with-coverage -c tests/server-multi-ports.json
-  - python tests/test.py --with-coverage -s tests/server-multi-passwd.json -c tests/server-multi-passwd-client-side.json
-  - python tests/test.py --with-coverage -c tests/workers.json
-  - python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json
-  - python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
-  - python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
-  - coverage combine && coverage report --include=shadowsocks/*
+  - ./.jenkins.sh

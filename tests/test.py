@@ -138,7 +138,7 @@ try:
 finally:
     for p in [p1, p2]:
         try:
-            os.kill(p.pid, signal.SIGQUIT)
+            os.kill(p.pid, signal.SIGINT)
             os.waitpid(p.pid, 0)
         except OSError:
             pass

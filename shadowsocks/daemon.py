@@ -100,19 +100,21 @@ def freopen(f, mode, stream):
 
 
 def daemon_start(pid_file, log_file):
-    # fork only once because we are sure parent will exit
-    pid = os.fork()
-    assert pid != -1
 
     def handle_exit(signum, _):
         if signum == signal.SIGTERM:
             sys.exit(0)
         sys.exit(1)
 
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+
+    # fork only once because we are sure parent will exit
+    pid = os.fork()
+    assert pid != -1
+
     if pid > 0:
         # parent waits for its child
-        signal.signal(signal.SIGINT, handle_exit)
-        signal.signal(signal.SIGTERM, handle_exit)
         time.sleep(5)
         sys.exit(0)
 
@@ -135,7 +137,6 @@ def daemon_start(pid_file, log_file):
         freopen(log_file, 'a', sys.stderr)
     except IOError as e:
         logging.error(e)
-        os.kill(ppid, signal.SIGINT)
         sys.exit(1)
 
 
