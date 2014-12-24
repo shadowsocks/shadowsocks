@@ -29,7 +29,7 @@ import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes
+from shadowsocks.common import to_bytes, to_str
 
 
 VERBOSE_LEVEL = 5
@@ -73,7 +73,7 @@ def check_config(config):
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
     if config.get('server', '') in [b'127.0.0.1', b'localhost']:
         logging.warn('warning: server set to listen on %s:%s, are you sure?' %
-                     (config['server'], config['server_port']))
+                     (to_str(config['server']), config['server_port']))
     if (config.get('method', '') or '').lower() == b'table':
         logging.warn('warning: table is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
