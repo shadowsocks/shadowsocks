@@ -44,8 +44,8 @@ run_test python tests/test.py --with-coverage -c tests/server-multi-ports.json
 run_test python tests/test.py --with-coverage -s tests/server-multi-passwd.json -c tests/server-multi-passwd-client-side.json
 run_test python tests/test.py --with-coverage -c tests/workers.json
 run_test python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json
-run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
-run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081"
+run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -q" -a "-m rc4-md5 -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -vv"
+run_test python tests/test.py --with-coverage -b "-b 127.0.0.1 -m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --workers 1" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -qq"
 
 if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
     if [ 3 -eq `cat /proc/sys/net/ipv4/tcp_fastopen` ] ; then
