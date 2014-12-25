@@ -241,19 +241,18 @@ class TCPRelayHandler(object):
                     self._create_remote_socket(self._chosen_server[0],
                                                self._chosen_server[1])
                 self._loop.add(remote_sock, eventloop.POLL_ERR)
-                data = b''.join(self._data_to_write_to_local)
+                data = b''.join(self._data_to_write_to_remote)
                 l = len(data)
                 s = remote_sock.sendto(data, MSG_FASTOPEN, self._chosen_server)
                 if s < l:
                     data = data[s:]
-                    self._data_to_write_to_local = [data]
-                    self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                    self._data_to_write_to_remote = [data]
                 else:
-                    self._data_to_write_to_local = []
-                    self._update_stream(STREAM_UP, WAIT_STATUS_READING)
-                    self._stage = STAGE_STREAM
+                    self._data_to_write_to_remote = []
+               self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
             except (OSError, IOError) as e:
                 if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
+                    # in this case data is not sent at all
                     self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
                 elif eventloop.errno_from_exception(e) == errno.ENOTCONN:
                     logging.error('fast open not supported on this OS')

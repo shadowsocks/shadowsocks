@@ -49,6 +49,10 @@ run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 1
 
 if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
     if [ 3 -eq `cat /proc/sys/net/ipv4/tcp_fastopen` ] ; then
+        # we have to run it twice:
+        # the first time there's no syn cookie
+        # the second time there is syn cookie
+        run_test python tests/test.py --with-coverage -c tests/fastopen.json
         run_test python tests/test.py --with-coverage -c tests/fastopen.json
     fi
 fi
