@@ -249,7 +249,7 @@ class TCPRelayHandler(object):
                     self._data_to_write_to_remote = [data]
                 else:
                     self._data_to_write_to_remote = []
-               self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
             except (OSError, IOError) as e:
                 if eventloop.errno_from_exception(e) == errno.EINPROGRESS:
                     # in this case data is not sent at all
