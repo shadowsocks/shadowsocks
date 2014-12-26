@@ -1,3 +1,7 @@
+2.6.1 2014-12-26
+- Fix a problem with TCP Fast Open on local side
+- Fix sometimes daemon_start returns wrong exit status
+
 2.6 2014-12-21
 - Add daemon support
 
