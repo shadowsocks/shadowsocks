@@ -104,7 +104,7 @@ Documentation
 -------------
 
 You can find all the documentation in the wiki:
-https://github.com/clowwindy/shadowsocks/wiki
+https://github.com/shadowsocks/shadowsocks/wiki
 
 License
 -------
@@ -118,23 +118,23 @@ Bugs and Issues
 * [Mailing list]
 
 
-[Android]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#android
-[Build Status]:      https://img.shields.io/travis/clowwindy/shadowsocks/master.svg?style=flat
-[Chinese Readme]:    https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[Android]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android
+[Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
+[Chinese Readme]:    https://github.com/shadowsocks/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Coverage Status]:   http://192.81.132.184/result/shadowsocks
 [Coverage]:          http://192.81.132.184/job/Shadowsocks/ws/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
 [the package]:       https://pypi.python.org/pypi/shadowsocks
-[Encryption]:        https://github.com/clowwindy/shadowsocks/wiki/Encryption
+[Encryption]:        https://github.com/shadowsocks/shadowsocks/wiki/Encryption
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
-[Issue Tracker]:     https://github.com/clowwindy/shadowsocks/issues?state=open
+[Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
 [Mailing list]:      http://groups.google.com/group/shadowsocks
 [OpenSSL for Windows]: http://slproweb.com/products/Win32OpenSSL.html
-[OpenWRT]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#openwrt
+[OpenWRT]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#openwrt
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
-[TCP_FASTOPEN]:      https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open
-[Travis CI]:         https://travis-ci.org/clowwindy/shadowsocks
-[Troubleshooting]:   https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting
-[Windows]:           https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients#windows
+[TCP_FASTOPEN]:      https://github.com/shadowsocks/shadowsocks/wiki/TCP-Fast-Open
+[Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
+[Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
+[Windows]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#windows
