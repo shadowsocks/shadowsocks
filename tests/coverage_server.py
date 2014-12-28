@@ -11,9 +11,9 @@ if __name__ == '__main__':
                 with open('/tmp/%s-coverage' % project, 'rb') as f:
                     coverage = f.read().strip()
                     self.redirect(('https://img.shields.io/badge/'
-                                'coverage-%s-brightgreen.svg'
-                                '?style=flat') %
-                                urllib.quote(coverage))
+                                   'coverage-%s-brightgreen.svg'
+                                   '?style=flat') %
+                                  urllib.quote(coverage))
             except IOError:
                 raise tornado.web.HTTPError(404)
 
