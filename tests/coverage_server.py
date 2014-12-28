@@ -18,7 +18,7 @@ if __name__ == '__main__':
                 raise tornado.web.HTTPError(404)
 
     application = tornado.web.Application([
-        (r"/([a-zA-Z0-9\\-_]+)", MainHandler),
+        (r"/([a-zA-Z0-9\-_]+)", MainHandler),
     ])
 
     if __name__ == "__main__":
