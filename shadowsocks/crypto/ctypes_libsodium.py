@@ -42,7 +42,7 @@ def load_libsodium():
     global loaded, libsodium, buf
 
     from ctypes.util import find_library
-    for p in ('sodium',):
+    for p in ('sodium', 'libsodium'):
         libsodium_path = find_library(p)
         if libsodium_path:
             break
