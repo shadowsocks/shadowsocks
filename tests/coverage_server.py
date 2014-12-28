@@ -10,10 +10,15 @@ if __name__ == '__main__':
             try:
                 with open('/tmp/%s-coverage' % project, 'rb') as f:
                     coverage = f.read().strip()
+                    n = int(coverage.strip('%'))
+                    if n > 80:
+                        color = 'brightgreen'
+                    else:
+                        color = 'yellow'
                     self.redirect(('https://img.shields.io/badge/'
-                                   'coverage-%s-brightgreen.svg'
+                                   'coverage-%s-%s.svg'
                                    '?style=flat') %
-                                  urllib.quote(coverage))
+                                  (urllib.quote(coverage), color))
             except IOError:
                 raise tornado.web.HTTPError(404)
 
