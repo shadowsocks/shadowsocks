@@ -39,7 +39,7 @@ BLOCK_SIZE = 64
 
 
 def load_libsodium():
-    global loaded, libsodium, buf, tag_buf
+    global loaded, libsodium, buf
 
     from ctypes.util import find_library
     for p in ('sodium', 'libsodium'):
@@ -73,7 +73,6 @@ def load_libsodium():
     libsodium.sodium_init()
 
     buf = create_string_buffer(buf_size)
-    tag_buf = create_string_buffer(16)
     loaded = True
 
 
@@ -118,9 +117,9 @@ class Salsa20Crypto(object):
 class Poly1305(object):
     @staticmethod
     def auth(method, key, data):
-        global tag_buf
         if not loaded:
             load_libsodium()
+        tag_buf = create_string_buffer(16)
         libsodium.crypto_onetimeauth(byref(tag_buf), data, len(data), key)
         return tag_buf.raw
 

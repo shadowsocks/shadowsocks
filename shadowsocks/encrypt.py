@@ -180,7 +180,7 @@ def auth_create(data, password, iv, method):
 
 
 def auth_open(data, password, iv, method):
-    if method is None:
+    if not method:
         return data
     # verify hmac and remove the hmac or return None
     password = common.to_bytes(password)

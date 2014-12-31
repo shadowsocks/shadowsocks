@@ -24,6 +24,7 @@ from __future__ import absolute_import, division, print_function, \
     with_statement
 
 import hmac
+import hashlib
 
 from shadowsocks import common
 
@@ -34,13 +35,30 @@ class HMAC(object):
     @staticmethod
     def auth(method, key, data):
         digest = common.to_str(method.replace(b'hmac-', b''))
-        return hmac.new(key, data, digest).digest()
+        return hmac.new(key, data, getattr(hashlib, digest)).digest()
 
     @staticmethod
     def verify(method, key, data, tag):
         digest = common.to_str(method.replace(b'hmac-', b''))
-        t = hmac.new(key, data, digest).digest()
-        return hmac.compare_digest(t, tag)
+        t = hmac.new(key, data, getattr(hashlib, digest)).digest()
+        if hasattr(hmac, 'compare_digest'):
+            return hmac.compare_digest(t, tag)
+        else:
+            return _time_independent_equals(t, tag)
+
+
+# from tornado
+def _time_independent_equals(a, b):
+    if len(a) != len(b):
+        return False
+    result = 0
+    if type(a[0]) is int:  # python3 byte strings
+        for x, y in zip(a, b):
+            result |= x ^ y
+    else:  # python2
+        for x, y in zip(a, b):
+            result |= ord(x) ^ ord(y)
+    return result == 0
 
 
 auths = {
