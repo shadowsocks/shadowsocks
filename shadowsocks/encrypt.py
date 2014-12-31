@@ -29,17 +29,23 @@ import hashlib
 import logging
 
 from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr,\
-    ctypes_openssl, ctypes_libsodium, table
+    ctypes_openssl, ctypes_libsodium, table, hmac
+from shadowsocks import common
 
 
-method_supported = {}
-method_supported.update(rc4_md5.ciphers)
-method_supported.update(salsa20_ctr.ciphers)
-method_supported.update(ctypes_openssl.ciphers)
-method_supported.update(ctypes_libsodium.ciphers)
+ciphers_supported = {}
+ciphers_supported.update(rc4_md5.ciphers)
+ciphers_supported.update(salsa20_ctr.ciphers)
+ciphers_supported.update(ctypes_openssl.ciphers)
+ciphers_supported.update(ctypes_libsodium.ciphers)
 # let M2Crypto override ctypes_openssl
-method_supported.update(m2.ciphers)
-method_supported.update(table.ciphers)
+ciphers_supported.update(m2.ciphers)
+ciphers_supported.update(table.ciphers)
+
+
+auths_supported = {}
+auths_supported.update(hmac.auths)
+auths_supported.update(ctypes_libsodium.auths)
 
 
 def random_string(length):
@@ -50,22 +56,14 @@ def random_string(length):
         return os.urandom(length)
 
 
-cached_keys = {}
-
-
-def try_cipher(key, method=None):
+def try_cipher(key, method=None, auth=None):
     Encryptor(key, method)
+    auth_create(b'test', key, b'test', auth)
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
-    if hasattr(password, 'encode'):
-        password = password.encode('utf-8')
-    cached_key = '%s-%d-%d' % (password, key_len, iv_len)
-    r = cached_keys.get(cached_key, None)
-    if r:
-        return r
     m = []
     i = 0
     while len(b''.join(m)) < (key_len + iv_len):
@@ -79,7 +77,6 @@ def EVP_BytesToKey(password, key_len, iv_len):
     ms = b''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
-    cached_keys[cached_key] = (key, iv)
     return key, iv
 
 
@@ -102,15 +99,14 @@ class Encryptor(object):
 
     def get_method_info(self, method):
         method = method.lower()
-        m = method_supported.get(method)
+        m = ciphers_supported.get(method)
         return m
 
     def iv_len(self):
         return len(self.cipher_iv)
 
     def get_cipher(self, password, method, op, iv):
-        if hasattr(password, 'encode'):
-            password = password.encode('utf-8')
+        password = common.to_bytes(password)
         m = self._method_info
         if m[0] > 0:
             key, iv_ = EVP_BytesToKey(password, m[0], m[1])
@@ -150,7 +146,8 @@ class Encryptor(object):
 def encrypt_all(password, method, op, data):
     result = []
     method = method.lower()
-    (key_len, iv_len, m) = method_supported[method]
+    password = common.to_bytes(password)
+    (key_len, iv_len, m) = ciphers_supported[method]
     if key_len > 0:
         key, _ = EVP_BytesToKey(password, key_len, iv_len)
     else:
@@ -166,6 +163,42 @@ def encrypt_all(password, method, op, data):
     return b''.join(result)
 
 
+def auth_create(data, password, iv, method):
+    if method is None:
+        return data
+    # prepend hmac to data
+    password = common.to_bytes(password)
+    method = method.lower()
+    method_info = auths_supported.get(method)
+    if not method_info:
+        logging.error('method %s not supported' % method)
+        sys.exit(1)
+    key_len, tag_len, m = method_info
+    key, _ = EVP_BytesToKey(password + iv, key_len, 0)
+    tag = m.auth(method, key, data)
+    return tag + data
+
+
+def auth_open(data, password, iv, method):
+    if method is None:
+        return data
+    # verify hmac and remove the hmac or return None
+    password = common.to_bytes(password)
+    method = method.lower()
+    method_info = auths_supported.get(method)
+    if not method_info:
+        logging.error('method %s not supported' % method)
+        sys.exit(1)
+    key_len, tag_len, m = method_info
+    key, _ = EVP_BytesToKey(password + iv, key_len, 0)
+    if len(data) <= tag_len:
+        return None
+    result = data[tag_len:]
+    if not m.verify(method, key, result, data[:tag_len]):
+        return None
+    return result
+
+
 CIPHERS_TO_TEST = [
     b'aes-128-cfb',
     b'aes-256-cfb',
@@ -173,6 +206,13 @@ CIPHERS_TO_TEST = [
     b'salsa20',
     b'chacha20',
     b'table',
+]
+
+AUTHS_TO_TEST = [
+    None,
+    b'hmac-md5',
+    b'hmac-sha256',
+    b'poly1305',
 ]
 
 
@@ -198,6 +238,22 @@ def test_encrypt_all():
         assert plain == plain2
 
 
+def test_auth():
+    from os import urandom
+    plain = urandom(10240)
+    for method in AUTHS_TO_TEST:
+        logging.warn(method)
+        boxed = auth_create(plain, b'key', b'iv', method)
+        unboxed = auth_open(boxed, b'key', b'iv', method)
+        assert plain == unboxed
+        if method is not None:
+            b = common.ord(boxed[0])
+            b ^= 1
+            attack = common.chr(b) + boxed[1:]
+            assert auth_open(attack, b'key', b'iv', method) is None
+
+
 if __name__ == '__main__':
     test_encrypt_all()
     test_encryptor()
+    test_auth()

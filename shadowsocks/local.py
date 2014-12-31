@@ -49,7 +49,7 @@ def main():
 
     utils.print_shadowsocks()
 
-    encrypt.try_cipher(config['password'], config['method'])
+    encrypt.try_cipher(config['password'], config['method'], config['auth'])
 
     try:
         logging.info("starting local at %s:%d" %

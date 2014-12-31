@@ -27,7 +27,7 @@ import logging
 from ctypes import CDLL, c_char_p, c_int, c_ulonglong, byref, \
     create_string_buffer, c_void_p
 
-__all__ = ['ciphers']
+__all__ = ['ciphers', 'auths']
 
 libsodium = None
 loaded = False
@@ -39,7 +39,7 @@ BLOCK_SIZE = 64
 
 
 def load_libsodium():
-    global loaded, libsodium, buf
+    global loaded, libsodium, buf, tag_buf
 
     from ctypes.util import find_library
     for p in ('sodium', 'libsodium'):
@@ -62,9 +62,18 @@ def load_libsodium():
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
 
+    libsodium.crypto_onetimeauth.restype = c_int
+    libsodium.crypto_onetimeauth.argtypes = (c_void_p, c_char_p,
+                                             c_ulonglong, c_char_p)
+
+    libsodium.crypto_onetimeauth_verify.restype = c_int
+    libsodium.crypto_onetimeauth_verify.argtypes = (c_char_p, c_char_p,
+                                                    c_ulonglong, c_char_p)
+
     libsodium.sodium_init()
 
     buf = create_string_buffer(buf_size)
+    tag_buf = create_string_buffer(16)
     loaded = True
 
 
@@ -106,9 +115,30 @@ class Salsa20Crypto(object):
         return buf.raw[padding:padding + l]
 
 
+class Poly1305(object):
+    @staticmethod
+    def auth(method, key, data):
+        global tag_buf
+        if not loaded:
+            load_libsodium()
+        libsodium.crypto_onetimeauth(byref(tag_buf), data, len(data), key)
+        return tag_buf.raw
+
+    @staticmethod
+    def verify(method, key, data, tag):
+        if not loaded:
+            load_libsodium()
+        r = libsodium.crypto_onetimeauth_verify(tag, data, len(data), key)
+        return r == 0
+
+
 ciphers = {
     b'salsa20': (32, 8, Salsa20Crypto),
     b'chacha20': (32, 8, Salsa20Crypto),
+}
+
+auths = {
+    b'poly1305': (32, 16, Poly1305)
 }
 
 
