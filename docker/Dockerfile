@@ -6,8 +6,4 @@ RUN pip install shadowsocks
 
 EXPOSE 8388
 
-ADD shadowsocks.json /etc/
-
-VOLUME ["/etc/shadowsocks.json"]
-
-CMD ssserver -c /etc/shadowsocks.json
+CMD ssserver -p 8388 -m "aes-256-cfb"
