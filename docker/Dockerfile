@@ -6,4 +6,4 @@ RUN pip install shadowsocks
 
 EXPOSE 8388
 
-CMD ssserver -p 8388 -m "aes-256-cfb"
+CMD ssserver -p 8388 -m "aes-256-cfb" -k "$KEY"
