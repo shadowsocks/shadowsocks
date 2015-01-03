@@ -18,7 +18,7 @@ RUN python setup.py install
 
 # Tear down building environment and delete git repository
 WORKDIR $BASEDIR
-RUN apt-get --purge autoremove -y git-core python python-setuptools
+RUN apt-get --purge autoremove -y git-core python-setuptools
 RUN rm -rf $BASEDIR/shadowsocks
 
 # Config file can be in a separated container
