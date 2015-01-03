@@ -153,5 +153,5 @@ Bugs and Issues
    :target: https://pypi.python.org/pypi/shadowsocks
 .. |Build Status| image:: https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
    :target: https://travis-ci.org/shadowsocks/shadowsocks
-.. |Coverage Status| image:: http://192.81.132.184/result/shadowsocks
-   :target: http://192.81.132.184/job/Shadowsocks/ws/htmlcov/index.html
+.. |Coverage Status| image:: https://jenkins.shadowvpn.org/result/shadowsocks
+   :target: https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
