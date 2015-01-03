@@ -4,9 +4,12 @@ MAINTAINER Sah Lee <contact@leesah.name>
 
 ENV BASEDIR /
 
-# Set up building environment
+# Install dependencies
 RUN apt-get update
-RUN apt-get install -y git-core python python-setuptools
+RUN apt-get install -y python python-pkg-resources
+
+# Set up building environment
+RUN apt-get install -y git-core python-setuptools
 
 # Get the latest code, build and install
 WORKDIR $BASEDIR
