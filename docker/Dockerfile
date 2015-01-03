@@ -1,12 +1,13 @@
 FROM ubuntu:latest
-
-ENV METHOD aes-256-cfb
-ENV KEY Change Me!
+MAINTAINER Sah Lee <contact@leesah.name>
 
 ENV PORT 8388
 EXPOSE $PORT
 
-CMD ssserver -p "$PORT" -m "$METHOD" -k "$KEY"
+ENV CONF /etc/shadowsocks.json
+VOLUME ["/etc/shadowsocks.json"]
+
+CMD ssserver -p $PORT -c $CONF
 
 RUN apt-get update
 RUN apt-get install -y python-pip
