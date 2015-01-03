@@ -20,3 +20,7 @@ Start the daemon container.
 ```bash
 docker run --name shadowsocks-app --detach --publish 58388:8388 --volumes-from shadowsocks-data leesah/shadowsocks
 ```
+
+## References
+
+[Shadowsocks - Servers](http://shadowsocks.org/en/download/servers.html)
