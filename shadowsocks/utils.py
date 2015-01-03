@@ -264,7 +264,7 @@ General options:
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
 
-Online help: <https://github.com/clowwindy/shadowsocks>
+Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
 
 
@@ -294,7 +294,7 @@ General options:
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
 
-Online help: <https://github.com/clowwindy/shadowsocks>
+Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
 
 
