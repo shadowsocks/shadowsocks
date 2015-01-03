@@ -7,15 +7,14 @@ RUN apt-get update
 RUN apt-get install -y git-core python python-setuptools
 
 # Get the latest code, build and install
-RUN git clone https://github.com/shadowsocks/shadowsocks.git
-RUN cd shadowsocks
+RUN git clone https://github.com/shadowsocks/shadowsocks.git /tmp
+WORKDIR /tmp/shadowsocks
 RUN python setup.py build
 RUN python setup.py install
 
 # Tear down building environment and delete git repository
 RUN apt-get --purge autoremove -y git-core python python-setuptools
-RUN cd ..
-RUN rm -rf shadowsocks
+RUN rm -rf /tmp/shadowsocks
 
 # Config file can be in a separated container
 ENV CONF /etc/shadowsocks.json
