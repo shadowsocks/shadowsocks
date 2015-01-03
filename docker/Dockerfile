@@ -28,4 +28,4 @@ VOLUME ["$CONF"]
 ENV PORT 8388
 EXPOSE $PORT
 
-CMD ssserver -c $CONF -p $PORT
+CMD /usr/local/bin/ssserver -c $CONF -p $PORT
