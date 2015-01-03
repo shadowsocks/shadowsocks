@@ -9,7 +9,8 @@ RUN apt-get update
 RUN apt-get install -y git-core python python-setuptools
 
 # Get the latest code, build and install
-RUN git clone https://github.com/shadowsocks/shadowsocks.git $BASEDIR
+WORKDIR $BASEDIR
+RUN git clone https://github.com/shadowsocks/shadowsocks.git
 WORKDIR $BASEDIR/shadowsocks
 RUN pwd
 RUN python setup.py build
