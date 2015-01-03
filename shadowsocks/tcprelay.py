@@ -121,6 +121,7 @@ class TCPRelayHandler(object):
         self._data_to_write_to_remote = []
         self._upstream_status = WAIT_STATUS_READING
         self._downstream_status = WAIT_STATUS_INIT
+        self._client_address = local_sock.getpeername()[:2]
         self._remote_address = None
         if is_local:
             self._chosen_server = self._get_a_server()
@@ -294,8 +295,9 @@ class TCPRelayHandler(object):
             if header_result is None:
                 raise Exception('can not parse header')
             addrtype, remote_addr, remote_port, header_length = header_result
-            logging.info('connecting %s:%d' % (common.to_str(remote_addr),
-                                               remote_port))
+            logging.info('connecting %s:%d from %s:%d' %
+                         (common.to_str(remote_addr), remote_port,
+                          self._client_address[0], self._client_address[1]))
             self._remote_address = (remote_addr, remote_port)
             # pause reading
             self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
@@ -317,7 +319,7 @@ class TCPRelayHandler(object):
                 self._dns_resolver.resolve(remote_addr,
                                            self._handle_dns_resolved)
         except Exception as e:
-            logging.error(e)
+            self._log_error(e)
             if self._config['verbose']:
                 traceback.print_exc()
             # TODO use logging when debug completed
@@ -338,7 +340,7 @@ class TCPRelayHandler(object):
 
     def _handle_dns_resolved(self, result, error):
         if error:
-            logging.error(error)
+            self._log_error(error)
             self.destroy()
             return
         if result:
@@ -506,6 +508,10 @@ class TCPRelayHandler(object):
                 self._on_local_write()
         else:
             logging.warn('unknown socket')
+
+    def _log_error(self, e):
+        logging.error('%s when handling connection from %s:%d' %
+                      (e, self._client_address[0], self._client_address[1]))
 
     def destroy(self):
         # destroy the handler and release any resources
