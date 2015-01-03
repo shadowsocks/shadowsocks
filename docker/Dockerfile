@@ -17,6 +17,7 @@ RUN python setup.py build
 RUN python setup.py install
 
 # Tear down building environment and delete git repository
+WORKDIR $BASEDIR
 RUN apt-get --purge autoremove -y git-core python python-setuptools
 RUN rm -rf $BASEDIR/shadowsocks
 
@@ -28,4 +29,4 @@ VOLUME ["$CONF"]
 ENV PORT 8388
 EXPOSE $PORT
 
-CMD /usr/local/bin/ssserver -c $CONF -p $PORT
+CMD ssserver -c $CONF -p $PORT
