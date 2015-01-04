@@ -74,7 +74,6 @@ Bugs and Issues
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
 [Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
-[Encryption]:        https://github.com/shadowsocks/shadowsocks/wiki/Encryption
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
 [Install Server on Windows]: https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows
@@ -83,7 +82,6 @@ Bugs and Issues
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
-[TCP_FASTOPEN]:      https://github.com/shadowsocks/shadowsocks/wiki/TCP-Fast-Open
 [Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
 [Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
 [Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
