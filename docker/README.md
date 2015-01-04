@@ -2,6 +2,8 @@
 
 ## How to use this image
 
+### Start the daemon for the firt time
+
 Pull the image.
 
 ```bash
@@ -20,6 +22,26 @@ Start the daemon container.
 ```bash
 docker run --name shadowsocks-app --detach --publish 58388:8388 --volumes-from shadowsocks-data leesah/shadowsocks
 ```
+
+### Stop the daemon
+
+```bash
+docker stop shadowsocks-app
+```
+
+### Start a stopped daemon
+
+```bash
+docker start shadowsocks-app
+```
+
+### Use in CoreOS
+
+COMING SOON
+
+### Use with `fig`
+
+COMING SOON
 
 ## References
 
