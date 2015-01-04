@@ -32,4 +32,5 @@ VOLUME ["$CONF"]
 ENV PORT 8388
 EXPOSE $PORT
 
-CMD ssserver -c $CONF -p $PORT
+# Override the host and port in the config file.
+CMD ssserver --fast-open -c $CONF -s 0.0.0.0 -p $PORT
