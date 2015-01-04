@@ -9,35 +9,26 @@ A fast tunnel proxy that helps you bypass firewalls.
 
 [中文说明][Chinese Readme]
 
-Install
--------
+Server
+------
 
-### Server
+### Install
 
 #### Debian / Ubuntu:
 
     apt-get install python-pip
     pip install shadowsocks
 
-Or simply `apt-get install shadowsocks` if you have [Debian sid] in your
-source list.
-
 #### CentOS:
 
-    yum install python-setuptools
-    easy_install pip
+    yum install python-setuptools && easy_install pip
     pip install shadowsocks
 
 #### Windows:
 
-1. Install [OpenSSL for Windows].
-2. Download [the package].
-3. Use `python shadowsocks/server.py` instead of `ssserver` command below.
+See [Install Server on Windows]
 
-Usage
------
-
-### Server
+### Usage
 
     ssserver -p 8000 -k password -m rc4-md5
 
@@ -49,7 +40,8 @@ To run in the background:
 Check all the options via `-h`. You can also use a [Configuration] file
 instead.
 
-### Client
+Client
+------
 
 * [Windows] / [OS X]
 * [Android] / [iOS]
@@ -83,12 +75,11 @@ Bugs and Issues
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
 [Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
-[the package]:       https://pypi.python.org/pypi/shadowsocks
 [Encryption]:        https://github.com/shadowsocks/shadowsocks/wiki/Encryption
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
+[Install Server on Windows]: https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows
 [Mailing list]:      https://groups.google.com/group/shadowsocks
-[OpenSSL for Windows]: https://slproweb.com/products/Win32OpenSSL.html
 [OpenWRT]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#openwrt
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
