@@ -78,7 +78,7 @@ Bugs and Issues
 [Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
 [Install Server on Windows]: https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows
 [Mailing list]:      https://groups.google.com/group/shadowsocks
-[OpenWRT]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#openwrt
+[OpenWRT]:           https://github.com/shadowsocks/openwrt-shadowsocks
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [PyPI]:              https://pypi.python.org/pypi/shadowsocks
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
