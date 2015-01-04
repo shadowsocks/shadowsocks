@@ -29,7 +29,7 @@ RUN rm -rf $BASEDIR/shadowsocks
 
 # Config file can be in a separated container
 VOLUME ["$CONFIGDIR"]
-ADD shadowsocks.json $CONFIGDIR
+ADD shadowsocks.json $CONFIGFILE
 
 # Port in the config file won't take affect. Instead we'll use 8388.
 EXPOSE $PORT
