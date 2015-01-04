@@ -53,8 +53,7 @@ for more information.
 Documentation
 -------------
 
-You can find all the documentation in the wiki:
-https://github.com/shadowsocks/shadowsocks/wiki
+You can find all the documentation in the [Wiki].
 
 License
 -------
@@ -87,4 +86,5 @@ Bugs and Issues
 [TCP_FASTOPEN]:      https://github.com/shadowsocks/shadowsocks/wiki/TCP-Fast-Open
 [Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
 [Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
+[Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
 [Windows]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#windows
