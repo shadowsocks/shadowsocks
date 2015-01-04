@@ -39,66 +39,25 @@ source list.
 
 #### Windows:
 
-Download [OpenSSL for Windows] and install. Then install shadowsocks via
-easy_install and pip as Linux. If you don't know how to use them, you can
-directly download [the package], and use `python shadowsocks/server.py`
-instead of `ssserver` command below.
+Install [OpenSSL for Windows]. Download [the package].
+Use `python shadowsocks/server.py` instead of `ssserver` command below.
 
-Configuration
--------------
-
-On your server create a config file `/etc/shadowsocks.json`.
-Example:
-
-    {
-        "server":"my_server_ip",
-        "server_port":8388,
-        "local_address": "127.0.0.1",
-        "local_port":1080,
-        "password":"mypassword",
-        "timeout":300,
-        "method":"aes-256-cfb",
-        "fast_open": false
-    }
-
-Explanation of the fields:
-
-| Name          | Explanation                                     |
-| ------------- | ----------------------------------------------- |
-| server        | the address your server listens                 |
-| server_port   | server port                                     |
-| local_address | the address your local listens                  |
-| local_port    | local port                                      |
-| password      | password used for encryption                    |
-| timeout       | in seconds                                      |
-| method        | default: "aes-256-cfb", see [Encryption]        |
-| fast_open     | use [TCP_FASTOPEN], true / false                |
-| workers       | number of workers, available on Unix/Linux      |
+Usage
+-----
 
 On your server:
 
-To run in the foreground:
-
-    ssserver -c /etc/shadowsocks.json
+    ssserver -p 8000 -k password -m rc4-md5
 
 To run in the background:
 
-    ssserver -c /etc/shadowsocks.json -d start
-    ssserver -c /etc/shadowsocks.json -d stop
+    ssserver -p 8000 -k password -m rc4-md5 -d start
+    ssserver -p 8000 -k password -m rc4-md5 -d stop
 
 On your client machine, use the same configuration as your server. Check the
 README of your client for more information.
 
-Command Line Options
---------------------
-
-Check the options via `-h`.You can use args to override settings from
-`config.json`.
-
-    sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
-    ssserver -p server_port -k password -m bf-cfb --workers 2
-    ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/shadowsocks.pid
-    ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/shadowsocks.pid
+Check the options via `-h`. You can also use a [Configuration] file instead.
 
 Documentation
 -------------
@@ -121,6 +80,7 @@ Bugs and Issues
 [Android]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android
 [Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
 [Chinese Readme]:    https://github.com/shadowsocks/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+[Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
 [Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
