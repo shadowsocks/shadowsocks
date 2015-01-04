@@ -1,5 +1,17 @@
 # Shadowsocks Dockerized
 
+## What is Shadowsocks
+
+A secure socks5 proxy designed to protect your Internet traffic.
+
+See http://shadowsocks.org/
+
+## What is Docker
+
+An open platform for distributed applications for developers and sysadmins.
+
+See https://www.docker.com/
+
 ## How to use this image
 
 ### Start the daemon for the firt time
@@ -34,6 +46,10 @@ docker stop shadowsocks-app
 ```bash
 docker start shadowsocks-app
 ```
+
+### Upgrade
+
+COMING SOON
 
 ### Use in CoreOS
 
