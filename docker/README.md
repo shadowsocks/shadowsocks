@@ -1,4 +1,4 @@
-# Shadowsocks Dockerization
+# Shadowsocks Dockerized
 
 ## How to use this image
 
