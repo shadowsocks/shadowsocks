@@ -12,15 +12,6 @@ A fast tunnel proxy that helps you bypass firewalls.
 Install
 -------
 
-You'll have a client on your local side, and setup a server on a
-remote server.
-
-### Client
-
-* [Windows] / [OS X]
-* [Android] / [iOS]
-* [OpenWRT]
-
 ### Server
 
 #### Debian / Ubuntu:
@@ -39,13 +30,14 @@ source list.
 
 #### Windows:
 
-Install [OpenSSL for Windows]. Download [the package].
-Use `python shadowsocks/server.py` instead of `ssserver` command below.
+1. Install [OpenSSL for Windows].
+2. Download [the package].
+3. Use `python shadowsocks/server.py` instead of `ssserver` command below.
 
 Usage
 -----
 
-On your server:
+### Server
 
     ssserver -p 8000 -k password -m rc4-md5
 
@@ -54,10 +46,17 @@ To run in the background:
     ssserver -p 8000 -k password -m rc4-md5 -d start
     ssserver -p 8000 -k password -m rc4-md5 -d stop
 
-On your client machine, use the same configuration as your server. Check the
-README of your client for more information.
+Check all the options via `-h`. You can also use a [Configuration] file
+instead.
 
-Check the options via `-h`. You can also use a [Configuration] file instead.
+### Client
+
+* [Windows] / [OS X]
+* [Android] / [iOS]
+* [OpenWRT]
+
+Use GUI clients on your local PC/phones. Check the README of your client
+for more information.
 
 Documentation
 -------------
