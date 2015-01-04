@@ -12,7 +12,7 @@ Create a data container and edit the configuration file.
 
 ```bash
 docker run --name shadowsocks-data leesah/shadowsocks /bin/true
-docker run --interactive --tty --rm --volumes-from shadowsocks-data leesah/shadowsocks vi /etc/shadowsocks.json
+docker run --interactive --tty --rm --volumes-from shadowsocks-data leesah/shadowsocks vi /etc/shadowsocks/shadowsocks.json
 ```
 
 Start the daemon container.
