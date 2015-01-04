@@ -19,32 +19,32 @@ See https://www.docker.com/
 Pull the image.
 
 ```bash
-docker pull leesah/shadowsocks
+$ docker pull leesah/shadowsocks
 ```
 
 Create a data container and edit the configuration file.
 
 ```bash
-docker run --name shadowsocks-data leesah/shadowsocks /bin/true
-docker run --interactive --tty --rm --volumes-from shadowsocks-data leesah/shadowsocks vi /etc/shadowsocks/shadowsocks.json
+$ docker run --name shadowsocks-data leesah/shadowsocks /bin/true
+$ docker run --interactive --tty --rm --volumes-from shadowsocks-data leesah/shadowsocks vi /etc/shadowsocks/shadowsocks.json
 ```
 
 Start the daemon container.
 
 ```bash
-docker run --name shadowsocks-app --detach --publish 58388:8388 --volumes-from shadowsocks-data leesah/shadowsocks
+$ docker run --name shadowsocks-app --detach --publish 58388:8388 --volumes-from shadowsocks-data leesah/shadowsocks
 ```
 
 ### Stop the daemon
 
 ```bash
-docker stop shadowsocks-app
+$ docker stop shadowsocks-app
 ```
 
 ### Start a stopped daemon
 
 ```bash
-docker start shadowsocks-app
+$ docker start shadowsocks-app
 ```
 
 ### Upgrade
