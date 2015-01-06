@@ -42,11 +42,16 @@ def load_libsodium():
     global loaded, libsodium, buf
 
     from ctypes.util import find_library
+    libsodium_path = None
     for p in ('sodium', 'libsodium'):
         libsodium_path = find_library(p)
         if libsodium_path:
             break
     else:
+        import glob
+        for libsodium_path in glob.glob('/usr/lib/libsodium.*'):
+            pass
+    if libsodium_path is None:
         raise Exception('libsodium not found')
     logging.info('loading libsodium from %s', libsodium_path)
     libsodium = CDLL(libsodium_path)

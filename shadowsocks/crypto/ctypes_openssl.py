@@ -39,11 +39,16 @@ def load_openssl():
     global loaded, libcrypto, buf
 
     from ctypes.util import find_library
+    libcrypto_path = None
     for p in ('crypto', 'eay32', 'libeay32'):
         libcrypto_path = find_library(p)
         if libcrypto_path:
             break
     else:
+        import glob
+        for libcrypto_path in glob.glob('/usr/lib/libcrypto.*'):
+            pass
+    if libcrypto_path is None:
         raise Exception('libcrypto(OpenSSL) not found')
     logging.info('loading libcrypto from %s', libcrypto_path)
     libcrypto = CDLL(libcrypto_path)
