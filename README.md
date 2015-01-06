@@ -7,8 +7,6 @@ shadowsocks
 
 A fast tunnel proxy that helps you bypass firewalls.
 
-[中文说明][Chinese Readme]
-
 Server
 ------
 
@@ -69,7 +67,6 @@ Bugs and Issues
 
 [Android]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android
 [Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
-[Chinese Readme]:    https://github.com/shadowsocks/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
 [Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
 [Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
