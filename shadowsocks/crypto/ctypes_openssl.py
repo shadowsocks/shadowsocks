@@ -83,9 +83,9 @@ def load_cipher(cipher_name):
 
 class CtypesCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
+        self._ctx = None
         if not loaded:
             load_openssl()
-        self._ctx = None
         cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
         if not cipher:
             cipher = load_cipher(cipher_name)
