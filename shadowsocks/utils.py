@@ -172,7 +172,7 @@ def get_config(is_local):
         sys.exit(2)
 
     config['password'] = config.get('password', '')
-    config['method'] = config.get('method', 'aes-256-cfb')
+    config['method'] = config.get('method', b'aes-256-cfb')
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
