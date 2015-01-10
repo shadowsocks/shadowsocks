@@ -45,9 +45,29 @@ def load_openssl():
         if libcrypto_path:
             break
     else:
+        # We may get here when find_library fails because, for example, 
+        # the user does not have sufficient privileges to access those 
+        # tools underlying find_library on linux.
+
         import glob
-        for libcrypto_path in glob.glob('/usr/lib/libcrypto.*'):
-            pass
+        import sys
+
+        patterns = ['/usr/lib/libcrypto.*']
+
+        # Some linux distros may store so in alternative locations
+        if sys.maxsize > 2 ** 32:
+            # Python is 64-bit
+            patterns.extend(['/usr/lib64/libcrypto.*'])
+        else:
+            # Python is 32-bit
+            patterns.extend(['/usr/lib32/libcrypto.*'])
+
+        for pat in patterns:
+            files = glob.glob(pat)
+            if files:
+                libcrypto_path = files[0]
+                break
+
     if libcrypto_path is None:
         raise Exception('libcrypto(OpenSSL) not found')
     logging.info('loading libcrypto from %s', libcrypto_path)
