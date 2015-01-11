@@ -45,8 +45,8 @@ def load_openssl():
         if libcrypto_path:
             break
     else:
-        # We may get here when find_library fails because, for example, 
-        # the user does not have sufficient privileges to access those 
+        # We may get here when find_library fails because, for example,
+        # the user does not have sufficient privileges to access those
         # tools underlying find_library on linux.
 
         import glob
