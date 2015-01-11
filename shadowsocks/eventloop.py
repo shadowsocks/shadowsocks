@@ -234,7 +234,7 @@ class EventLoop(object):
                     traceback.print_exc()
             for handler in self._handlers_to_remove:
                 self._handlers.remove(handler)
-                self._handlers_to_remove = []
+            self._handlers_to_remove = []
             self._iterating = False
 
 

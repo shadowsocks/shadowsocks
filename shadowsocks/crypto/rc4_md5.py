@@ -39,7 +39,7 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
     try:
         from shadowsocks.crypto import ctypes_openssl
         return ctypes_openssl.CtypesCrypto(b'rc4', rc4_key, b'', op)
-    except:
+    except Exception:
         import M2Crypto.EVP
         return M2Crypto.EVP.Cipher(b'rc4', rc4_key, b'', op,
                                    key_as_bytes=0, d='md5', salt=None, i=1,
