@@ -62,7 +62,7 @@ def load_libsodium():
     loaded = True
 
 
-class Salsa20Crypto(object):
+class SodiumCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
         if not loaded:
             load_libsodium()
@@ -101,22 +101,22 @@ class Salsa20Crypto(object):
 
 
 ciphers = {
-    b'salsa20': (32, 8, Salsa20Crypto),
-    b'chacha20': (32, 8, Salsa20Crypto),
+    b'salsa20': (32, 8, SodiumCrypto),
+    b'chacha20': (32, 8, SodiumCrypto),
 }
 
 
 def test_salsa20():
-    cipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_chacha20():
 
-    cipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
