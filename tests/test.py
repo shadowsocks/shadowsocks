@@ -90,7 +90,6 @@ try:
 
         for fd in r:
             line = fd.readline()
-            sys.stderr.write(line)
             if not line:
                 if stage == 2 and fd == p3.stdout:
                     stage = 3
@@ -98,6 +97,7 @@ try:
                     stage = 5
             if bytes != str:
                 line = str(line, 'utf8')
+            sys.stderr.write(line)
             if line.find('starting local') >= 0:
                 local_ready = True
             if line.find('starting server') >= 0:
