@@ -20,6 +20,57 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
+import logging
+
+
+def find_library(possible_lib_names, search_symbol, library_name):
+    from ctypes.util import find_library
+    from ctypes import CDLL
+
+    paths = []
+
+    if type(possible_lib_names) is not list:
+        possible_lib_names = [possible_lib_names]
+
+    for name in possible_lib_names:
+        path = find_library(name)
+        if path:
+            paths.append(path)
+
+    if not paths:
+        # We may get here when find_library fails because, for example,
+        # the user does not have sufficient privileges to access those
+        # tools underlying find_library on linux.
+        import glob
+
+        for name in possible_lib_names:
+            patterns = [
+                '/usr/local/lib*/lib%s.*' % name,
+                '/usr/lib*/lib%s.*' % name,
+                'lib%s.*' % name,
+                '%s.dll' % name,
+                'lib%s.dll' % name]
+
+            for pat in patterns:
+                files = glob.glob(pat)
+                if files:
+                    paths.extend(files)
+    for path in paths:
+        try:
+            lib = CDLL(path)
+            if hasattr(lib, search_symbol):
+                logging.info('loading %s from %s', library_name, path)
+                return lib
+            else:
+                logging.warn('can\'t find symbol %s in %s', search_symbol,
+                             path)
+        except Exception:
+            pass
+    return None
+
 
 def run_cipher(cipher, decipher):
     from os import urandom
@@ -49,3 +100,17 @@ def run_cipher(cipher, decipher):
     end = time.time()
     print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
     assert b''.join(results) == plain
+
+
+def test_find_library():
+    assert find_library('c', 'strcpy', 'libc') is not None
+    assert find_library(['c'], 'strcpy', 'libc') is not None
+    assert find_library('crypto', 'EVP_CipherUpdate', 'libcrypto') is not None
+    assert find_library('notexist', 'strcpy', 'libnotexist') is None
+    assert find_library('c', 'symbol_not_exist', 'c') is None
+    assert find_library(['notexist', 'c', 'crypto'],
+                        'EVP_CipherUpdate', 'libc') is not None
+
+
+if __name__ == '__main__':
+    test_find_library()

@@ -23,9 +23,10 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import logging
-from ctypes import CDLL, c_char_p, c_int, c_long, byref,\
+from ctypes import c_char_p, c_int, c_long, byref,\
     create_string_buffer, c_void_p
+
+from shadowsocks.crypto import util
 
 __all__ = ['ciphers']
 
@@ -38,40 +39,12 @@ buf_size = 2048
 def load_openssl():
     global loaded, libcrypto, buf
 
-    from ctypes.util import find_library
-    libcrypto_path = None
-    for p in ('crypto', 'eay32', 'libeay32'):
-        libcrypto_path = find_library(p)
-        if libcrypto_path:
-            break
-    else:
-        # We may get here when find_library fails because, for example,
-        # the user does not have sufficient privileges to access those
-        # tools underlying find_library on linux.
-
-        import glob
-        import sys
-
-        patterns = ['/usr/lib/libcrypto.*']
-
-        # Some linux distros may store so in alternative locations
-        if sys.maxsize > 2 ** 32:
-            # Python is 64-bit
-            patterns.extend(['/usr/lib64/libcrypto.*'])
-        else:
-            # Python is 32-bit
-            patterns.extend(['/usr/lib32/libcrypto.*'])
-
-        for pat in patterns:
-            files = glob.glob(pat)
-            if files:
-                libcrypto_path = files[0]
-                break
-
-    if libcrypto_path is None:
+    libcrypto = util.find_library(('crypto', 'eay32'),
+                                  'EVP_get_cipherbyname',
+                                  'libcrypto')
+    if libcrypto is None:
         raise Exception('libcrypto(OpenSSL) not found')
-    logging.info('loading libcrypto from %s', libcrypto_path)
-    libcrypto = CDLL(libcrypto_path)
+
     libcrypto.EVP_get_cipherbyname.restype = c_void_p
     libcrypto.EVP_CIPHER_CTX_new.restype = c_void_p
 
@@ -173,7 +146,6 @@ ciphers = {
 
 
 def run_method(method):
-    from shadowsocks.crypto import util
 
     cipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 1)
     decipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 0)
