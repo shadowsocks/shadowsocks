@@ -127,7 +127,8 @@ try:
             else:
                 if r != 0:
                     sys.exit(1)
-            p4 = Popen(['socksify', 'dig', '@%s' % config.dns, 'www.google.com'],
+            p4 = Popen(['socksify', 'dig', '@%s' % config.dns,
+                        'www.google.com'],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
             if p4 is not None:
                 fdset.append(p4.stdout)
