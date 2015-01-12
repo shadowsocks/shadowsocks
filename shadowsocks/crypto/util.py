@@ -27,7 +27,7 @@ import logging
 
 
 def find_library(possible_lib_names, search_symbol, library_name):
-    from ctypes.util import find_library
+    import ctypes.util
     from ctypes import CDLL
 
     paths = []
@@ -36,7 +36,7 @@ def find_library(possible_lib_names, search_symbol, library_name):
         possible_lib_names = [possible_lib_names]
 
     for name in possible_lib_names:
-        path = find_library(name)
+        path = ctypes.util.find_library(name)
         if path:
             paths.append(path)
 
