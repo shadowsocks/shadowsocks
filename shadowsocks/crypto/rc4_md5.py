@@ -25,6 +25,7 @@ from __future__ import absolute_import, division, print_function, \
 
 import hashlib
 
+from shadowsocks.crypto import openssl
 
 __all__ = ['ciphers']
 
@@ -35,15 +36,7 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
     md5.update(key)
     md5.update(iv)
     rc4_key = md5.digest()
-
-    try:
-        from shadowsocks.crypto import openssl
-        return openssl.OpenSSLCrypto(b'rc4', rc4_key, b'', op)
-    except Exception:
-        import M2Crypto.EVP
-        return M2Crypto.EVP.Cipher(b'rc4', rc4_key, b'', op,
-                                   key_as_bytes=0, d='md5', salt=None, i=1,
-                                   padding=1)
+    return openssl.OpenSSLCrypto(b'rc4', rc4_key, b'', op)
 
 
 ciphers = {
