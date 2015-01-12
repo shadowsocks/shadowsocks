@@ -112,7 +112,6 @@ class UDPRelay(object):
         self._closed = False
         self._last_time = time.time()
         self._sockets = set()
-        print(config)
         if 'forbidden_ip' in config:
             self._forbidden_iplist = config['forbidden_ip']
         else:
