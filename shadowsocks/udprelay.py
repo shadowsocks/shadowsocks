@@ -112,6 +112,11 @@ class UDPRelay(object):
         self._closed = False
         self._last_time = time.time()
         self._sockets = set()
+        print(config)
+        if 'forbidden_ip' in config:
+            self._forbidden_iplist = config['forbidden_ip']
+        else:
+            self._forbidden_iplist = None
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -178,6 +183,12 @@ class UDPRelay(object):
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if addrs:
                 af, socktype, proto, canonname, sa = addrs[0]
+                if self._forbidden_iplist:
+                    if common.to_str(sa[0]) in self._forbidden_iplist:
+                        logging.warn('IP %s is in forbidden list, drop' %
+                                     common.to_str(sa[0]))
+                        # drop
+                        return
                 client = socket.socket(af, socktype, proto)
                 client.setblocking(False)
                 self._cache[key] = client

@@ -40,6 +40,9 @@ parser.add_argument('-s', '--server-conf', type=str, default=None)
 parser.add_argument('-a', '--client-args', type=str, default=None)
 parser.add_argument('-b', '--server-args', type=str, default=None)
 parser.add_argument('--with-coverage', action='store_true', default=None)
+parser.add_argument('--should-fail', action='store_true', default=None)
+parser.add_argument('--url', type=str, default='http://www.example.com/')
+parser.add_argument('--dns', type=str, default='8.8.8.8')
 
 config = parser.parse_args()
 
@@ -87,6 +90,7 @@ try:
 
         for fd in r:
             line = fd.readline()
+            sys.stderr.write(line)
             if not line:
                 if stage == 2 and fd == p3.stdout:
                     stage = 3
@@ -94,7 +98,6 @@ try:
                     stage = 5
             if bytes != str:
                 line = str(line, 'utf8')
-            sys.stdout.write(line)
             if line.find('starting local') >= 0:
                 local_ready = True
             if line.find('starting server') >= 0:
@@ -103,7 +106,7 @@ try:
         if stage == 1:
             time.sleep(2)
 
-            p3 = Popen(['curl', 'http://www.example.com/', '-v', '-L',
+            p3 = Popen(['curl', config.url, '-v', '-L',
                         '--socks5-hostname', '127.0.0.1:1081',
                         '-m', '15', '--connect-timeout', '10'],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
@@ -118,9 +121,13 @@ try:
             fdset.remove(p3.stdout)
             fdset.remove(p3.stderr)
             r = p3.wait()
-            if r != 0:
-                sys.exit(1)
-            p4 = Popen(['socksify', 'dig', '@8.8.8.8', 'www.google.com'],
+            if config.should_fail:
+                if r == 0:
+                    sys.exit(1)
+            else:
+                if r != 0:
+                    sys.exit(1)
+            p4 = Popen(['socksify', 'dig', '@%s' % config.dns, 'www.google.com'],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
             if p4 is not None:
                 fdset.append(p4.stdout)
@@ -131,9 +138,14 @@ try:
 
         if stage == 5:
             r = p4.wait()
-            if r != 0:
-                sys.exit(1)
-            print('test passed')
+            if config.should_fail:
+                if r == 0:
+                    sys.exit(1)
+                print('test passed (expecting failure)')
+            else:
+                if r != 0:
+                    sys.exit(1)
+                print('test passed')
             break
 finally:
     for p in [p1, p2]:

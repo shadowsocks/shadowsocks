@@ -123,8 +123,8 @@ class TCPRelayHandler(object):
         self._downstream_status = WAIT_STATUS_INIT
         self._client_address = local_sock.getpeername()[:2]
         self._remote_address = None
-        if 'forbidden_ip' in self._config:
-            self._forbidden_iplist = self._config['forbidden_ip']
+        if 'forbidden_ip' in config:
+            self._forbidden_iplist = config['forbidden_ip']
         else:
             self._forbidden_iplist = None
         if is_local:
