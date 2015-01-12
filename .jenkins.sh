@@ -38,7 +38,6 @@ run_test python tests/test.py --with-coverage -c tests/aes-cfb8.json
 run_test python tests/test.py --with-coverage -c tests/rc4-md5.json
 run_test python tests/test.py --with-coverage -c tests/salsa20.json
 run_test python tests/test.py --with-coverage -c tests/chacha20.json
-run_test python tests/test.py --with-coverage -c tests/salsa20-ctr.json
 run_test python tests/test.py --with-coverage -c tests/table.json
 run_test python tests/test.py --with-coverage -c tests/server-multi-ports.json
 run_test python tests/test.py --with-coverage -s tests/server-multi-passwd.json -c tests/server-multi-passwd-client-side.json
