@@ -232,8 +232,9 @@ class EventLoop(object):
                     logging.error(e)
                     import traceback
                     traceback.print_exc()
-            for handler in self._handlers_to_remove:
-                self._handlers.remove(handler)
+            if self._handlers_to_remove:
+                for handler in self._handlers_to_remove:
+                    self._handlers.remove(handler)
                 self._handlers_to_remove = []
             self._iterating = False
 
