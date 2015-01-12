@@ -185,8 +185,8 @@ class UDPRelay(object):
                 af, socktype, proto, canonname, sa = addrs[0]
                 if self._forbidden_iplist:
                     if common.to_str(sa[0]) in self._forbidden_iplist:
-                        logging.warn('IP %s is in forbidden list, drop' %
-                                     common.to_str(sa[0]))
+                        logging.debug('IP %s is in forbidden list, drop' %
+                                      common.to_str(sa[0]))
                         # drop
                         return
                 client = socket.socket(af, socktype, proto)
