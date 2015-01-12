@@ -32,7 +32,7 @@ def find_library(possible_lib_names, search_symbol, library_name):
 
     paths = []
 
-    if type(possible_lib_names) is not list:
+    if type(possible_lib_names) not in (list, tuple):
         possible_lib_names = [possible_lib_names]
 
     for name in possible_lib_names:
@@ -105,10 +105,11 @@ def run_cipher(cipher, decipher):
 def test_find_library():
     assert find_library('c', 'strcpy', 'libc') is not None
     assert find_library(['c'], 'strcpy', 'libc') is not None
+    assert find_library(('c',), 'strcpy', 'libc') is not None
     assert find_library('crypto', 'EVP_CipherUpdate', 'libcrypto') is not None
     assert find_library('notexist', 'strcpy', 'libnotexist') is None
     assert find_library('c', 'symbol_not_exist', 'c') is None
-    assert find_library(['notexist', 'c', 'crypto'],
+    assert find_library(('notexist', 'c', 'crypto'),
                         'EVP_CipherUpdate', 'libc') is not None
 
 
