@@ -1,4 +1,7 @@
-2.6.3 2015-01-03
+2.6.4 2015-01-14
+- Also search lib* when searching libraries
+
+2.6.3 2015-01-12
 - Support --forbidden-ip to ban some IP, i.e. localhost
 - Search OpenSSL and libsodium harder
 - Now works on OpenWRT
