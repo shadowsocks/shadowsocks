@@ -35,7 +35,12 @@ def find_library(possible_lib_names, search_symbol, library_name):
     if type(possible_lib_names) not in (list, tuple):
         possible_lib_names = [possible_lib_names]
 
-    for name in possible_lib_names:
+    lib_names = []
+    for lib_name in possible_lib_names:
+        lib_names.append(lib_name)
+        lib_names.append('lib' + lib_name)
+
+    for name in lib_names:
         path = ctypes.util.find_library(name)
         if path:
             paths.append(path)
@@ -46,7 +51,7 @@ def find_library(possible_lib_names, search_symbol, library_name):
         # tools underlying find_library on linux.
         import glob
 
-        for name in possible_lib_names:
+        for name in lib_names:
             patterns = [
                 '/usr/local/lib*/lib%s.*' % name,
                 '/usr/lib*/lib%s.*' % name,
@@ -106,10 +111,11 @@ def test_find_library():
     assert find_library('c', 'strcpy', 'libc') is not None
     assert find_library(['c'], 'strcpy', 'libc') is not None
     assert find_library(('c',), 'strcpy', 'libc') is not None
-    assert find_library('crypto', 'EVP_CipherUpdate', 'libcrypto') is not None
+    assert find_library(('crypto', 'eay32'), 'EVP_CipherUpdate',
+                        'libcrypto') is not None
     assert find_library('notexist', 'strcpy', 'libnotexist') is None
     assert find_library('c', 'symbol_not_exist', 'c') is None
-    assert find_library(('notexist', 'c', 'crypto'),
+    assert find_library(('notexist', 'c', 'crypto', 'eay32'),
                         'EVP_CipherUpdate', 'libc') is not None
 
 
