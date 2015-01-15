@@ -23,9 +23,10 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import logging
-from ctypes import CDLL, c_char_p, c_int, c_long, byref,\
+from ctypes import c_char_p, c_int, c_long, byref,\
     create_string_buffer, c_void_p
+
+from shadowsocks.crypto import util
 
 __all__ = ['ciphers']
 
@@ -38,20 +39,12 @@ buf_size = 2048
 def load_openssl():
     global loaded, libcrypto, buf
 
-    from ctypes.util import find_library
-    libcrypto_path = None
-    for p in ('crypto', 'eay32', 'libeay32'):
-        libcrypto_path = find_library(p)
-        if libcrypto_path:
-            break
-    else:
-        import glob
-        for libcrypto_path in glob.glob('/usr/lib/libcrypto.*'):
-            pass
-    if libcrypto_path is None:
+    libcrypto = util.find_library(('crypto', 'eay32'),
+                                  'EVP_get_cipherbyname',
+                                  'libcrypto')
+    if libcrypto is None:
         raise Exception('libcrypto(OpenSSL) not found')
-    logging.info('loading libcrypto from %s', libcrypto_path)
-    libcrypto = CDLL(libcrypto_path)
+
     libcrypto.EVP_get_cipherbyname.restype = c_void_p
     libcrypto.EVP_CIPHER_CTX_new.restype = c_void_p
 
@@ -81,11 +74,11 @@ def load_cipher(cipher_name):
     return None
 
 
-class CtypesCrypto(object):
+class OpenSSLCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
+        self._ctx = None
         if not loaded:
             load_openssl()
-        self._ctx = None
         cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
         if not cipher:
             cipher = load_cipher(cipher_name)
@@ -124,39 +117,38 @@ class CtypesCrypto(object):
 
 
 ciphers = {
-    b'aes-128-cfb': (16, 16, CtypesCrypto),
-    b'aes-192-cfb': (24, 16, CtypesCrypto),
-    b'aes-256-cfb': (32, 16, CtypesCrypto),
-    b'aes-128-ofb': (16, 16, CtypesCrypto),
-    b'aes-192-ofb': (24, 16, CtypesCrypto),
-    b'aes-256-ofb': (32, 16, CtypesCrypto),
-    b'aes-128-ctr': (16, 16, CtypesCrypto),
-    b'aes-192-ctr': (24, 16, CtypesCrypto),
-    b'aes-256-ctr': (32, 16, CtypesCrypto),
-    b'aes-128-cfb8': (16, 16, CtypesCrypto),
-    b'aes-192-cfb8': (24, 16, CtypesCrypto),
-    b'aes-256-cfb8': (32, 16, CtypesCrypto),
-    b'aes-128-cfb1': (16, 16, CtypesCrypto),
-    b'aes-192-cfb1': (24, 16, CtypesCrypto),
-    b'aes-256-cfb1': (32, 16, CtypesCrypto),
-    b'bf-cfb': (16, 8, CtypesCrypto),
-    b'camellia-128-cfb': (16, 16, CtypesCrypto),
-    b'camellia-192-cfb': (24, 16, CtypesCrypto),
-    b'camellia-256-cfb': (32, 16, CtypesCrypto),
-    b'cast5-cfb': (16, 8, CtypesCrypto),
-    b'des-cfb': (8, 8, CtypesCrypto),
-    b'idea-cfb': (16, 8, CtypesCrypto),
-    b'rc2-cfb': (16, 8, CtypesCrypto),
-    b'rc4': (16, 0, CtypesCrypto),
-    b'seed-cfb': (16, 16, CtypesCrypto),
+    b'aes-128-cfb': (16, 16, OpenSSLCrypto),
+    b'aes-192-cfb': (24, 16, OpenSSLCrypto),
+    b'aes-256-cfb': (32, 16, OpenSSLCrypto),
+    b'aes-128-ofb': (16, 16, OpenSSLCrypto),
+    b'aes-192-ofb': (24, 16, OpenSSLCrypto),
+    b'aes-256-ofb': (32, 16, OpenSSLCrypto),
+    b'aes-128-ctr': (16, 16, OpenSSLCrypto),
+    b'aes-192-ctr': (24, 16, OpenSSLCrypto),
+    b'aes-256-ctr': (32, 16, OpenSSLCrypto),
+    b'aes-128-cfb8': (16, 16, OpenSSLCrypto),
+    b'aes-192-cfb8': (24, 16, OpenSSLCrypto),
+    b'aes-256-cfb8': (32, 16, OpenSSLCrypto),
+    b'aes-128-cfb1': (16, 16, OpenSSLCrypto),
+    b'aes-192-cfb1': (24, 16, OpenSSLCrypto),
+    b'aes-256-cfb1': (32, 16, OpenSSLCrypto),
+    b'bf-cfb': (16, 8, OpenSSLCrypto),
+    b'camellia-128-cfb': (16, 16, OpenSSLCrypto),
+    b'camellia-192-cfb': (24, 16, OpenSSLCrypto),
+    b'camellia-256-cfb': (32, 16, OpenSSLCrypto),
+    b'cast5-cfb': (16, 8, OpenSSLCrypto),
+    b'des-cfb': (8, 8, OpenSSLCrypto),
+    b'idea-cfb': (16, 8, OpenSSLCrypto),
+    b'rc2-cfb': (16, 8, OpenSSLCrypto),
+    b'rc4': (16, 0, OpenSSLCrypto),
+    b'seed-cfb': (16, 16, OpenSSLCrypto),
 }
 
 
 def run_method(method):
-    from shadowsocks.crypto import util
 
-    cipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 1)
-    decipher = CtypesCrypto(method, b'k' * 32, b'i' * 16, 0)
+    cipher = OpenSSLCrypto(method, b'k' * 32, b'i' * 16, 1)
+    decipher = OpenSSLCrypto(method, b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

@@ -28,26 +28,18 @@ import sys
 import hashlib
 import logging
 
-from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr,\
-    ctypes_openssl, ctypes_libsodium, table
+from shadowsocks.crypto import rc4_md5, openssl, sodium, table
 
 
 method_supported = {}
 method_supported.update(rc4_md5.ciphers)
-method_supported.update(salsa20_ctr.ciphers)
-method_supported.update(ctypes_openssl.ciphers)
-method_supported.update(ctypes_libsodium.ciphers)
-# let M2Crypto override ctypes_openssl
-method_supported.update(m2.ciphers)
+method_supported.update(openssl.ciphers)
+method_supported.update(sodium.ciphers)
 method_supported.update(table.ciphers)
 
 
 def random_string(length):
-    try:
-        import M2Crypto.Rand
-        return M2Crypto.Rand.rand_bytes(length)
-    except ImportError:
-        return os.urandom(length)
+    return os.urandom(length)
 
 
 cached_keys = {}

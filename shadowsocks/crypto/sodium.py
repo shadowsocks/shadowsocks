@@ -23,9 +23,10 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import logging
-from ctypes import CDLL, c_char_p, c_int, c_ulonglong, byref, \
+from ctypes import c_char_p, c_int, c_ulonglong, byref, \
     create_string_buffer, c_void_p
+
+from shadowsocks.crypto import util
 
 __all__ = ['ciphers']
 
@@ -41,21 +42,11 @@ BLOCK_SIZE = 64
 def load_libsodium():
     global loaded, libsodium, buf
 
-    from ctypes.util import find_library
-    libsodium_path = None
-    for p in ('sodium', 'libsodium'):
-        libsodium_path = find_library(p)
-        if libsodium_path:
-            break
-    else:
-        import glob
-        for libsodium_path in glob.glob('/usr/lib/libsodium.*'):
-            pass
-    if libsodium_path is None:
+    libsodium = util.find_library('sodium', 'crypto_stream_salsa20_xor_ic',
+                                  'libsodium')
+    if libsodium is None:
         raise Exception('libsodium not found')
-    logging.info('loading libsodium from %s', libsodium_path)
-    libsodium = CDLL(libsodium_path)
-    libsodium.sodium_init.restype = c_int
+
     libsodium.crypto_stream_salsa20_xor_ic.restype = c_int
     libsodium.crypto_stream_salsa20_xor_ic.argtypes = (c_void_p, c_char_p,
                                                        c_ulonglong,
@@ -67,13 +58,11 @@ def load_libsodium():
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
 
-    libsodium.sodium_init()
-
     buf = create_string_buffer(buf_size)
     loaded = True
 
 
-class Salsa20Crypto(object):
+class SodiumCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
         if not loaded:
             load_libsodium()
@@ -112,25 +101,22 @@ class Salsa20Crypto(object):
 
 
 ciphers = {
-    b'salsa20': (32, 8, Salsa20Crypto),
-    b'chacha20': (32, 8, Salsa20Crypto),
+    b'salsa20': (32, 8, SodiumCrypto),
+    b'chacha20': (32, 8, SodiumCrypto),
 }
 
 
 def test_salsa20():
-    from shadowsocks.crypto import util
-
-    cipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_chacha20():
-    from shadowsocks.crypto import util
 
-    cipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

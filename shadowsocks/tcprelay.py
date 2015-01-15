@@ -123,6 +123,10 @@ class TCPRelayHandler(object):
         self._downstream_status = WAIT_STATUS_INIT
         self._client_address = local_sock.getpeername()[:2]
         self._remote_address = None
+        if 'forbidden_ip' in config:
+            self._forbidden_iplist = config['forbidden_ip']
+        else:
+            self._forbidden_iplist = None
         if is_local:
             self._chosen_server = self._get_a_server()
         fd_to_handlers[local_sock.fileno()] = self
@@ -331,6 +335,10 @@ class TCPRelayHandler(object):
         if len(addrs) == 0:
             raise Exception("getaddrinfo failed for %s:%d" % (ip,  port))
         af, socktype, proto, canonname, sa = addrs[0]
+        if self._forbidden_iplist:
+            if common.to_str(sa[0]) in self._forbidden_iplist:
+                raise Exception('IP %s is in forbidden list, reject' %
+                                common.to_str(sa[0]))
         remote_sock = socket.socket(af, socktype, proto)
         self._remote_sock = remote_sock
         self._fd_to_handlers[remote_sock.fileno()] = self
@@ -346,6 +354,7 @@ class TCPRelayHandler(object):
         if result:
             ip = result[1]
             if ip:
+
                 try:
                     self._stage = STAGE_CONNECTING
                     remote_addr = ip

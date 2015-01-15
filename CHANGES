@@ -1,3 +1,8 @@
+2.6.3 2015-01-03
+- Support --forbidden-ip to ban some IP, i.e. localhost
+- Search OpenSSL and libsodium harder
+- Now works on OpenWRT
+
 2.6.2 2015-01-03
 - Log client IP
 
