@@ -413,7 +413,7 @@ class DNSResolver(object):
 
     def _send_req(self, hostname, qtype):
         self._request_id += 1
-        if self._request_id > 32768:
+        if self._request_id > 65536:
             self._request_id = 1
         req = build_request(hostname, qtype, self._request_id)
         for server in self._servers:
