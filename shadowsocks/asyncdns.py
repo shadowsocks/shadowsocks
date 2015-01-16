@@ -93,11 +93,12 @@ def build_address(address):
     return b''.join(results)
 
 
-def build_request(address, qtype, request_id):
-    header = struct.pack('!HBBHHHH', request_id, 1, 0, 1, 0, 0, 0)
+def build_request(address, qtype):
+    request_id = os.urandom(2)
+    header = struct.pack('!BBHHHH', 1, 0, 1, 0, 0, 0)
     addr = build_address(address)
     qtype_qclass = struct.pack('!HH', qtype, QCLASS_IN)
-    return header + addr + qtype_qclass
+    return request_id + header + addr + qtype_qclass
 
 
 def parse_ip(addrtype, data, length, offset):
@@ -270,7 +271,6 @@ class DNSResolver(object):
 
     def __init__(self):
         self._loop = None
-        self._request_id = 1
         self._hosts = {}
         self._hostname_status = {}
         self._hostname_to_cb = {}
@@ -412,10 +412,7 @@ class DNSResolver(object):
                         del self._hostname_status[hostname]
 
     def _send_req(self, hostname, qtype):
-        self._request_id += 1
-        if self._request_id > 32768:
-            self._request_id = 1
-        req = build_request(hostname, qtype, self._request_id)
+        req = build_request(hostname, qtype)
         for server in self._servers:
             logging.debug('resolving %s with type %d using server %s',
                           hostname, qtype, server)
