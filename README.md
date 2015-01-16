@@ -12,17 +12,17 @@ Server
 
 ### Install
 
-#### Debian / Ubuntu:
+Debian / Ubuntu:
 
     apt-get install python-pip
     pip install shadowsocks
 
-#### CentOS:
+CentOS:
 
     yum install python-setuptools && easy_install pip
     pip install shadowsocks
 
-#### Windows:
+Windows:
 
 See [Install Server on Windows]
 
