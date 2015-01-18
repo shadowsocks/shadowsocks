@@ -1,3 +1,6 @@
+2.6.5 2015-01-18
+- Try both 32 bit and 64 bit dll on Windows
+
 2.6.4 2015-01-14
 - Also search lib* when searching libraries
 
