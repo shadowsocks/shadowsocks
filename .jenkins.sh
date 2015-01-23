@@ -24,6 +24,7 @@ function run_test {
     return 0
 }
 
+python --version
 coverage erase
 mkdir tmp
 run_test pep8 .
