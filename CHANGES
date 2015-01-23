@@ -1,3 +1,6 @@
+2.6.6 2015-01-23
+- Fix a crash in forbidden list
+
 2.6.5 2015-01-18
 - Try both 32 bit and 64 bit dll on Windows
 
