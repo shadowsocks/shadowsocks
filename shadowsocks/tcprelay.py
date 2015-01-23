@@ -387,7 +387,7 @@ class TCPRelayHandler(object):
                         self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
                         self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                     return
-                except (OSError, IOError) as e:
+                except Exception as e:
                     logging.error(e)
                     if self._config['verbose']:
                         traceback.print_exc()
