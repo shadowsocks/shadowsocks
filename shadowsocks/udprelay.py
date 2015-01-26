@@ -249,6 +249,17 @@ class UDPRelay(object):
         self._eventloop.add(server_socket,
                             eventloop.POLL_IN | eventloop.POLL_ERR)
 
+    def remove_to_loop(self):
+        self._eventloop.remove(self._server_socket)
+        self._eventloop.remove_handler(self._handle_events)
+
+    def destroy(self):
+        #destroy all conn and server conn
+        self.remove_to_loop()
+        self.close()
+        #GC
+        self._cache = None
+
     def _handle_events(self, events):
         for sock, fd, event in events:
             if sock == self._server_socket:

@@ -356,6 +356,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        self._server.server_transfer_ul += len(data)
         if not is_local:
             data = self._encryptor.decrypt(data)
             if not data:
@@ -388,6 +389,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        self._server.server_transfer_dl += len(data)
         if self._is_local:
             data = self._encryptor.decrypt(data)
         else:
@@ -495,6 +497,8 @@ class TCPRelay(object):
         self._eventloop = None
         self._fd_to_handlers = {}
         self._last_time = time.time()
+        self.server_transfer_ul = 0L
+        self.server_transfer_dl = 0L
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers
@@ -539,6 +543,21 @@ class TCPRelay(object):
         self._eventloop.add(self._server_socket,
                             eventloop.POLL_IN | eventloop.POLL_ERR)
 
+    def remove_to_loop(self):
+        self._eventloop.remove(self._server_socket)
+        self._eventloop.remove_handler(self._handle_events)
+
+    def destroy(self):
+        #destroy all conn and server conn at this tcprelay
+        self.remove_to_loop()
+        for fd in self._fd_to_handlers.keys():
+            try:
+                self._fd_to_handlers[fd].destroy()
+            except Exception, e:
+                #already destroy
+                pass
+        self.close()
+        
     def remove_handler(self, handler):
         index = self._handler_to_timeouts.get(hash(handler), -1)
         if index >= 0:

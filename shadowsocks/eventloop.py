@@ -192,6 +192,9 @@ class EventLoop(object):
     def add_handler(self, handler):
         self._handlers.append(handler)
 
+    def remove_handler(self, handler):
+        self._handlers.remove(handler)
+
     def run(self):
         while not self.stopping:
             try:
