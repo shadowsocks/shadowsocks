@@ -1,4 +1,13 @@
-2.6.3 2015-01-03
+2.6.6 2015-01-23
+- Fix a crash in forbidden list
+
+2.6.5 2015-01-18
+- Try both 32 bit and 64 bit dll on Windows
+
+2.6.4 2015-01-14
+- Also search lib* when searching libraries
+
+2.6.3 2015-01-12
 - Support --forbidden-ip to ban some IP, i.e. localhost
 - Search OpenSSL and libsodium harder
 - Now works on OpenWRT

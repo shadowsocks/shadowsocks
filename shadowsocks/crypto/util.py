@@ -23,7 +23,26 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
+import os
 import logging
+
+
+def find_library_nt(name):
+    # modified from ctypes.util
+    # ctypes.util.find_library just returns first result he found
+    # but we want to try them all
+    # because on Windows, users may have both 32bit and 64bit version installed
+    results = []
+    for directory in os.environ['PATH'].split(os.pathsep):
+        fname = os.path.join(directory, name)
+        if os.path.isfile(fname):
+            results.append(fname)
+        if fname.lower().endswith(".dll"):
+            continue
+        fname = fname + ".dll"
+        if os.path.isfile(fname):
+            results.append(fname)
+    return results
 
 
 def find_library(possible_lib_names, search_symbol, library_name):
@@ -41,9 +60,12 @@ def find_library(possible_lib_names, search_symbol, library_name):
         lib_names.append('lib' + lib_name)
 
     for name in lib_names:
-        path = ctypes.util.find_library(name)
-        if path:
-            paths.append(path)
+        if os.name == "nt":
+            paths.extend(find_library_nt(name))
+        else:
+            path = ctypes.util.find_library(name)
+            if path:
+                paths.append(path)
 
     if not paths:
         # We may get here when find_library fails because, for example,
@@ -56,8 +78,7 @@ def find_library(possible_lib_names, search_symbol, library_name):
                 '/usr/local/lib*/lib%s.*' % name,
                 '/usr/lib*/lib%s.*' % name,
                 'lib%s.*' % name,
-                '%s.dll' % name,
-                'lib%s.dll' % name]
+                '%s.dll' % name]
 
             for pat in patterns:
                 files = glob.glob(pat)
