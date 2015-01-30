@@ -43,30 +43,22 @@ TIMEOUT_PRECISION = 4
 
 MSG_FASTOPEN = 0x20000000
 
-# SOCKS CMD defination
+# SOCKS command definition
 CMD_CONNECT = 1
 CMD_BIND = 2
 CMD_UDP_ASSOCIATE = 3
 
-# TCP Relay can be either sslocal or ssserver
-# for sslocal it is called is_local=True
-
 # for each opening port, we have a TCP Relay
+
 # for each connection, we have a TCP Relay Handler to handle the connection
 
 # for each handler, we have 2 sockets:
 #    local:   connected to the client
 #    remote:  connected to remote server
 
-# for each handler, we have 2 streams:
-#    upstream:    from client to server direction
-#                 read local and write to remote
-#    downstream:  from server to client direction
-#                 read remote and write to local
-
 # for each handler, it could be at one of several stages:
 
-# sslocal:
+# as sslocal:
 # stage 0 SOCKS hello received from local, send hello to local
 # stage 1 addr received from local, query DNS for remote
 # stage 2 UDP assoc
@@ -74,7 +66,7 @@ CMD_UDP_ASSOCIATE = 3
 # stage 4 still connecting, more data from local received
 # stage 5 remote connected, piping local and remote
 
-# ssserver:
+# as ssserver:
 # stage 0 just jump to stage 1
 # stage 1 addr received from local, query DNS for remote
 # stage 3 DNS resolved, connect to remote
@@ -89,11 +81,16 @@ STAGE_CONNECTING = 4
 STAGE_STREAM = 5
 STAGE_DESTROYED = -1
 
-# stream direction
+# for each handler, we have 2 stream directions:
+#    upstream:    from client to server direction
+#                 read local and write to remote
+#    downstream:  from server to client direction
+#                 read remote and write to local
+
 STREAM_UP = 0
 STREAM_DOWN = 1
 
-# stream wait status, indicating it's waiting for reading, etc
+# for each stream, it's waiting for reading, or writing, or both
 WAIT_STATUS_INIT = 0
 WAIT_STATUS_READING = 1
 WAIT_STATUS_WRITING = 2
@@ -112,6 +109,9 @@ class TCPRelayHandler(object):
         self._remote_sock = None
         self._config = config
         self._dns_resolver = dns_resolver
+
+        # TCP Relay works as either sslocal or ssserver
+        # if is_local, this is sslocal
         self._is_local = is_local
         self._stage = STAGE_INIT
         self._encryptor = encrypt.Encryptor(config['password'],
