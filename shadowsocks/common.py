@@ -101,6 +101,18 @@ def inet_pton(family, addr):
         raise RuntimeError("What family?")
 
 
+def is_ip(address):
+    for family in (socket.AF_INET, socket.AF_INET6):
+        try:
+            if type(address) != str:
+                address = address.decode('utf8')
+            inet_pton(family, address)
+            return family
+        except (TypeError, ValueError, OSError, IOError):
+            pass
+    return False
+
+
 def patch_socket():
     if not hasattr(socket, 'inet_pton'):
         socket.inet_pton = inet_pton
