@@ -29,7 +29,7 @@ import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes, to_str
+from shadowsocks.common import to_bytes, to_str, IPNetwork
 
 
 VERBOSE_LEVEL = 5
@@ -186,6 +186,7 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = config.get('local_address', '127.0.0.1')
     config['local_port'] = config.get('local_port', 1080)
+    config['forbidden_ip'] = IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1'))
     if is_local:
         if config.get('server', None) is None:
             logging.error('server addr not specified')
