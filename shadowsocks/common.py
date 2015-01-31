@@ -192,7 +192,7 @@ class IPNetwork(object):
         self._network_list_v6 = []
         if type(addrs) == str:
             addrs = addrs.split(',')
-        map(self.add_network, addrs)
+        list(map(self.add_network, addrs))
 
     def add_network(self, addr):
         if addr is "":
