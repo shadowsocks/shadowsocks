@@ -195,6 +195,8 @@ class IPNetwork(object):
         map(self.add_network, addrs)
 
     def add_network(self, addr):
+        if addr is "":
+            return
         block = addr.split('/')
         addr_family = is_ip(block[0])
         addr_len = IPNetwork.ADDRLENGTH[addr_family]
@@ -207,7 +209,7 @@ class IPNetwork(object):
             raise SyntaxError("Not a valid CIDR notation: %s" % addr)
         if len(block) is 1:
             prefix_size = 0
-            while ((ip & 1) == 0):
+            while (ip & 1) == 0 and ip is not 0:
                 ip >>= 1
                 prefix_size += 1
             logging.warn("You did't specify CIDR routing prefix size for %s, "
