@@ -29,7 +29,7 @@ import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes, to_str
+from shadowsocks.common import to_bytes, to_str, IPNetwork
 
 
 VERBOSE_LEVEL = 5
@@ -193,6 +193,8 @@ def get_config(is_local):
             sys.exit(2)
     else:
         config['server'] = config.get('server', '0.0.0.0')
+        config['forbidden_ip'] = \
+            IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
     config['server_port'] = config.get('server_port', 8388)
 
     if is_local and not config.get('password', None):
