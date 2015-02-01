@@ -51,7 +51,7 @@ run_test python tests/test.py --with-coverage --should-fail --url="http://localh
 # test localhost is in the forbidden list by default
 run_test python tests/test.py --with-coverage --should-fail --tcp-only --url="http://localhost/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
 
-# test localhost available when forbidden list is empty
+# test localhost is available when forbidden list is empty
 run_test python tests/test.py --with-coverage --tcp-only --url="http://localhost/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --forbidden-ip=''" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
 
 if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
