@@ -11,7 +11,7 @@ if __name__ == '__main__':
                 with open('/tmp/%s-coverage' % project, 'rb') as f:
                     coverage = f.read().strip()
                     n = int(coverage.strip('%'))
-                    if n > 80:
+                    if n >= 80:
                         color = 'brightgreen'
                     else:
                         color = 'yellow'
