@@ -41,6 +41,7 @@ parser.add_argument('-a', '--client-args', type=str, default=None)
 parser.add_argument('-b', '--server-args', type=str, default=None)
 parser.add_argument('--with-coverage', action='store_true', default=None)
 parser.add_argument('--should-fail', action='store_true', default=None)
+parser.add_argument('--tcp-only', action='store_true', default=None)
 parser.add_argument('--url', type=str, default='http://www.example.com/')
 parser.add_argument('--dns', type=str, default='8.8.8.8')
 
@@ -127,6 +128,8 @@ try:
             else:
                 if r != 0:
                     sys.exit(1)
+            if config.tcp_only:
+                break
             p4 = Popen(['socksify', 'dig', '@%s' % config.dns,
                         'www.google.com'],
                        stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)

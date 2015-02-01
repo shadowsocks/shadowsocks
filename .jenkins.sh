@@ -48,6 +48,12 @@ run_test python tests/test.py --with-coverage -b "-m rc4-md5 -k testrc4 -s 127.0
 run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --workers 1" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -qq -b 127.0.0.1"
 run_test python tests/test.py --with-coverage --should-fail --url="http://localhost/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --forbidden-ip=127.0.0.1,::1,8.8.8.8" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
 
+# test localhost is in the forbidden list by default
+run_test python tests/test.py --with-coverage --should-fail --tcp-only --url="http://localhost/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
+
+# test localhost available when forbidden list is empty
+run_test python tests/test.py --with-coverage --tcp-only --url="http://localhost/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --forbidden-ip=''" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
+
 if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
     if [ 3 -eq `cat /proc/sys/net/ipv4/tcp_fastopen` ] ; then
         # we have to run it twice:
