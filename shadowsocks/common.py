@@ -206,7 +206,7 @@ class IPNetwork(object):
             hi, lo = struct.unpack("!QQ", inet_pton(addr_family, block[0]))
             ip = (hi << 64) | lo
         else:
-            raise SyntaxError("Not a valid CIDR notation: %s" % addr)
+            raise Exception("Not a valid CIDR notation: %s" % addr)
         if len(block) is 1:
             prefix_size = 0
             while (ip & 1) == 0 and ip is not 0:
@@ -218,7 +218,7 @@ class IPNetwork(object):
             prefix_size = addr_len - int(block[1])
             ip >>= prefix_size
         else:
-            raise SyntaxError("Not a valid CIDR notation: %s" % addr)
+            raise Exception("Not a valid CIDR notation: %s" % addr)
         if addr_family is socket.AF_INET:
             self._network_list_v4.append((ip, prefix_size))
         else:
