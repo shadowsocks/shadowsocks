@@ -43,9 +43,6 @@ def daemon_exec(config):
             command = 'start'
         pid_file = config['pid-file']
         log_file = config['log-file']
-        command = common.to_str(command)
-        pid_file = common.to_str(pid_file)
-        log_file = common.to_str(log_file)
         if command == 'start':
             daemon_start(pid_file, log_file)
         elif command == 'stop':

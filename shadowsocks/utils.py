@@ -70,6 +70,10 @@ def find_config():
 
 
 def check_config(config):
+    if config.get('daemon', None) == 'stop':
+        # no need to specify configuration for daemon stop
+        return
+
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
     if config.get('server', '') in [b'127.0.0.1', b'localhost']:
@@ -165,11 +169,11 @@ def get_config(is_local):
                     print_server_help()
                 sys.exit(0)
             elif key == '-d':
-                config['daemon'] = value
+                config['daemon'] = to_str(value)
             elif key == '--pid-file':
-                config['pid-file'] = value
+                config['pid-file'] = to_str(value)
             elif key == '--log-file':
-                config['log-file'] = value
+                config['log-file'] = to_str(value)
             elif key == '-q':
                 v_count -= 1
                 config['verbose'] = v_count
