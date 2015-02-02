@@ -30,8 +30,7 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, daemon, encrypt, eventloop, tcprelay, udprelay,\
-    asyncdns
+from shadowsocks import utils, daemon, eventloop, tcprelay, udprelay, asyncdns
 
 
 def main():
@@ -48,8 +47,6 @@ def main():
     daemon.daemon_exec(config)
 
     utils.print_shadowsocks()
-
-    encrypt.try_cipher(config['password'], config['method'])
 
     try:
         logging.info("starting local at %s:%d" %

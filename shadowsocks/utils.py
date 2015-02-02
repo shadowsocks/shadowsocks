@@ -30,6 +30,7 @@ import sys
 import getopt
 import logging
 from shadowsocks.common import to_bytes, to_str, IPNetwork
+from shadowsocks import encrypt
 
 
 VERBOSE_LEVEL = 5
@@ -94,6 +95,8 @@ def check_config(config):
         if os.name != 'posix':
             logging.error('user can be used only on Unix')
             sys.exit(1)
+
+    encrypt.try_cipher(config['password'], config['method'])
 
 
 def get_config(is_local):

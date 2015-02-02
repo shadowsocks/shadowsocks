@@ -30,8 +30,7 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, daemon, encrypt, eventloop, tcprelay, udprelay,\
-    asyncdns
+from shadowsocks import utils, daemon, eventloop, tcprelay, udprelay, asyncdns
 
 
 def main():
@@ -57,7 +56,6 @@ def main():
         else:
             config['port_password'][str(server_port)] = config['password']
 
-    encrypt.try_cipher(config['password'], config['method'])
     tcp_servers = []
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()
