@@ -7,7 +7,7 @@ with codecs.open('README.rst', encoding='utf-8') as f:
 
 setup(
     name="shadowsocks",
-    version="2.6.6",
+    version="2.6.7",
     license='MIT',
     description="A fast tunnel proxy that help you get through firewalls",
     author='clowwindy',
