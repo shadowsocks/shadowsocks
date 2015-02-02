@@ -86,6 +86,8 @@ def main():
             loop = eventloop.EventLoop()
             dns_resolver.add_to_loop(loop)
             list(map(lambda s: s.add_to_loop(loop), tcp_servers + udp_servers))
+
+            daemon.set_user(config.get('user', None))
             loop.run()
         except (KeyboardInterrupt, IOError, OSError) as e:
             logging.error(e)

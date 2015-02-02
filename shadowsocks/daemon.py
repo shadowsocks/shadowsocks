@@ -183,3 +183,35 @@ def daemon_stop(pid_file):
         sys.exit(1)
     print('stopped')
     os.unlink(pid_file)
+
+
+def set_user(username):
+    if username is None:
+        return
+
+    import pwd
+    import grp
+
+    try:
+        pwrec = pwd.getpwnam(username)
+    except KeyError:
+        logging.error('user not found: %s' % username)
+        raise
+    user = pwrec[0]
+    uid = pwrec[2]
+    gid = pwrec[3]
+
+    cur_uid = os.getuid()
+    if uid == cur_uid:
+        return
+    if cur_uid != 0:
+        logging.error('can not set user as nonroot user')
+        # will raise later
+
+    # inspired by supervisor
+    if hasattr(os, 'setgroups'):
+        groups = [grprec[2] for grprec in grp.getgrall() if user in grprec[3]]
+        groups.insert(0, gid)
+        os.setgroups(groups)
+    os.setgid(gid)
+    os.setuid(uid)

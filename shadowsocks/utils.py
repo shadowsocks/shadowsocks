@@ -89,7 +89,11 @@ def check_config(config):
     if config.get('password') in [b'mypassword']:
         logging.error('DON\'T USE DEFAULT PASSWORD! Please change it in your '
                       'config.json!')
-        exit(1)
+        sys.exit(1)
+    if config.get('user', None) is not None:
+        if os.name != 'posix':
+            logging.error('user can be used only on Unix')
+            sys.exit(1)
 
 
 def get_config(is_local):
@@ -97,11 +101,11 @@ def get_config(is_local):
                         format='%(levelname)-s: %(message)s')
     if is_local:
         shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
-        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=']
+        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=']
     else:
         shortopts = 'hd:s:p:k:m:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=']
+                    'forbidden-ip=', 'user=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -147,6 +151,8 @@ def get_config(is_local):
                 config['fast_open'] = True
             elif key == '--workers':
                 config['workers'] = int(value)
+            elif key == '--user':
+                config['user'] = to_str(value)
             elif key == '--forbidden-ip':
                 config['forbidden_ip'] = to_str(value).split(',')
             elif key in ('-h', '--help'):
@@ -247,9 +253,7 @@ def print_help(is_local):
 
 
 def print_local_help():
-    print('''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
-               [-b LOCAL_ADDR] [-l LOCAL_PORT] -k PASSWORD [-m METHOD]
-               [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] -[d] [-q]
+    print('''usage: sslocal [OPTION]...
 A fast tunnel proxy that helps you bypass firewalls.
 
 You can supply configurations via either config file or command line arguments.
@@ -270,6 +274,7 @@ General options:
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
+  --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
 
@@ -278,9 +283,7 @@ Online help: <https://github.com/shadowsocks/shadowsocks>
 
 
 def print_server_help():
-    print('''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
-                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
-                [--workers WORKERS] [-v] [-d start] [-q]
+    print('''usage: ssserver [OPTION]...
 A fast tunnel proxy that helps you bypass firewalls.
 
 You can supply configurations via either config file or command line arguments.
@@ -301,6 +304,7 @@ General options:
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
+  --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
 

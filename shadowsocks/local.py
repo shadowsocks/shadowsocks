@@ -73,6 +73,7 @@ def main():
             sys.exit(1)
         signal.signal(signal.SIGINT, int_handler)
 
+        daemon.set_user(config.get('user', None))
         loop.run()
     except (KeyboardInterrupt, IOError, OSError) as e:
         logging.error(e)
