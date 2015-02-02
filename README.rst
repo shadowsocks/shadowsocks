@@ -12,7 +12,6 @@ Install
 ~~~~~~~
 
 Debian / Ubuntu:
-^^^^^^^^^^^^^^^^
 
 ::
 
@@ -20,7 +19,6 @@ Debian / Ubuntu:
     pip install shadowsocks
 
 CentOS:
-^^^^^^^
 
 ::
 
@@ -28,7 +26,6 @@ CentOS:
     pip install shadowsocks
 
 Windows:
-^^^^^^^^
 
 See `Install Server on
 Windows <https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows>`__
@@ -38,14 +35,25 @@ Usage
 
 ::
 
-    ssserver -p 8000 -k password -m rc4-md5
+    ssserver -p 443 -k password -m rc4-md5
 
 To run in the background:
 
 ::
 
-    ssserver -p 8000 -k password -m rc4-md5 -d start
-    ssserver -p 8000 -k password -m rc4-md5 -d stop
+    sudo ssserver -p 443 -k password -m rc4-md5 --user nobody -d start
+
+To stop:
+
+::
+
+    sudo ssserver -d stop
+
+To check the log:
+
+::
+
+    sudo less /var/log/shadowsocks.log
 
 Check all the options via ``-h``. You can also use a
 `Configuration <https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File>`__
@@ -88,4 +96,4 @@ Bugs and Issues
 .. |Build Status| image:: https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
    :target: https://travis-ci.org/shadowsocks/shadowsocks
 .. |Coverage Status| image:: https://jenkins.shadowvpn.org/result/shadowsocks
-   :target: https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
+   :target: https://jenkins.shadowvpn.org/job/Shadowsocks/ws/PYENV/py34/label/linux/htmlcov/index.html
