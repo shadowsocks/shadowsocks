@@ -87,12 +87,12 @@ def main():
 
             daemon.set_user(config.get('user', None))
             loop.run()
-        except (KeyboardInterrupt, IOError, OSError) as e:
+        except Exception as e:
             logging.error(e)
             if config['verbose']:
                 import traceback
                 traceback.print_exc()
-            os._exit(1)
+            sys.exit(1)
 
     if int(config['workers']) > 1:
         if os.name == 'posix':
