@@ -69,10 +69,27 @@ def find_config():
     return None
 
 
-def check_config(config):
+def check_config(config, is_local):
     if config.get('daemon', None) == 'stop':
         # no need to specify configuration for daemon stop
         return
+
+    if is_local and not config.get('password', None):
+        logging.error('password not specified')
+        print_help(is_local)
+        sys.exit(2)
+
+    if not is_local and not config.get('password', None) \
+            and not config.get('port_password', None):
+        logging.error('password or port_password not specified')
+        print_help(is_local)
+        sys.exit(2)
+
+    if 'local_port' in config:
+        config['local_port'] = int(config['local_port'])
+
+    if 'server_port' in config and type(config['server_port']) != list:
+        config['server_port'] = int(config['server_port'])
 
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
@@ -214,23 +231,6 @@ def get_config(is_local):
             sys.exit(2)
     config['server_port'] = config.get('server_port', 8388)
 
-    if is_local and not config.get('password', None):
-        logging.error('password not specified')
-        print_help(is_local)
-        sys.exit(2)
-
-    if not is_local and not config.get('password', None) \
-            and not config.get('port_password', None):
-        logging.error('password or port_password not specified')
-        print_help(is_local)
-        sys.exit(2)
-
-    if 'local_port' in config:
-        config['local_port'] = int(config['local_port'])
-
-    if 'server_port' in config and type(config['server_port']) != list:
-        config['server_port'] = int(config['server_port'])
-
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
     if config['verbose'] >= 2:
@@ -247,7 +247,7 @@ def get_config(is_local):
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    check_config(config)
+    check_config(config, is_local)
 
     return config
 
