@@ -67,7 +67,7 @@ class TableCipher(object):
 
 
 ciphers = {
-    b'table': (0, 0, TableCipher)
+    'table': (0, 0, TableCipher)
 }
 
 
@@ -163,8 +163,8 @@ def test_table_result():
 def test_encryption():
     from shadowsocks.crypto import util
 
-    cipher = TableCipher(b'table', b'test', b'', 1)
-    decipher = TableCipher(b'table', b'test', b'', 0)
+    cipher = TableCipher('table', b'test', b'', 1)
+    decipher = TableCipher('table', b'test', b'', 0)
 
     util.run_cipher(cipher, decipher)
 

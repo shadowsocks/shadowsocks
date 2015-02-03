@@ -34,15 +34,15 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
 
 
 ciphers = {
-    b'rc4-md5': (16, 16, create_cipher),
+    'rc4-md5': (16, 16, create_cipher),
 }
 
 
 def test():
     from shadowsocks.crypto import util
 
-    cipher = create_cipher(b'rc4-md5', b'k' * 32, b'i' * 16, 1)
-    decipher = create_cipher(b'rc4-md5', b'k' * 32, b'i' * 16, 0)
+    cipher = create_cipher('rc4-md5', b'k' * 32, b'i' * 16, 1)
+    decipher = create_cipher('rc4-md5', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

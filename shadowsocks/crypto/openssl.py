@@ -111,31 +111,31 @@ class OpenSSLCrypto(object):
 
 
 ciphers = {
-    b'aes-128-cfb': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb': (32, 16, OpenSSLCrypto),
-    b'aes-128-ofb': (16, 16, OpenSSLCrypto),
-    b'aes-192-ofb': (24, 16, OpenSSLCrypto),
-    b'aes-256-ofb': (32, 16, OpenSSLCrypto),
-    b'aes-128-ctr': (16, 16, OpenSSLCrypto),
-    b'aes-192-ctr': (24, 16, OpenSSLCrypto),
-    b'aes-256-ctr': (32, 16, OpenSSLCrypto),
-    b'aes-128-cfb8': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb8': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb8': (32, 16, OpenSSLCrypto),
-    b'aes-128-cfb1': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb1': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb1': (32, 16, OpenSSLCrypto),
-    b'bf-cfb': (16, 8, OpenSSLCrypto),
-    b'camellia-128-cfb': (16, 16, OpenSSLCrypto),
-    b'camellia-192-cfb': (24, 16, OpenSSLCrypto),
-    b'camellia-256-cfb': (32, 16, OpenSSLCrypto),
-    b'cast5-cfb': (16, 8, OpenSSLCrypto),
-    b'des-cfb': (8, 8, OpenSSLCrypto),
-    b'idea-cfb': (16, 8, OpenSSLCrypto),
-    b'rc2-cfb': (16, 8, OpenSSLCrypto),
-    b'rc4': (16, 0, OpenSSLCrypto),
-    b'seed-cfb': (16, 16, OpenSSLCrypto),
+    'aes-128-cfb': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb': (32, 16, OpenSSLCrypto),
+    'aes-128-ofb': (16, 16, OpenSSLCrypto),
+    'aes-192-ofb': (24, 16, OpenSSLCrypto),
+    'aes-256-ofb': (32, 16, OpenSSLCrypto),
+    'aes-128-ctr': (16, 16, OpenSSLCrypto),
+    'aes-192-ctr': (24, 16, OpenSSLCrypto),
+    'aes-256-ctr': (32, 16, OpenSSLCrypto),
+    'aes-128-cfb8': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb8': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb8': (32, 16, OpenSSLCrypto),
+    'aes-128-cfb1': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb1': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb1': (32, 16, OpenSSLCrypto),
+    'bf-cfb': (16, 8, OpenSSLCrypto),
+    'camellia-128-cfb': (16, 16, OpenSSLCrypto),
+    'camellia-192-cfb': (24, 16, OpenSSLCrypto),
+    'camellia-256-cfb': (32, 16, OpenSSLCrypto),
+    'cast5-cfb': (16, 8, OpenSSLCrypto),
+    'des-cfb': (8, 8, OpenSSLCrypto),
+    'idea-cfb': (16, 8, OpenSSLCrypto),
+    'rc2-cfb': (16, 8, OpenSSLCrypto),
+    'rc4': (16, 0, OpenSSLCrypto),
+    'seed-cfb': (16, 16, OpenSSLCrypto),
 }
 
 
@@ -148,31 +148,31 @@ def run_method(method):
 
 
 def test_aes_128_cfb():
-    run_method(b'aes-128-cfb')
+    run_method('aes-128-cfb')
 
 
 def test_aes_256_cfb():
-    run_method(b'aes-256-cfb')
+    run_method('aes-256-cfb')
 
 
 def test_aes_128_cfb8():
-    run_method(b'aes-128-cfb8')
+    run_method('aes-128-cfb8')
 
 
 def test_aes_256_ofb():
-    run_method(b'aes-256-ofb')
+    run_method('aes-256-ofb')
 
 
 def test_aes_256_ctr():
-    run_method(b'aes-256-ctr')
+    run_method('aes-256-ctr')
 
 
 def test_bf_cfb():
-    run_method(b'bf-cfb')
+    run_method('bf-cfb')
 
 
 def test_rc4():
-    run_method(b'rc4')
+    run_method('rc4')
 
 
 if __name__ == '__main__':

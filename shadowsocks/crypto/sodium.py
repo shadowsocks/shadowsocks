@@ -64,9 +64,9 @@ class SodiumCrypto(object):
         self.iv = iv
         self.key_ptr = c_char_p(key)
         self.iv_ptr = c_char_p(iv)
-        if cipher_name == b'salsa20':
+        if cipher_name == 'salsa20':
             self.cipher = libsodium.crypto_stream_salsa20_xor_ic
-        elif cipher_name == b'chacha20':
+        elif cipher_name == 'chacha20':
             self.cipher = libsodium.crypto_stream_chacha20_xor_ic
         else:
             raise Exception('Unknown cipher')
@@ -95,22 +95,22 @@ class SodiumCrypto(object):
 
 
 ciphers = {
-    b'salsa20': (32, 8, SodiumCrypto),
-    b'chacha20': (32, 8, SodiumCrypto),
+    'salsa20': (32, 8, SodiumCrypto),
+    'chacha20': (32, 8, SodiumCrypto),
 }
 
 
 def test_salsa20():
-    cipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_chacha20():
 
-    cipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
-    decipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

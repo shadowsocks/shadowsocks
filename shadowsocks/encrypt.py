@@ -22,6 +22,7 @@ import sys
 import hashlib
 import logging
 
+from shadowsocks import common
 from shadowsocks.crypto import rc4_md5, openssl, sodium, table
 
 
@@ -46,8 +47,6 @@ def try_cipher(key, method=None):
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
-    if hasattr(password, 'encode'):
-        password = password.encode('utf-8')
     cached_key = '%s-%d-%d' % (password, key_len, iv_len)
     r = cached_keys.get(cached_key, None)
     if r:
@@ -95,8 +94,7 @@ class Encryptor(object):
         return len(self.cipher_iv)
 
     def get_cipher(self, password, method, op, iv):
-        if hasattr(password, 'encode'):
-            password = password.encode('utf-8')
+        password = common.to_bytes(password)
         m = self._method_info
         if m[0] > 0:
             key, iv_ = EVP_BytesToKey(password, m[0], m[1])
@@ -153,12 +151,12 @@ def encrypt_all(password, method, op, data):
 
 
 CIPHERS_TO_TEST = [
-    b'aes-128-cfb',
-    b'aes-256-cfb',
-    b'rc4-md5',
-    b'salsa20',
-    b'chacha20',
-    b'table',
+    'aes-128-cfb',
+    'aes-256-cfb',
+    'rc4-md5',
+    'salsa20',
+    'chacha20',
+    'table',
 ]
 
 

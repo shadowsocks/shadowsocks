@@ -154,11 +154,11 @@ def get_config(is_local):
             elif key == '-l':
                 config['local_port'] = int(value)
             elif key == '-s':
-                config['server'] = to_bytes(value)
+                config['server'] = to_str(value)
             elif key == '-m':
-                config['method'] = to_bytes(value)
+                config['method'] = to_str(value)
             elif key == '-b':
-                config['local_address'] = to_bytes(value)
+                config['local_address'] = to_str(value)
             elif key == '-v':
                 v_count += 1
                 # '-vv' turns on more verbose mode
