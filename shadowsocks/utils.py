@@ -90,10 +90,10 @@ def check_config(config, is_local):
     if config.get('server', '') in [b'127.0.0.1', b'localhost']:
         logging.warn('warning: server set to listen on %s:%s, are you sure?' %
                      (to_str(config['server']), config['server_port']))
-    if (config.get('method', '') or '').lower() == b'table':
+    if (config.get('method', '') or '').lower() == 'table':
         logging.warn('warning: table is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
-    if (config.get('method', '') or '').lower() == b'rc4':
+    if (config.get('method', '') or '').lower() == 'rc4':
         logging.warn('warning: RC4 is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
     if config.get('timeout', 300) < 100:
@@ -198,8 +198,8 @@ def get_config(is_local):
         print_help(is_local)
         sys.exit(2)
 
-    config['password'] = config.get('password', '')
-    config['method'] = config.get('method', b'aes-256-cfb')
+    config['password'] = to_bytes(config.get('password', b''))
+    config['method'] = to_str(config.get('method', 'aes-256-cfb'))
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
@@ -208,7 +208,7 @@ def get_config(is_local):
     config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
     config['workers'] = config.get('workers', 1)
     config['verbose'] = config.get('verbose', False)
-    config['local_address'] = config.get('local_address', '127.0.0.1')
+    config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
     if is_local:
         if config.get('server', None) is None:
