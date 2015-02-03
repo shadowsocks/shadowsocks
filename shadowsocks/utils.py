@@ -87,7 +87,7 @@ def check_config(config, is_local):
 
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
-    if config.get('server', '') in [b'127.0.0.1', b'localhost']:
+    if config.get('server', '') in ['127.0.0.1', 'localhost']:
         logging.warn('warning: server set to listen on %s:%s, are you sure?' %
                      (to_str(config['server']), config['server_port']))
     if (config.get('method', '') or '').lower() == 'table':
@@ -215,8 +215,10 @@ def get_config(is_local):
             logging.error('server addr not specified')
             print_local_help()
             sys.exit(2)
+        else:
+            config['server'] = to_str(config['server'])
     else:
-        config['server'] = config.get('server', '0.0.0.0')
+        config['server'] = to_str(config.get('server', '0.0.0.0'))
         try:
             config['forbidden_ip'] = \
                 IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
