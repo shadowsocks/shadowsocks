@@ -1,27 +1,25 @@
 shadowsocks manyuser branch
 ===========
+Which people need this branch
+------------------
+1.share shadowsocks server
 
+2.create multi server by shadowsocks
 
-###Why This?
-The shadowsocks manyuser branch implements 3 functions which the original version doesn't have:
-1.For sharing shadowsocks server
+3.manage server (transfer / account)
 
-2.For creating multiple servers by shadowsocks
-
-3.For managing the servers (transfer / accounting)
-
-It is ideal for an environment which needs to manage multiple users.
-
-###Installing
-1. install MySQL 5.x.x
+Install
+-------
+install MySQL 5.x.x
 
 `pip install cymysql`
 
-2. create a database named `shadowsocks`
+create a database named `shadowsocks`
 
 import `shadowsocks.sql` into `shadowsocks`
 
-3. edit the file Config.py:E.g.:
+edit Config.py
+Example:
 
 	#Config
 	MYSQL_HOST = 'mdss.mengsky.net'
@@ -36,42 +34,40 @@ import `shadowsocks.sql` into `shadowsocks`
 	#make sure this port is idle
 	MANAGE_PORT = 23333
 
-4. Running the first time: `cd shadowsocks` ` python server.py`
+TestRun `cd shadowsocks` ` python server.py`
 
-If there is no other mistakes, the server will startup automatically. you will see things such as
+if no exception server will startup. you will see such like
+Example:
 
 	db start server at port [%s] pass [%s]
 
+Database user table column
+------------------
+`passwd` server pass
 
-###Database user table columns
+`port` server port
 
-`passwd` : server pass
+`t` last keepalive time
 
-`port` : server port
+`u` upload transfer
 
-`t` : last keepalive time
-
-`u` : upload transfer
-
-`d` : download transer
+`d` download transer
 
 `transfer_enable` if u + d > transfer_enable this server will be stop (db_transfer.py del_server_out_of_bound_safe)
 
+Manage socket
+------------------
+Manage server work in UDP at `MANAGE_BIND_IP` `MANAGE_PORT`
 
-
-###Managing the socket
-
-The managing server work in UDP at `MANAGE_BIND_IP` `MANAGE_PORT`
-
-use `MANAGE_PASS:port:passwd:0` to delete a server at port `port`
+use `MANAGE_PASS:port:passwd:0` to del a server at port `port`
 
 use `MANAGE_PASS:port:passwd:1` to run a server at port `port` password is `passwd`
 
-E.g.(Python):
+Python Eg:
 
 	udpsock.sendto('MANAGE_PASS:65535:123456:1', (MANAGE_BIND_IP, MANAGE_PORT))
 	
-E.g.(PHP):
+PHP Eg:
 
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$msg = 'MANAGE_PASS:65535:123456:1';
@@ -79,11 +75,10 @@ E.g.(PHP):
 	socket_sendto($sock, $msg, $len, 0, MANAGE_BIND_IP, MANAGE_PORT);
 	socket_close($sock);
 
+NOTICE
+------------------
+If error such like `2014-09-18 09:02:37 ERROR    [Errno 24] Too many open files`
 
-
-###Noticements
-If an error occurs such as `2014-09-18 09:02:37 ERROR    [Errno 24] Too many open files` ,
-The solution is:
 edit /etc/security/limits.conf
 
 Add:
@@ -91,8 +86,8 @@ Add:
 	*                soft    nofile          8192
 	*                hard    nofile          65535
 
-The Original README File For Shadowsocks
-==========================================
+shadowsocks
+===========
 
 [![PyPI version]][PyPI] [![Build Status]][Travis CI] 
 
