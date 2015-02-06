@@ -24,7 +24,7 @@ import socket
 import struct
 import re
 import logging
-
+import random
 from shadowsocks import common, lru_cache, eventloop
 
 
@@ -336,12 +336,11 @@ class DNSResolver(object):
         response = parse_response(data)
         if response and response.hostname:
             hostname = response.hostname
-            ip = None
+            ip = []
             for answer in response.answers:
                 if answer[1] in (QTYPE_A, QTYPE_AAAA) and \
                         answer[2] == QCLASS_IN:
-                    ip = answer[0]
-                    break
+                    ip.append(answer[0])
             if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
                     == STATUS_IPV4:
                 self._hostname_status[hostname] = STATUS_IPV6
@@ -349,7 +348,7 @@ class DNSResolver(object):
             else:
                 if ip:
                     self._cache[hostname] = ip
-                    self._call_callback(hostname, ip)
+                    self._call_callback(hostname, random.choice(ip))
                 elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
                     for question in response.questions:
                         if question[1] == QTYPE_AAAA:
@@ -413,7 +412,7 @@ class DNSResolver(object):
             callback((hostname, ip), None)
         elif hostname in self._cache:
             logging.debug('hit cache: %s', hostname)
-            ip = self._cache[hostname]
+            ip = random.choice(self._cache[hostname])
             callback((hostname, ip), None)
         else:
             if not is_valid_hostname(hostname):
