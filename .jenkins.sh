@@ -27,7 +27,7 @@ function run_test {
 python --version
 coverage erase
 mkdir tmp
-run_test pep8 .
+run_test pep8 --ignore=E402 .
 run_test pyflakes .
 run_test coverage run tests/nose_plugin.py -v
 run_test python setup.py sdist

@@ -6,6 +6,9 @@ PYTHON="coverage run -a -p"
 LOCAL="$PYTHON shadowsocks/local.py"
 SERVER="$PYTHON shadowsocks/server.py"
 
+assert "$LOCAL --version 2>&1 | grep Shadowsocks | awk -F\" \" '{print \$1}'" "Shadowsocks"
+assert "$SERVER --version 2>&1 | grep Shadowsocks | awk -F\" \" '{print \$1}'" "Shadowsocks"
+
 assert "$LOCAL 2>&1 | grep ERROR" "ERROR: config not specified"
 assert "$LOCAL 2>&1 | grep usage | cut -d: -f1" "usage"
 

@@ -328,7 +328,7 @@ class TCPRelayHandler(object):
         addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM,
                                    socket.SOL_TCP)
         if len(addrs) == 0:
-            raise Exception("getaddrinfo failed for %s:%d" % (ip,  port))
+            raise Exception("getaddrinfo failed for %s:%d" % (ip, port))
         af, socktype, proto, canonname, sa = addrs[0]
         if self._forbidden_iplist:
             if common.to_str(sa[0]) in self._forbidden_iplist:

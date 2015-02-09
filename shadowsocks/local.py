@@ -40,8 +40,6 @@ def main():
 
     daemon.daemon_exec(config)
 
-    utils.print_shadowsocks()
-
     try:
         logging.info("starting local at %s:%d" %
                      (config['local_address'], config['local_port']))

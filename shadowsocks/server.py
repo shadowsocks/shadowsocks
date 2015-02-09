@@ -34,8 +34,6 @@ def main():
 
     daemon.daemon_exec(config)
 
-    utils.print_shadowsocks()
-
     if config['port_password']:
         if config['password']:
             logging.warn('warning: port_password should not be used with '

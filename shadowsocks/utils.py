@@ -50,7 +50,7 @@ def print_shadowsocks():
         version = pkg_resources.get_distribution('shadowsocks').version
     except Exception:
         pass
-    print('shadowsocks %s' % version)
+    print('Shadowsocks %s' % version)
 
 
 def find_config():
@@ -119,11 +119,12 @@ def get_config(is_local):
                         format='%(levelname)-s: %(message)s')
     if is_local:
         shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
-        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=']
+        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
+                    'version']
     else:
         shortopts = 'hd:s:p:k:m:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=']
+                    'forbidden-ip=', 'user=', 'version']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -178,6 +179,9 @@ def get_config(is_local):
                     print_local_help()
                 else:
                     print_server_help()
+                sys.exit(0)
+            elif key == '--version':
+                print_shadowsocks()
                 sys.exit(0)
             elif key == '-d':
                 config['daemon'] = to_str(value)
@@ -262,7 +266,6 @@ A fast tunnel proxy that helps you bypass firewalls.
 You can supply configurations via either config file or command line arguments.
 
 Proxy options:
-  -h, --help             show this help message and exit
   -c CONFIG              path to config file
   -s SERVER_ADDR         server address
   -p SERVER_PORT         server port, default: 8388
@@ -274,12 +277,14 @@ Proxy options:
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
 
 General options:
+  -h, --help             show this help message and exit
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
   --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
+  --version              show version information
 
 Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
@@ -292,7 +297,6 @@ A fast tunnel proxy that helps you bypass firewalls.
 You can supply configurations via either config file or command line arguments.
 
 Proxy options:
-  -h, --help             show this help message and exit
   -c CONFIG              path to config file
   -s SERVER_ADDR         server address, default: 0.0.0.0
   -p SERVER_PORT         server port, default: 8388
@@ -304,12 +308,14 @@ Proxy options:
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
 
 General options:
+  -h, --help             show this help message and exit
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
   --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
+  --version              show version information
 
 Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
