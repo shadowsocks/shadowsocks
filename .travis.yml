@@ -17,4 +17,4 @@ before_install:
   - sudo tests/libsodium/install.sh
   - sudo tests/setup_tc.sh
 script:
-  - ./.jenkins.sh
+  - tests/jenkins.sh
