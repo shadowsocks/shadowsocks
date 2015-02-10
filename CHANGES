@@ -1,3 +1,8 @@
+2.6.8 2015-02-10
+- Support multiple server ip on client side
+- Support --version
+- Minor fixes
+
 2.6.7 2015-02-02
 - Support --user
 - Support CIDR format in --forbidden-ip
