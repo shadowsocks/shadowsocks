@@ -1,24 +1,18 @@
 #!/usr/bin/env python
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -70,9 +64,9 @@ class SodiumCrypto(object):
         self.iv = iv
         self.key_ptr = c_char_p(key)
         self.iv_ptr = c_char_p(iv)
-        if cipher_name == b'salsa20':
+        if cipher_name == 'salsa20':
             self.cipher = libsodium.crypto_stream_salsa20_xor_ic
-        elif cipher_name == b'chacha20':
+        elif cipher_name == 'chacha20':
             self.cipher = libsodium.crypto_stream_chacha20_xor_ic
         else:
             raise Exception('Unknown cipher')
@@ -101,22 +95,22 @@ class SodiumCrypto(object):
 
 
 ciphers = {
-    b'salsa20': (32, 8, SodiumCrypto),
-    b'chacha20': (32, 8, SodiumCrypto),
+    'salsa20': (32, 8, SodiumCrypto),
+    'chacha20': (32, 8, SodiumCrypto),
 }
 
 
 def test_salsa20():
-    cipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = SodiumCrypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_chacha20():
 
-    cipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
-    decipher = SodiumCrypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 

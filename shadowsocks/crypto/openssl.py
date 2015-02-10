@@ -1,24 +1,18 @@
 #!/usr/bin/env python
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -26,6 +20,7 @@ from __future__ import absolute_import, division, print_function, \
 from ctypes import c_char_p, c_int, c_long, byref,\
     create_string_buffer, c_void_p
 
+from shadowsocks import common
 from shadowsocks.crypto import util
 
 __all__ = ['ciphers']
@@ -64,7 +59,7 @@ def load_openssl():
 
 
 def load_cipher(cipher_name):
-    func_name = b'EVP_' + cipher_name.replace(b'-', b'_')
+    func_name = 'EVP_' + cipher_name.replace('-', '_')
     if bytes != str:
         func_name = str(func_name, 'utf-8')
     cipher = getattr(libcrypto, func_name, None)
@@ -79,6 +74,7 @@ class OpenSSLCrypto(object):
         self._ctx = None
         if not loaded:
             load_openssl()
+        cipher_name = common.to_bytes(cipher_name)
         cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
         if not cipher:
             cipher = load_cipher(cipher_name)
@@ -117,31 +113,31 @@ class OpenSSLCrypto(object):
 
 
 ciphers = {
-    b'aes-128-cfb': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb': (32, 16, OpenSSLCrypto),
-    b'aes-128-ofb': (16, 16, OpenSSLCrypto),
-    b'aes-192-ofb': (24, 16, OpenSSLCrypto),
-    b'aes-256-ofb': (32, 16, OpenSSLCrypto),
-    b'aes-128-ctr': (16, 16, OpenSSLCrypto),
-    b'aes-192-ctr': (24, 16, OpenSSLCrypto),
-    b'aes-256-ctr': (32, 16, OpenSSLCrypto),
-    b'aes-128-cfb8': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb8': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb8': (32, 16, OpenSSLCrypto),
-    b'aes-128-cfb1': (16, 16, OpenSSLCrypto),
-    b'aes-192-cfb1': (24, 16, OpenSSLCrypto),
-    b'aes-256-cfb1': (32, 16, OpenSSLCrypto),
-    b'bf-cfb': (16, 8, OpenSSLCrypto),
-    b'camellia-128-cfb': (16, 16, OpenSSLCrypto),
-    b'camellia-192-cfb': (24, 16, OpenSSLCrypto),
-    b'camellia-256-cfb': (32, 16, OpenSSLCrypto),
-    b'cast5-cfb': (16, 8, OpenSSLCrypto),
-    b'des-cfb': (8, 8, OpenSSLCrypto),
-    b'idea-cfb': (16, 8, OpenSSLCrypto),
-    b'rc2-cfb': (16, 8, OpenSSLCrypto),
-    b'rc4': (16, 0, OpenSSLCrypto),
-    b'seed-cfb': (16, 16, OpenSSLCrypto),
+    'aes-128-cfb': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb': (32, 16, OpenSSLCrypto),
+    'aes-128-ofb': (16, 16, OpenSSLCrypto),
+    'aes-192-ofb': (24, 16, OpenSSLCrypto),
+    'aes-256-ofb': (32, 16, OpenSSLCrypto),
+    'aes-128-ctr': (16, 16, OpenSSLCrypto),
+    'aes-192-ctr': (24, 16, OpenSSLCrypto),
+    'aes-256-ctr': (32, 16, OpenSSLCrypto),
+    'aes-128-cfb8': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb8': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb8': (32, 16, OpenSSLCrypto),
+    'aes-128-cfb1': (16, 16, OpenSSLCrypto),
+    'aes-192-cfb1': (24, 16, OpenSSLCrypto),
+    'aes-256-cfb1': (32, 16, OpenSSLCrypto),
+    'bf-cfb': (16, 8, OpenSSLCrypto),
+    'camellia-128-cfb': (16, 16, OpenSSLCrypto),
+    'camellia-192-cfb': (24, 16, OpenSSLCrypto),
+    'camellia-256-cfb': (32, 16, OpenSSLCrypto),
+    'cast5-cfb': (16, 8, OpenSSLCrypto),
+    'des-cfb': (8, 8, OpenSSLCrypto),
+    'idea-cfb': (16, 8, OpenSSLCrypto),
+    'rc2-cfb': (16, 8, OpenSSLCrypto),
+    'rc4': (16, 0, OpenSSLCrypto),
+    'seed-cfb': (16, 16, OpenSSLCrypto),
 }
 
 
@@ -154,31 +150,31 @@ def run_method(method):
 
 
 def test_aes_128_cfb():
-    run_method(b'aes-128-cfb')
+    run_method('aes-128-cfb')
 
 
 def test_aes_256_cfb():
-    run_method(b'aes-256-cfb')
+    run_method('aes-256-cfb')
 
 
 def test_aes_128_cfb8():
-    run_method(b'aes-128-cfb8')
+    run_method('aes-128-cfb8')
 
 
 def test_aes_256_ofb():
-    run_method(b'aes-256-ofb')
+    run_method('aes-256-ofb')
 
 
 def test_aes_256_ctr():
-    run_method(b'aes-256-ctr')
+    run_method('aes-256-ctr')
 
 
 def test_bf_cfb():
-    run_method(b'bf-cfb')
+    run_method('bf-cfb')
 
 
 def test_rc4():
-    run_method(b'rc4')
+    run_method('rc4')
 
 
 if __name__ == '__main__':
