@@ -23,7 +23,7 @@ import sys
 import logging
 import signal
 import time
-from shadowsocks import common, utils
+from shadowsocks import common, shell
 
 # this module is ported from ShadowVPN daemon.c
 
@@ -58,7 +58,7 @@ def write_pid_file(pid_file, pid):
         fd = os.open(pid_file, os.O_RDWR | os.O_CREAT,
                      stat.S_IRUSR | stat.S_IWUSR)
     except OSError as e:
-        utils.print_exception(e)
+        shell.print_exception(e)
         return -1
     flags = fcntl.fcntl(fd, fcntl.F_GETFD)
     assert flags != -1
@@ -127,7 +127,7 @@ def daemon_start(pid_file, log_file):
         freopen(log_file, 'a', sys.stdout)
         freopen(log_file, 'a', sys.stderr)
     except IOError as e:
-        utils.print_exception(e)
+        shell.print_exception(e)
         sys.exit(1)
 
 
@@ -140,7 +140,7 @@ def daemon_stop(pid_file):
             if not buf:
                 logging.error('not running')
     except IOError as e:
-        utils.print_exception(e)
+        shell.print_exception(e)
         if e.errno == errno.ENOENT:
             # always exit 0 if we are sure daemon is not running
             logging.error('not running')
@@ -155,7 +155,7 @@ def daemon_stop(pid_file):
                 logging.error('not running')
                 # always exit 0 if we are sure daemon is not running
                 return
-            utils.print_exception(e)
+            shell.print_exception(e)
             sys.exit(1)
     else:
         logging.error('pid is not positive: %d', pid)

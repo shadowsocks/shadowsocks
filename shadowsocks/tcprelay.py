@@ -26,7 +26,7 @@ import logging
 import traceback
 import random
 
-from shadowsocks import encrypt, eventloop, utils, common
+from shadowsocks import encrypt, eventloop, shell, common
 from shadowsocks.common import parse_header
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
@@ -203,7 +203,7 @@ class TCPRelayHandler(object):
                             errno.EWOULDBLOCK):
                 uncomplete = True
             else:
-                utils.print_exception(e)
+                shell.print_exception(e)
                 self.destroy()
                 return False
         if uncomplete:
@@ -257,7 +257,7 @@ class TCPRelayHandler(object):
                     self._config['fast_open'] = False
                     self.destroy()
                 else:
-                    utils.print_exception(e)
+                    shell.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
                     self.destroy()
@@ -381,7 +381,7 @@ class TCPRelayHandler(object):
                         self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                     return
                 except Exception as e:
-                    utils.print_exception(e)
+                    shell.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
         self.destroy()
@@ -443,7 +443,7 @@ class TCPRelayHandler(object):
         try:
             self._write_to_sock(data, self._local_sock)
         except Exception as e:
-            utils.print_exception(e)
+            shell.print_exception(e)
             if self._config['verbose']:
                 traceback.print_exc()
             # TODO use logging when debug completed
@@ -630,7 +630,7 @@ class TCPRelay(object):
         # we just need a sorted last_activity queue and it's faster than heapq
         # in fact we can do O(1) insertion/remove so we invent our own
         if self._timeouts:
-            logging.log(utils.VERBOSE_LEVEL, 'sweeping timeouts')
+            logging.log(shell.VERBOSE_LEVEL, 'sweeping timeouts')
             now = time.time()
             length = len(self._timeouts)
             pos = self._timeout_offset
@@ -663,7 +663,7 @@ class TCPRelay(object):
         # handle events and dispatch to handlers
         for sock, fd, event in events:
             if sock:
-                logging.log(utils.VERBOSE_LEVEL, 'fd %d %s', fd,
+                logging.log(shell.VERBOSE_LEVEL, 'fd %d %s', fd,
                             eventloop.EVENT_NAMES.get(event, event))
             if sock == self._server_socket:
                 if event & eventloop.POLL_ERR:
@@ -681,7 +681,7 @@ class TCPRelay(object):
                                     errno.EWOULDBLOCK):
                         continue
                     else:
-                        utils.print_exception(e)
+                        shell.print_exception(e)
                         if self._config['verbose']:
                             traceback.print_exc()
             else:

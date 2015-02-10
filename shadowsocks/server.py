@@ -24,13 +24,13 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, daemon, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
 
 
 def main():
-    utils.check_python()
+    shell.check_python()
 
-    config = utils.get_config(False)
+    config = shell.get_config(False)
 
     daemon.daemon_exec(config)
 
@@ -80,7 +80,7 @@ def main():
             daemon.set_user(config.get('user', None))
             loop.run()
         except Exception as e:
-            utils.print_exception(e)
+            shell.print_exception(e)
             sys.exit(1)
 
     if int(config['workers']) > 1:

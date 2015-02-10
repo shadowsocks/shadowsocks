@@ -28,7 +28,7 @@ import errno
 import logging
 from collections import defaultdict
 
-from shadowsocks import utils
+from shadowsocks import shell
 
 
 __all__ = ['EventLoop', 'POLL_NULL', 'POLL_IN', 'POLL_OUT', 'POLL_ERR',
@@ -225,7 +225,7 @@ class EventLoop(object):
                 try:
                     handler(events)
                 except (OSError, IOError) as e:
-                    utils.print_exception(e)
+                    shell.print_exception(e)
             if self._handlers_to_remove:
                 for handler in self._handlers_to_remove:
                     self._handlers.remove(handler)

@@ -69,7 +69,7 @@ import struct
 import errno
 import random
 
-from shadowsocks import encrypt, eventloop, lru_cache, common, utils
+from shadowsocks import encrypt, eventloop, lru_cache, common, shell
 from shadowsocks.common import parse_header, pack_addr
 
 
@@ -208,7 +208,7 @@ class UDPRelay(object):
             if err in (errno.EINPROGRESS, errno.EAGAIN):
                 pass
             else:
-                utils.print_exception(e)
+                shell.print_exception(e)
 
     def _handle_client(self, sock):
         data, r_addr = sock.recvfrom(BUF_SIZE)

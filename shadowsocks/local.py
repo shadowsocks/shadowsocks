@@ -24,11 +24,11 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, daemon, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
 
 
 def main():
-    utils.check_python()
+    shell.check_python()
 
     # fix py2exe
     if hasattr(sys, "frozen") and sys.frozen in \
@@ -36,7 +36,7 @@ def main():
         p = os.path.dirname(os.path.abspath(sys.executable))
         os.chdir(p)
 
-    config = utils.get_config(True)
+    config = shell.get_config(True)
 
     daemon.daemon_exec(config)
 
@@ -65,7 +65,7 @@ def main():
         daemon.set_user(config.get('user', None))
         loop.run()
     except Exception as e:
-        utils.print_exception(e)
+        shell.print_exception(e)
         sys.exit(1)
 
 if __name__ == '__main__':
