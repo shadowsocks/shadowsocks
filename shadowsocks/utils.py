@@ -29,6 +29,8 @@ from shadowsocks import encrypt
 
 VERBOSE_LEVEL = 5
 
+verbose = 0
+
 
 def check_python():
     info = sys.version_info
@@ -41,6 +43,14 @@ def check_python():
     elif info[0] not in [2, 3]:
         print('Python version not supported')
         sys.exit(1)
+
+
+def print_exception(e):
+    global verbose
+    logging.error(e)
+    if verbose > 0:
+        import traceback
+        traceback.print_exc()
 
 
 def print_shadowsocks():
@@ -115,6 +125,8 @@ def check_config(config, is_local):
 
 
 def get_config(is_local):
+    global verbose
+
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
@@ -243,6 +255,7 @@ def get_config(is_local):
         level = logging.ERROR
     else:
         level = logging.INFO
+    verbose = config['verbose']
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')

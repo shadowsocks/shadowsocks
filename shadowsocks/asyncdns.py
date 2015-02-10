@@ -25,7 +25,7 @@ import struct
 import re
 import logging
 
-from shadowsocks import common, lru_cache, eventloop
+from shadowsocks import common, lru_cache, eventloop, utils
 
 
 CACHE_SWEEP_INTERVAL = 30
@@ -221,9 +221,7 @@ def parse_response(data):
                 response.answers.append((an[1], an[2], an[3]))
             return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logging.error(e)
+        utils.print_exception(e)
         return None
 
 

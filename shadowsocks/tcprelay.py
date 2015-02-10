@@ -203,9 +203,7 @@ class TCPRelayHandler(object):
                             errno.EWOULDBLOCK):
                 uncomplete = True
             else:
-                logging.error(e)
-                if self._config['verbose']:
-                    traceback.print_exc()
+                utils.print_exception(e)
                 self.destroy()
                 return False
         if uncomplete:
@@ -259,7 +257,7 @@ class TCPRelayHandler(object):
                     self._config['fast_open'] = False
                     self.destroy()
                 else:
-                    logging.error(e)
+                    utils.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
                     self.destroy()
@@ -383,7 +381,7 @@ class TCPRelayHandler(object):
                         self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
                     return
                 except Exception as e:
-                    logging.error(e)
+                    utils.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
         self.destroy()
@@ -445,7 +443,7 @@ class TCPRelayHandler(object):
         try:
             self._write_to_sock(data, self._local_sock)
         except Exception as e:
-            logging.error(e)
+            utils.print_exception(e)
             if self._config['verbose']:
                 traceback.print_exc()
             # TODO use logging when debug completed
@@ -683,7 +681,7 @@ class TCPRelay(object):
                                     errno.EWOULDBLOCK):
                         continue
                     else:
-                        logging.error(e)
+                        utils.print_exception(e)
                         if self._config['verbose']:
                             traceback.print_exc()
             else:
