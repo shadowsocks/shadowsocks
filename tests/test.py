@@ -28,6 +28,8 @@ from subprocess import Popen, PIPE
 
 python = ['python']
 
+default_url = 'http://localhost/'
+
 parser = argparse.ArgumentParser(description='test Shadowsocks')
 parser.add_argument('-c', '--client-conf', type=str, default=None)
 parser.add_argument('-s', '--server-conf', type=str, default=None)
@@ -36,7 +38,7 @@ parser.add_argument('-b', '--server-args', type=str, default=None)
 parser.add_argument('--with-coverage', action='store_true', default=None)
 parser.add_argument('--should-fail', action='store_true', default=None)
 parser.add_argument('--tcp-only', action='store_true', default=None)
-parser.add_argument('--url', type=str, default='http://www.example.com/')
+parser.add_argument('--url', type=str, default=default_url)
 parser.add_argument('--dns', type=str, default='8.8.8.8')
 
 config = parser.parse_args()
@@ -59,6 +61,8 @@ if config.client_args:
         server_args.extend(config.server_args.split())
     else:
         server_args.extend(config.client_args.split())
+if config.url == default_url:
+    server_args.extend(['--forbidden-ip', ''])
 
 p1 = Popen(server_args, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 p2 = Popen(client_args, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
