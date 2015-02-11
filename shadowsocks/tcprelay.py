@@ -295,7 +295,7 @@ class TCPRelayHandler(object):
             logging.info('connecting %s:%d from %s:%d' %
                          (common.to_str(remote_addr), remote_port,
                           self._client_address[0], self._client_address[1]))
-            self._remote_address = (remote_addr, remote_port)
+            self._remote_address = (common.to_str(remote_addr), remote_port)
             # pause reading
             self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
             self._stage = STAGE_DNS
