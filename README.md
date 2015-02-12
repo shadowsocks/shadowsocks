@@ -86,7 +86,7 @@ Bugs and Issues
 
 
 
-[Android]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android
+[Android]:           https://github.com/shadowsocks/shadowsocks-android
 [Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
 [Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
@@ -103,4 +103,4 @@ Bugs and Issues
 [Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
 [Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
 [Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
-[Windows]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#windows
+[Windows]:           https://github.com/shadowsocks/shadowsocks-csharp
