@@ -157,7 +157,6 @@ def get_config(is_local):
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
         v_count = 0
         for key, value in optlist:
             if key == '-p':
