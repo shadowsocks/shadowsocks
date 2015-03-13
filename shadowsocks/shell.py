@@ -221,7 +221,6 @@ def get_config(is_local):
     config['workers'] = config.get('workers', 1)
     config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
     config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
-    config['workers'] = config.get('workers', 1)
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
