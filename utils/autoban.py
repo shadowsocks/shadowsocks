@@ -42,10 +42,12 @@ if __name__ == '__main__':
             if ip not in ips:
                 ips[ip] = 1
                 print(ip)
+                sys.stdout.flush()
             else:
                 ips[ip] += 1
             if ip not in banned and ips[ip] >= config.count:
                 banned.add(ip)
                 cmd = 'iptables -A INPUT -s %s -j DROP' % ip
                 print(cmd, file=sys.stderr)
+                sys.stderr.flush()
                 os.system(cmd)
