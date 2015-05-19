@@ -41,6 +41,7 @@ class LRUCache(collections.MutableMapping):
         self._time_to_keys = collections.defaultdict(list)
         self._keys_to_last_time = {}
         self._last_visits = collections.deque()
+        self._closed_values = set()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
@@ -74,7 +75,6 @@ class LRUCache(collections.MutableMapping):
         # O(m)
         now = time.time()
         c = 0
-        values_closed = list()  # list is cheaper to create
         while len(self._last_visits) > 0:
             least = self._last_visits[0]
             if now - least <= self.timeout:
@@ -84,9 +84,9 @@ class LRUCache(collections.MutableMapping):
                     if key in self._store:
                         if now - self._keys_to_last_time[key] > self.timeout:
                             value = self._store[key]
-                            if value not in values_closed:
+                            if value not in self._closed_values:
                                 self.close_callback(value)
-                                values_closed.append(value)
+                                self._closed_values.add(value)
             for key in self._time_to_keys[least]:
                 self._last_visits.popleft()
                 if key in self._store:
@@ -96,6 +96,7 @@ class LRUCache(collections.MutableMapping):
                         c += 1
             del self._time_to_keys[least]
         if c:
+            self._closed_values.clear()
             logging.debug('%d keys swept' % c)
 
 
