@@ -74,6 +74,7 @@ class LRUCache(collections.MutableMapping):
         # O(m)
         now = time.time()
         c = 0
+        values_closed = list()  # list is cheaper to create
         while len(self._last_visits) > 0:
             least = self._last_visits[0]
             if now - least <= self.timeout:
@@ -83,7 +84,9 @@ class LRUCache(collections.MutableMapping):
                     if key in self._store:
                         if now - self._keys_to_last_time[key] > self.timeout:
                             value = self._store[key]
-                            self.close_callback(value)
+                            if value not in values_closed:
+                                self.close_callback(value)
+                                values_closed.append(value)
             for key in self._time_to_keys[least]:
                 self._last_visits.popleft()
                 if key in self._store:
@@ -125,6 +128,22 @@ def test():
     c.sweep()
     assert 'a' not in c
     assert 'b' not in c
+
+    global close_cb_called
+    close_cb_called = False
+
+    def close_cb(t):
+        global close_cb_called
+        assert not close_cb_called
+        close_cb_called = True
+
+    c = LRUCache(timeout=0.1, close_callback=close_cb)
+    c['s'] = 1
+    c['s']
+    time.sleep(0.1)
+    c['s']
+    time.sleep(0.3)
+    c.sweep()
 
 if __name__ == '__main__':
     test()
