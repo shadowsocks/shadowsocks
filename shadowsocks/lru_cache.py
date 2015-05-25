@@ -1,25 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -47,6 +41,7 @@ class LRUCache(collections.MutableMapping):
         self._time_to_keys = collections.defaultdict(list)
         self._keys_to_last_time = {}
         self._last_visits = collections.deque()
+        self._closed_values = set()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
@@ -89,7 +84,9 @@ class LRUCache(collections.MutableMapping):
                     if key in self._store:
                         if now - self._keys_to_last_time[key] > self.timeout:
                             value = self._store[key]
-                            self.close_callback(value)
+                            if value not in self._closed_values:
+                                self.close_callback(value)
+                                self._closed_values.add(value)
             for key in self._time_to_keys[least]:
                 self._last_visits.popleft()
                 if key in self._store:
@@ -99,6 +96,7 @@ class LRUCache(collections.MutableMapping):
                         c += 1
             del self._time_to_keys[least]
         if c:
+            self._closed_values.clear()
             logging.debug('%d keys swept' % c)
 
 
@@ -131,6 +129,22 @@ def test():
     c.sweep()
     assert 'a' not in c
     assert 'b' not in c
+
+    global close_cb_called
+    close_cb_called = False
+
+    def close_cb(t):
+        global close_cb_called
+        assert not close_cb_called
+        close_cb_called = True
+
+    c = LRUCache(timeout=0.1, close_callback=close_cb)
+    c['s'] = 1
+    c['s']
+    time.sleep(0.1)
+    c['s']
+    time.sleep(0.3)
+    c.sweep()
 
 if __name__ == '__main__':
     test()

@@ -17,7 +17,8 @@ develop-eggs
 pip-log.txt
 
 # Unit test / coverage reports
-.coverage
+htmlcov
+.coverage*
 .tox
 
 #Translations

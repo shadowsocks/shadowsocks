@@ -1,3 +1,40 @@
+2.6.9 2015-05-19
+- Fix a stability issue on Windows
+
+2.6.8 2015-02-10
+- Support multiple server ip on client side
+- Support --version
+- Minor fixes
+
+2.6.7 2015-02-02
+- Support --user
+- Support CIDR format in --forbidden-ip
+- Minor fixes
+
+2.6.6 2015-01-23
+- Fix a crash in forbidden list
+
+2.6.5 2015-01-18
+- Try both 32 bit and 64 bit dll on Windows
+
+2.6.4 2015-01-14
+- Also search lib* when searching libraries
+
+2.6.3 2015-01-12
+- Support --forbidden-ip to ban some IP, i.e. localhost
+- Search OpenSSL and libsodium harder
+- Now works on OpenWRT
+
+2.6.2 2015-01-03
+- Log client IP
+
+2.6.1 2014-12-26
+- Fix a problem with TCP Fast Open on local side
+- Fix sometimes daemon_start returns wrong exit status
+
+2.6 2014-12-21
+- Add daemon support
+
 2.5 2014-12-11
 - Add salsa20 and chacha20
 

@@ -1,31 +1,26 @@
 #!/usr/bin/env python
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import logging
-from ctypes import CDLL, c_char_p, c_int, c_ulonglong, byref, \
+from ctypes import c_char_p, c_int, c_ulonglong, byref, \
     create_string_buffer, c_void_p
+
+from shadowsocks.crypto import util
 
 __all__ = ['ciphers']
 
@@ -41,16 +36,11 @@ BLOCK_SIZE = 64
 def load_libsodium():
     global loaded, libsodium, buf
 
-    from ctypes.util import find_library
-    for p in ('sodium',):
-        libsodium_path = find_library(p)
-        if libsodium_path:
-            break
-    else:
+    libsodium = util.find_library('sodium', 'crypto_stream_salsa20_xor_ic',
+                                  'libsodium')
+    if libsodium is None:
         raise Exception('libsodium not found')
-    logging.info('loading libsodium from %s', libsodium_path)
-    libsodium = CDLL(libsodium_path)
-    libsodium.sodium_init.restype = c_int
+
     libsodium.crypto_stream_salsa20_xor_ic.restype = c_int
     libsodium.crypto_stream_salsa20_xor_ic.argtypes = (c_void_p, c_char_p,
                                                        c_ulonglong,
@@ -62,13 +52,11 @@ def load_libsodium():
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
 
-    libsodium.sodium_init()
-
     buf = create_string_buffer(buf_size)
     loaded = True
 
 
-class Salsa20Crypto(object):
+class SodiumCrypto(object):
     def __init__(self, cipher_name, key, iv, op):
         if not loaded:
             load_libsodium()
@@ -76,9 +64,9 @@ class Salsa20Crypto(object):
         self.iv = iv
         self.key_ptr = c_char_p(key)
         self.iv_ptr = c_char_p(iv)
-        if cipher_name == b'salsa20':
+        if cipher_name == 'salsa20':
             self.cipher = libsodium.crypto_stream_salsa20_xor_ic
-        elif cipher_name == b'chacha20':
+        elif cipher_name == 'chacha20':
             self.cipher = libsodium.crypto_stream_chacha20_xor_ic
         else:
             raise Exception('Unknown cipher')
@@ -107,25 +95,22 @@ class Salsa20Crypto(object):
 
 
 ciphers = {
-    b'salsa20': (32, 8, Salsa20Crypto),
-    b'chacha20': (32, 8, Salsa20Crypto),
+    'salsa20': (32, 8, SodiumCrypto),
+    'chacha20': (32, 8, SodiumCrypto),
 }
 
 
 def test_salsa20():
-    from shadowsocks.crypto import util
-
-    cipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'salsa20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_chacha20():
-    from shadowsocks.crypto import util
 
-    cipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 1)
-    decipher = Salsa20Crypto(b'chacha20', b'k' * 32, b'i' * 16, 0)
+    cipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 0)
 
     util.run_cipher(cipher, decipher)
 
