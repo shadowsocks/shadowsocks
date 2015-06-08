@@ -173,6 +173,7 @@ class UDPRelay(object):
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
+            logging.info('UDP handle_server %s:%d from %s:%d' % (common.to_str(server_addr), server_port, self._listen_addr, self._listen_port))
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if addrs:
