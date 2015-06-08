@@ -1,3 +1,7 @@
+2.6.10 2015-06-08
+- Optimize LRU cache
+- Refine logging
+
 2.6.9 2015-05-19
 - Fix a stability issue on Windows
 
