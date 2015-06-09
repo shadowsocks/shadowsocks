@@ -194,20 +194,19 @@ class TCPRelayHandler(object):
         #logging.debug("_write_to_sock %s %s %s" % (self._remote_sock, sock, self._remote_udp))
         if self._remote_sock == sock and self._remote_udp:
             try:
-                addrtype = data[3]
-                if addrtype == '\x01':
-                    addr = socket.inet_ntoa(data[4:8])
-                    port = struct.unpack('>H', data[8:10])[0]
-                    logging.info('udp sendto %s:%d %d bytes from %s:%d' % (addr, port, len(data), self._client_address[0], self._client_address[1]))
-                    sock.sendto(data[10:], (addr, port))
-                elif addrtype == '\x04':
-                    addr = socket.inet_ntop(data[4:20])
-                    port = struct.unpack('>H', data[20:22])[0]
-                    logging.info('udp sendto %s:%d %d bytes from %s:%d' % (addr, port, len(data), self._client_address[0], self._client_address[1]))
-                    sock.sendto(data[22:], (addr, port))
-                elif addrtype == '\x03':
-                    #unsupport
-                    pass
+                #TODO
+                data = data[3:]
+                header_result = parse_header(data)
+                if header_result is None:
+                    return False
+                connecttype, dest_addr, dest_port, header_length = header_result
+                addrs = socket.getaddrinfo(dest_addr, dest_port, 0,
+                        socket.SOCK_DGRAM, socket.SOL_UDP)
+                if addrs:
+                    af, socktype, proto, canonname, server_addr = addrs[0]
+                    data = data[header_length:]
+                    sock.sendto(data, server_addr)
+
             except Exception as e:
                 trace = traceback.format_exc()
                 logging.error(trace)
@@ -520,16 +519,12 @@ class TCPRelayHandler(object):
         logging.debug('got local error')
         if self._local_sock:
             logging.error(eventloop.get_sock_error(self._local_sock))
-            trace = traceback.format_exc()
-            logging.error(trace)
         self.destroy()
 
     def _on_remote_error(self):
         logging.debug('got remote error')
         if self._remote_sock:
             logging.error(eventloop.get_sock_error(self._remote_sock))
-            trace = traceback.format_exc()
-            logging.error(trace)
         self.destroy()
 
     def handle_event(self, sock, event):

@@ -162,7 +162,7 @@ class UDPRelay(object):
         header_result = parse_header(data)
         if header_result is None:
             return
-        addrtype, dest_addr, dest_port, header_length = header_result
+        connecttype, dest_addr, dest_port, header_length = header_result
 
         if self._is_local:
             server_addr, server_port = self._get_a_server()
@@ -234,7 +234,7 @@ class UDPRelay(object):
             header_result = parse_header(data)
             if header_result is None:
                 return
-            # addrtype, dest_addr, dest_port, header_length = header_result
+            # connecttype, dest_addr, dest_port, header_length = header_result
             response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
