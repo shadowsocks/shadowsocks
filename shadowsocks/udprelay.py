@@ -162,7 +162,7 @@ class UDPRelay(object):
         header_result = parse_header(data)
         if header_result is None:
             return
-        addrtype, dest_addr, dest_port, header_length = header_result
+        connecttype, dest_addr, dest_port, header_length = header_result
 
         if self._is_local:
             server_addr, server_port = self._get_a_server()
@@ -173,6 +173,7 @@ class UDPRelay(object):
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
+            logging.info('UDP handle_server %s:%d from %s:%d' % (common.to_str(server_addr), server_port, self._listen_addr, self._listen_port))
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if addrs:
@@ -233,7 +234,7 @@ class UDPRelay(object):
             header_result = parse_header(data)
             if header_result is None:
                 return
-            # addrtype, dest_addr, dest_port, header_length = header_result
+            # connecttype, dest_addr, dest_port, header_length = header_result
             response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:

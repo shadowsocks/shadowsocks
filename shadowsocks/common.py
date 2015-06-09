@@ -144,6 +144,8 @@ def parse_header(data):
     dest_addr = None
     dest_port = None
     header_length = 0
+    connecttype = (addrtype & 8) and 1 or 0
+    addrtype &= ~8
     if addrtype == ADDRTYPE_IPV4:
         if len(data) >= 7:
             dest_addr = socket.inet_ntoa(data[1:5])
@@ -171,11 +173,11 @@ def parse_header(data):
         else:
             logging.warn('header is too short')
     else:
-        logging.warn('unsupported addrtype %d, maybe wrong password or '
-                     'encryption method' % addrtype)
+        logging.warn('unsupported addrtype %d, maybe wrong password' %
+                     addrtype)
     if dest_addr is None:
         return None
-    return addrtype, to_bytes(dest_addr), dest_port, header_length
+    return connecttype, to_bytes(dest_addr), dest_port, header_length
 
 
 class IPNetwork(object):

@@ -47,6 +47,8 @@ def try_cipher(key, method=None):
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
+    if hasattr(password, 'encode'):
+        password = password.encode('utf-8')
     cached_key = '%s-%d-%d' % (password, key_len, iv_len)
     r = cached_keys.get(cached_key, None)
     if r:
