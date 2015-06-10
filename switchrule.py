@@ -1,2 +1,3 @@
-def isTurnOn(plan, switch):
+def isTurnOn(row):
 	return True
+

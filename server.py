@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
+#!/usr/bin/python
 import time
 import sys
 import thread
@@ -11,12 +9,12 @@ import server_pool
 import db_transfer
 
 #def test():
-#    thread.start_new_thread(DbTransfer.thread_db, ())
-#    Api.web_server()
+#	 thread.start_new_thread(DbTransfer.thread_db, ())
+#	 Api.web_server()
 
 if __name__ == '__main__':
-    #server_pool.ServerPool.get_instance()
-    #server_pool.ServerPool.get_instance().new_server(2333, '2333')
-    thread.start_new_thread(db_transfer.DbTransfer.thread_db, ())
-    while True:
-        time.sleep(99999)
+	#server_pool.ServerPool.get_instance()
+	#server_pool.ServerPool.get_instance().new_server(2333, '2333')
+	thread.start_new_thread(db_transfer.DbTransfer.thread_db, ())
+	while True:
+		time.sleep(99999)
