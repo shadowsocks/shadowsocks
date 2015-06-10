@@ -194,8 +194,12 @@ class TCPRelayHandler(object):
         #logging.debug("_write_to_sock %s %s %s" % (self._remote_sock, sock, self._remote_udp))
         if self._remote_sock == sock and self._remote_udp:
             try:
-                #TODO
-                data = data[3:]
+                frag = common.ord(data[2])
+                if frag != 0:
+                    logging.warn('drop a message since frag is %d' % (frag,))
+                    return False
+                else:
+                    data = data[3:]
                 header_result = parse_header(data)
                 if header_result is None:
                     return False
