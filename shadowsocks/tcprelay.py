@@ -209,7 +209,7 @@ class TCPRelayHandler(object):
                 if addrs:
                     af, socktype, proto, canonname, server_addr = addrs[0]
                     data = data[header_length:]
-                    sock.sendto(data, server_addr)
+                    sock.sendto(data, (server_addr[0], dest_port))
 
             except Exception as e:
                 trace = traceback.format_exc()
@@ -352,8 +352,14 @@ class TCPRelayHandler(object):
             self.destroy()
 
     def _create_remote_socket(self, ip, port):
+        addrs = None
         if self._remote_udp:
-            addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
+            try:
+                addrs = socket.getaddrinfo("::", 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
+            except Exception as e:
+                pass
+            if addrs is None:
+                addrs = socket.getaddrinfo("0.0.0.0", 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
         else:
             addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
         if len(addrs) == 0:
