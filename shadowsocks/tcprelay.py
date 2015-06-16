@@ -351,14 +351,18 @@ class TCPRelayHandler(object):
             # TODO use logging when debug completed
             self.destroy()
 
+    def _is_support_ipv6(self):
+        local = socket.gethostbyaddr(socket.gethostname())
+        for ip in local:
+            if ':' in ip:
+                return True
+        return False
+
     def _create_remote_socket(self, ip, port):
-        addrs = None
         if self._remote_udp:
-            try:
+            if self._is_support_ipv6():
                 addrs = socket.getaddrinfo("::", 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
-            except Exception as e:
-                pass
-            if addrs is None:
+            else:
                 addrs = socket.getaddrinfo("0.0.0.0", 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
         else:
             addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
