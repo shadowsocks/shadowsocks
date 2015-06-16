@@ -209,7 +209,7 @@ class TCPRelayHandler(object):
                 if addrs:
                     af, socktype, proto, canonname, server_addr = addrs[0]
                     data = data[header_length:]
-                    sock.sendto(data, server_addr)
+                    sock.sendto(data, (server_addr[0], dest_port))
 
             except Exception as e:
                 trace = traceback.format_exc()
