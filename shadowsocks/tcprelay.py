@@ -94,6 +94,8 @@ BUF_SIZE = 32 * 1024
 
 
 class TCPRelayHandler(object):
+    support_ipv6 = None
+
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
                  dns_resolver, is_local):
         self._server = server
@@ -351,12 +353,20 @@ class TCPRelayHandler(object):
             # TODO use logging when debug completed
             self.destroy()
 
-    def _is_support_ipv6(self):
-        local = socket.gethostbyaddr(socket.gethostname())
-        for ip in local:
-            if ':' in ip:
+    def _has_ipv6_addr(self, addr_list):
+        for item in addr_list:
+            if type(item) is list:
+                if self._has_ipv6_addr(item):
+                    return True
+            elif ':' in item:
                 return True
         return False
+
+    def _is_support_ipv6(self):
+        if TCPRelayHandler.support_ipv6 is None:
+            local = socket.gethostbyaddr(socket.gethostname())
+            TCPRelayHandler.support_ipv6 = self._has_ipv6_addr(local)
+        return TCPRelayHandler.support_ipv6
 
     def _create_remote_socket(self, ip, port):
         if self._remote_udp:
