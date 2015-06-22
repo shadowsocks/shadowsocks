@@ -46,7 +46,6 @@ class ServerPool(object):
 		shell.print_shadowsocks()
 		self.dns_resolver = asyncdns.DNSResolver()
 		self.mgr = asyncmgr.ServerMgr()
-		self.udp_on = True ### UDP switch =====================================
 
 		self.tcp_servers_pool = {}
 		self.tcp_ipv6_servers_pool = {}
@@ -110,19 +109,21 @@ class ServerPool(object):
 				a_config['password'] = password
 				try:
 					logging.info("starting server at [%s]:%d" % (a_config['server'], port))
+
 					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
 					tcp_server.add_to_loop(self.loop)
 					self.tcp_ipv6_servers_pool.update({port: tcp_server})
-					if self.udp_on:
-						udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
-						udp_server.add_to_loop(self.loop)
-						self.udp_ipv6_servers_pool.update({port: udp_server})
+
+					udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
+					udp_server.add_to_loop(self.loop)
+					self.udp_ipv6_servers_pool.update({port: udp_server})
+
 					if a_config['server_ipv6'] == "::":
 						ipv6_ok = True
 				except Exception, e:
 					logging.warn("IPV6 %s " % (e,))
 
-		if not ipv6_ok and 'server' in self.config:
+		if 'server' in self.config:
 			if port in self.tcp_servers_pool:
 				logging.info("server already at %s:%d" % (self.config['server'], port))
 				return 'this port server is already running'
@@ -132,13 +133,16 @@ class ServerPool(object):
 				a_config['password'] = password
 				try:
 					logging.info("starting server at %s:%d" % (a_config['server'], port))
-					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
-					tcp_server.add_to_loop(self.loop)
-					self.tcp_servers_pool.update({port: tcp_server})
-					if self.udp_on:
+
+					if not ipv6_ok:
+						tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
+						tcp_server.add_to_loop(self.loop)
+						self.tcp_servers_pool.update({port: tcp_server})
+
 						udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
 						udp_server.add_to_loop(self.loop)
 						self.udp_servers_pool.update({port: udp_server})
+
 				except Exception, e:
 					logging.warn("IPV4 %s " % (e,))
 
@@ -167,12 +171,11 @@ class ServerPool(object):
 				del self.tcp_servers_pool[port]
 			except Exception, e:
 				logging.warn(e)
-			if self.udp_on:
-				try:
-					self.udp_servers_pool[port].close(True)
-					del self.udp_servers_pool[port]
-				except Exception, e:
-					logging.warn(e)
+			try:
+				self.udp_servers_pool[port].close(True)
+				del self.udp_servers_pool[port]
+			except Exception, e:
+				logging.warn(e)
 
 		if 'server_ipv6' in self.config:
 			if port not in self.tcp_ipv6_servers_pool:
@@ -184,12 +187,11 @@ class ServerPool(object):
 					del self.tcp_ipv6_servers_pool[port]
 				except Exception, e:
 					logging.warn(e)
-				if self.udp_on:
-					try:
-						self.udp_ipv6_servers_pool[port].close(True)
-						del self.udp_ipv6_servers_pool[port]
-					except Exception, e:
-						logging.warn(e)
+				try:
+					self.udp_ipv6_servers_pool[port].close(True)
+					del self.udp_ipv6_servers_pool[port]
+				except Exception, e:
+					logging.warn(e)
 
 			return True
 

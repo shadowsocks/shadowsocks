@@ -27,7 +27,7 @@ import traceback
 import random
 
 from shadowsocks import encrypt, eventloop, shell, common
-from shadowsocks.common import parse_header
+from shadowsocks.common import pre_parse_header, parse_header
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
@@ -320,12 +320,15 @@ class TCPRelayHandler(object):
                     logging.error('unknown command %d', cmd)
                     self.destroy()
                     return
+            data = pre_parse_header(data)
+            if data is None:
+                raise Exception('can not parse header')
             header_result = parse_header(data)
             if header_result is None:
                 raise Exception('can not parse header')
             connecttype, remote_addr, remote_port, header_length = header_result
             logging.info('%s connecting %s:%d from %s:%d' %
-                        ((connecttype == 0) and 'tcp' or 'udp',
+                        ((connecttype == 0) and 'TCP' or 'UDP',
                             common.to_str(remote_addr), remote_port,
                             self._client_address[0], self._client_address[1]))
             self._remote_address = (common.to_str(remote_addr), remote_port)
@@ -355,15 +358,6 @@ class TCPRelayHandler(object):
                 traceback.print_exc()
             # TODO use logging when debug completed
             self.destroy()
-
-    def _has_ipv6_addr(self, addr_list):
-        for item in addr_list:
-            if type(item) is list:
-                if self._has_ipv6_addr(item):
-                    return True
-            elif ':' in item:
-                return True
-        return False
 
     def _create_remote_socket(self, ip, port):
         if self._remote_udp:
@@ -505,7 +499,7 @@ class TCPRelayHandler(object):
                 except Exception as e:
                     ip = socket.inet_pton(socket.AF_INET6, addr[0])
                     data = '\x00\x00\x00\x04' + ip + port + data
-                logging.info('udp recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._client_address[0], self._client_address[1]))
+                logging.info('UDP recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._client_address[0], self._client_address[1]))
             else:
                 data = self._remote_sock.recv(BUF_SIZE)
         except (OSError, IOError) as e:

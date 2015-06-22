@@ -138,6 +138,20 @@ def pack_addr(address):
         address = address[:255]  # TODO
     return b'\x03' + chr(len(address)) + address
 
+def pre_parse_header(data):
+    datatype = ord(data[0])
+    if datatype == 0x80 :
+        if len(data) <= 2:
+            return None
+        rand_data_size = ord(data[1])
+        if rand_data_size + 2 >= len(data):
+            logging.warn('header too short, maybe wrong password or '
+                         'encryption method')
+            return None
+        data = data[rand_data_size + 2:]
+    elif datatype == 0x81:
+        data = data[1:]
+    return data
 
 def parse_header(data):
     addrtype = ord(data[0])

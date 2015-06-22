@@ -70,7 +70,7 @@ import errno
 import random
 
 from shadowsocks import encrypt, eventloop, lru_cache, common, shell
-from shadowsocks.common import parse_header, pack_addr
+from shadowsocks.common import pre_parse_header, parse_header, pack_addr
 
 
 BUF_SIZE = 65536
@@ -159,6 +159,10 @@ class UDPRelay(object):
             if not data:
                 logging.debug('UDP handle_server: data is empty after decrypt')
                 return
+        data = pre_parse_header(data)
+        if data is None:
+            return
+
         header_result = parse_header(data)
         if header_result is None:
             return
@@ -173,7 +177,7 @@ class UDPRelay(object):
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
-            logging.info('UDP handle_server %s:%d from %s:%d' % (common.to_str(server_addr), server_port, self._listen_addr, self._listen_port))
+            #logging.info('UDP handle_server %s:%d from %s:%d' % (common.to_str(server_addr), server_port, self._listen_addr, self._listen_port))
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if addrs:
