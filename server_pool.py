@@ -134,17 +134,17 @@ class ServerPool(object):
 				try:
 					logging.info("starting server at %s:%d" % (a_config['server'], port))
 
-					if not ipv6_ok:
-						tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
-						tcp_server.add_to_loop(self.loop)
-						self.tcp_servers_pool.update({port: tcp_server})
+					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
+					tcp_server.add_to_loop(self.loop)
+					self.tcp_servers_pool.update({port: tcp_server})
 
-						udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
-						udp_server.add_to_loop(self.loop)
-						self.udp_servers_pool.update({port: udp_server})
+					udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
+					udp_server.add_to_loop(self.loop)
+					self.udp_servers_pool.update({port: udp_server})
 
 				except Exception, e:
-					logging.warn("IPV4 %s " % (e,))
+					if not ipv6_ok:
+						logging.warn("IPV4 %s " % (e,))
 
 		return True
 

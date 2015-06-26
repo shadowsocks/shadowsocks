@@ -54,6 +54,7 @@ def main():
     for port, password in config['port_password'].items():
         a_config = config.copy()
         ipv6_ok = False
+        logging.info("server start with password [%s] method [%s]" % (password, a_config['method']))
         if 'server_ipv6' in a_config:
             try:
                 if len(a_config['server_ipv6']) > 2 and a_config['server_ipv6'][0] == "[" and a_config['server_ipv6'][-1] == "]":
@@ -70,16 +71,16 @@ def main():
             except Exception as e:
                 shell.print_exception(e)
 
-        if not ipv6_ok:
-            try:
-                a_config = config.copy()
-                a_config['server_port'] = int(port)
-                a_config['password'] = password
-                logging.info("starting server at %s:%d" %
-                             (a_config['server'], int(port)))
-                tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
-                udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
-            except Exception as e:
+        try:
+            a_config = config.copy()
+            a_config['server_port'] = int(port)
+            a_config['password'] = password
+            logging.info("starting server at %s:%d" %
+                         (a_config['server'], int(port)))
+            tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
+            udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
+        except Exception as e:
+            if not ipv6_ok:
                 shell.print_exception(e)
 
     def run_server():
