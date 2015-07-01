@@ -76,7 +76,11 @@ class DbTransfer(object):
 	@staticmethod
 	def pull_db_all_user():
 		#数据库所有用户信息
-		keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
+		try:
+			import switchrule
+			keys = switchrule.getKeys()
+		except Exception, e:
+			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
 		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
 								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
