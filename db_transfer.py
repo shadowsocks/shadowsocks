@@ -76,7 +76,7 @@ class DbTransfer(object):
 	@staticmethod
 	def pull_db_all_user():
 		#数据库所有用户信息
-		keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'switch', 'enable', 'plan' ]
+		keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
 		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
 								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
@@ -96,10 +96,13 @@ class DbTransfer(object):
 		#停止超流量的服务
 		#启动没超流量的服务
 		#需要动态载入switchrule，以便实时修改规则
+		try:
+			import switchrule
+		except Exception, e:
+			logging.error('load switchrule.py fail')
 		cur_servers = {}
 		for row in rows:
 			try:
-				import switchrule
 				allow = switchrule.isTurnOn(row) and row['enable'] == 1 and row['u'] + row['d'] < row['transfer_enable']
 			except Exception, e:
 				allow = False
