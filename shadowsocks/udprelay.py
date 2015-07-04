@@ -159,9 +159,11 @@ class UDPRelay(object):
             if not data:
                 logging.debug('UDP handle_server: data is empty after decrypt')
                 return
-        data = pre_parse_header(data)
-        if data is None:
-            return
+
+        if not self._is_local:
+            data = pre_parse_header(data)
+            if data is None:
+                return
 
         header_result = parse_header(data)
         if header_result is None:
@@ -170,10 +172,16 @@ class UDPRelay(object):
 
         if self._is_local:
             server_addr, server_port = self._get_a_server()
+            key = client_key(r_addr[0], r_addr[1], dest_addr, dest_port)
         else:
             server_addr, server_port = dest_addr, dest_port
+            addrs = socket.getaddrinfo(dest_addr, dest_port, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
+            if addrs:
+                af, socktype, proto, canonname, sa = addrs[0]
+                key = client_key(r_addr[0], r_addr[1], af, 0)
+            else:
+                key = None
 
-        key = client_key(r_addr[0], r_addr[1], dest_addr, dest_port)
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
