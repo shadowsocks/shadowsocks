@@ -24,6 +24,8 @@ function run_test {
     return 0
 }
 
+pip install PySocks
+
 python --version
 coverage erase
 mkdir tmp
@@ -69,7 +71,7 @@ if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
 fi
 
 run_test tests/test_large_file.sh
-
+run_test tests/test_udp_src.sh
 run_test tests/test_command.sh
 
 coverage combine && coverage report --include=shadowsocks/*
