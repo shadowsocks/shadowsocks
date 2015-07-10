@@ -76,8 +76,9 @@ from shadowsocks.common import parse_header, pack_addr
 BUF_SIZE = 65536
 
 
-def client_key(source_addr, dest_addr):
-    return '%s:%s' % (source_addr[0], source_addr[1])
+def client_key(source_addr, server_af):
+    # notice this is server af, not dest af
+    return '%s:%s:%d' % (source_addr[0], source_addr[1], server_af)
 
 
 class UDPRelay(object):
@@ -169,27 +170,29 @@ class UDPRelay(object):
         else:
             server_addr, server_port = dest_addr, dest_port
 
-        key = client_key(r_addr, (dest_addr, dest_port))
+        addrs = socket.getaddrinfo(server_addr, server_port, 0,
+                                   socket.SOCK_DGRAM, socket.SOL_UDP)
+        if not addrs:
+            # drop
+            return
+
+        af, socktype, proto, canonname, sa = addrs[0]
+        key = client_key(r_addr, af)
+        logging.debug(key)
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
-            addrs = socket.getaddrinfo(server_addr, server_port, 0,
-                                       socket.SOCK_DGRAM, socket.SOL_UDP)
-            if addrs:
-                af, socktype, proto, canonname, sa = addrs[0]
-                if self._forbidden_iplist:
-                    if common.to_str(sa[0]) in self._forbidden_iplist:
-                        logging.debug('IP %s is in forbidden list, drop' %
-                                      common.to_str(sa[0]))
-                        # drop
-                        return
-                client = socket.socket(af, socktype, proto)
-                client.setblocking(False)
-                self._cache[key] = client
-                self._client_fd_to_server_addr[client.fileno()] = r_addr
-            else:
-                # drop
-                return
+            if self._forbidden_iplist:
+                if common.to_str(sa[0]) in self._forbidden_iplist:
+                    logging.debug('IP %s is in forbidden list, drop' %
+                                  common.to_str(sa[0]))
+                    # drop
+                    return
+            client = socket.socket(af, socktype, proto)
+            client.setblocking(False)
+            self._cache[key] = client
+            self._client_fd_to_server_addr[client.fileno()] = r_addr
+
             self._sockets.add(client.fileno())
             self._eventloop.add(client, eventloop.POLL_IN)
 

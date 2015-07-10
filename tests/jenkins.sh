@@ -24,8 +24,6 @@ function run_test {
     return 0
 }
 
-pip install PySocks
-
 python --version
 coverage erase
 mkdir tmp

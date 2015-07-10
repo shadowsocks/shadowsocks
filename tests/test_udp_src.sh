@@ -4,10 +4,10 @@ PYTHON="coverage run -p -a"
 
 mkdir -p tmp
 
-$PYTHON shadowsocks/local.py -c tests/aes.json &
+$PYTHON shadowsocks/local.py -c tests/aes.json -v &
 LOCAL=$!
 
-$PYTHON shadowsocks/server.py -c tests/aes.json --forbidden-ip "" &
+$PYTHON shadowsocks/server.py -c tests/aes.json --forbidden-ip "" -v &
 SERVER=$!
 
 sleep 3
