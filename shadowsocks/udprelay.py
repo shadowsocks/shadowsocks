@@ -76,8 +76,8 @@ from shadowsocks.common import parse_header, pack_addr
 BUF_SIZE = 65536
 
 
-def client_key(a, b, c, d):
-    return '%s:%s:%s:%s' % (a, b, c, d)
+def client_key(source_addr, dest_addr):
+    return '%s:%s' % (source_addr[0], source_addr[1])
 
 
 class UDPRelay(object):
@@ -169,7 +169,7 @@ class UDPRelay(object):
         else:
             server_addr, server_port = dest_addr, dest_port
 
-        key = client_key(r_addr[0], r_addr[1], dest_addr, dest_port)
+        key = client_key(r_addr, (dest_addr, dest_port))
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
