@@ -103,6 +103,7 @@ class UDPRelay(object):
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = \
             lru_cache.LRUCache(timeout=config['timeout'])
+        self._dns_cache = lru_cache.LRUCache(timeout=300)
         self._eventloop = None
         self._closed = False
         self._last_time = time.time()
@@ -170,11 +171,15 @@ class UDPRelay(object):
         else:
             server_addr, server_port = dest_addr, dest_port
 
-        addrs = socket.getaddrinfo(server_addr, server_port, 0,
-                                   socket.SOCK_DGRAM, socket.SOL_UDP)
-        if not addrs:
-            # drop
-            return
+        addrs = self._dns_cache.get(server_addr, None)
+        if addrs is None:
+            addrs = socket.getaddrinfo(server_addr, server_port, 0,
+                                       socket.SOCK_DGRAM, socket.SOL_UDP)
+            if not addrs:
+                # drop
+                return
+            else:
+                self._dns_cache[server_addr] = addrs
 
         af, socktype, proto, canonname, sa = addrs[0]
         key = client_key(r_addr, af)
