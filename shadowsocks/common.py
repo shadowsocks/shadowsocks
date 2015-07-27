@@ -157,7 +157,7 @@ def parse_header(data):
             if len(data) >= 2 + addrlen:
                 dest_addr = data[2:2 + addrlen]
                 dest_port = struct.unpack('>H', data[2 + addrlen:4 +
-                                          addrlen])[0]
+                                                     addrlen])[0]
                 header_length = 4 + addrlen
             else:
                 logging.warn('header is too short')
