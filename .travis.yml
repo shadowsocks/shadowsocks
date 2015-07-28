@@ -13,7 +13,7 @@ before_install:
   - sudo dd if=/dev/urandom of=/usr/share/nginx/www/file bs=1M count=10
   - sudo sh -c "echo '127.0.0.1    localhost' > /etc/hosts"
   - sudo service nginx restart
-  - pip install pep8 pyflakes nose coverage
+  - pip install pep8 pyflakes nose coverage PySocks
   - sudo tests/socksify/install.sh
   - sudo tests/libsodium/install.sh
   - sudo tests/setup_tc.sh

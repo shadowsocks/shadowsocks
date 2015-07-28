@@ -157,7 +157,7 @@ def parse_header(data):
             if len(data) >= 2 + addrlen:
                 dest_addr = data[2:2 + addrlen]
                 dest_port = struct.unpack('>H', data[2 + addrlen:4 +
-                                          addrlen])[0]
+                                                     addrlen])[0]
                 header_length = 4 + addrlen
             else:
                 logging.warn('header is too short')
@@ -171,8 +171,8 @@ def parse_header(data):
         else:
             logging.warn('header is too short')
     else:
-        logging.warn('unsupported addrtype %d, maybe wrong password' %
-                     addrtype)
+        logging.warn('unsupported addrtype %d, maybe wrong password or '
+                     'encryption method' % addrtype)
     if dest_addr is None:
         return None
     return addrtype, to_bytes(dest_addr), dest_port, header_length
