@@ -1,3 +1,105 @@
+2.6.1 2014-12-26
+- Fix a problem with TCP Fast Open on local side
+- Fix sometimes daemon_start returns wrong exit status
+
+2.6 2014-12-21
+- Add daemon support
+
+2.5 2014-12-11
+- Add salsa20 and chacha20
+
+2.4.3 2014-11-10
+- Fix an issue on Python 3
+- Fix an issue with IPv6
+
+2.4.2 2014-11-06
+- Fix command line arguments on Python 3
+- Support table on Python 3
+- Fix TCP Fast Open on Python 3
+
+2.4.1 2014-11-01
+- Fix setup.py for non-utf8 locales on Python 3
+
+2.4 2014-11-01
+- Python 3 support
+- Performance improvement
+- Fix LRU cache behavior
+
+2.3.2 2014-10-11
+- Fix OpenSSL on Windows
+
+2.3.1 2014-10-09
+- Does not require M2Crypto any more
+
+2.3 2014-09-23
+- Support CFB1, CFB8 and CTR mode of AES
+- Do not require password config when using port_password
+- Use SIGTERM instead of SIGQUIT on Windows
+
+2.2.2 2014-09-14
+- Fix when multiple DNS set, IPv6 only sites are broken
+
+2.2.1 2014-09-10
+- Support graceful shutdown
+- Fix some bugs
+
+2.2.0 2014-09-09
+- Add RC4-MD5 encryption
+
+2.1.0 2014-08-10
+- Use only IPv4 DNS server
+- Does not ship config.json
+- Better error message
+
+2.0.12 2014-07-26
+- Support -q quiet mode
+- Exit 0 when showing help with -h
+
+2.0.11 2014-07-12
+- Prefers IP addresses over hostnames, more friendly with socksify and openvpn
+
+2.0.10 2014-07-11
+- Fix UDP on local
+
+2.0.9 2014-07-06
+- Fix EWOULDBLOCK on Windows
+- Fix Unicode config problem on some platforms
+
+2.0.8 2014-06-23
+- Use multiple DNS to query hostnames
+
+2.0.7 2014-06-21
+- Fix fastopen on local
+- Fallback when fastopen is not available
+- Add verbose logging mode -vv
+- Verify if hostname is valid
+
+2.0.6 2014-06-19
+- Fix CPU 100% on POLL_HUP
+- More friendly logging
+
+2.0.5 2014-06-18
+- Support a simple config format for multiple ports
+
+2.0.4 2014-06-12
+- Fix worker master
+
+2.0.3 2014-06-11
+- Fix table encryption with UDP
+
+2.0.2 2014-06-11
+- Add asynchronous DNS in TCP relay
+
+2.0.1 2014-06-05
+- Better logging
+- Maybe fix bad file descriptor
+
+2.0 2014-06-05
+- Use a new event model
+- Remove gevent
+- Refuse to use default password
+- Fix a problem when using multiple passwords with table encryption
+
 1.4.5 2014-05-24
 - Add timeout in TCP server
 - Close sockets in master process

@@ -20,13 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
+
 import os
 import sys
 import hashlib
-import string
-import struct
 import logging
-import encrypt_salsa20
+
+from shadowsocks.crypto import m2, rc4_md5, salsa20_ctr,\
+    ctypes_openssl, ctypes_libsodium, table, hmac
+from shadowsocks import common
+
+
+ciphers_supported = {}
+ciphers_supported.update(rc4_md5.ciphers)
+ciphers_supported.update(salsa20_ctr.ciphers)
+ciphers_supported.update(ctypes_openssl.ciphers)
+ciphers_supported.update(ctypes_libsodium.ciphers)
+# let M2Crypto override ctypes_openssl
+ciphers_supported.update(m2.ciphers)
+ciphers_supported.update(table.ciphers)
+
+
+auths_supported = {}
+auths_supported.update(hmac.auths)
+auths_supported.update(ctypes_libsodium.auths)
 
 
 def random_string(length):
@@ -34,60 +53,20 @@ def random_string(length):
         import M2Crypto.Rand
         return M2Crypto.Rand.rand_bytes(length)
     except ImportError:
-        # TODO really strong enough on Linux?
         return os.urandom(length)
 
 
-cached_tables = {}
-cached_keys = {}
-
-
-def get_table(key):
-    m = hashlib.md5()
-    m.update(key)
-    s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
-    table = [c for c in string.maketrans('', '')]
-    for i in xrange(1, 1024):
-        table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
-    return table
-
-
-def init_table(key, method=None):
-    if method is not None and method == 'table':
-        method = None
-    if method:
-        try:
-            __import__('M2Crypto')
-        except ImportError:
-            logging.error('M2Crypto is required to use encryption other than '
-                          'default method')
-            sys.exit(1)
-    if not method:
-        if key in cached_tables:
-            return cached_tables[key]
-        encrypt_table = ''.join(get_table(key))
-        decrypt_table = string.maketrans(encrypt_table,
-                                         string.maketrans('', ''))
-        cached_tables[key] = [encrypt_table, decrypt_table]
-    else:
-        try:
-            Encryptor(key, method)  # test if the settings if OK
-        except Exception as e:
-            logging.error(e)
-            sys.exit(1)
+def try_cipher(key, method=None, auth=None):
+    Encryptor(key, method)
+    auth_create(b'test', key, b'test', auth)
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
     # equivalent to OpenSSL's EVP_BytesToKey() with count 1
     # so that we make the same key and iv as nodejs version
-    password = str(password)
-    r = cached_keys.get(password, None)
-    if r:
-        return r
     m = []
     i = 0
-    while len(''.join(m)) < (key_len + iv_len):
+    while len(b''.join(m)) < (key_len + iv_len):
         md5 = hashlib.md5()
         data = password
         if i > 0:
@@ -95,132 +74,186 @@ def EVP_BytesToKey(password, key_len, iv_len):
         md5.update(data)
         m.append(md5.digest())
         i += 1
-    ms = ''.join(m)
+    ms = b''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
-    cached_keys[password] = (key, iv)
-    return (key, iv)
-
-
-method_supported = {
-    'aes-128-cfb': (16, 16),
-    'aes-192-cfb': (24, 16),
-    'aes-256-cfb': (32, 16),
-    'bf-cfb': (16, 8),
-    'camellia-128-cfb': (16, 16),
-    'camellia-192-cfb': (24, 16),
-    'camellia-256-cfb': (32, 16),
-    'cast5-cfb': (16, 8),
-    'des-cfb': (8, 8),
-    'idea-cfb': (16, 8),
-    'rc2-cfb': (16, 8),
-    'rc4': (16, 0),
-    'seed-cfb': (16, 16),
-    'salsa20-ctr': (32, 8),
-}
+    return key, iv
 
 
 class Encryptor(object):
-    def __init__(self, key, method=None):
-        if method == 'table':
-            method = None
+    def __init__(self, key, method):
         self.key = key
         self.method = method
         self.iv = None
         self.iv_sent = False
-        self.cipher_iv = ''
+        self.cipher_iv = b''
         self.decipher = None
-        if method:
-            self.cipher = self.get_cipher(key, method, 1, iv=random_string(32))
-        else:
-            self.encrypt_table, self.decrypt_table = init_table(key)
-            self.cipher = None
-
-    def get_cipher_len(self, method):
         method = method.lower()
-        m = method_supported.get(method, None)
+        self._method_info = self.get_method_info(method)
+        if self._method_info:
+            self.cipher = self.get_cipher(key, method, 1,
+                                          random_string(self._method_info[1]))
+        else:
+            logging.error('method %s not supported' % method)
+            sys.exit(1)
+
+    def get_method_info(self, method):
+        method = method.lower()
+        m = ciphers_supported.get(method)
         return m
 
     def iv_len(self):
         return len(self.cipher_iv)
 
-    def get_cipher(self, password, method, op, iv=None):
-        password = password.encode('utf-8')
-        method = method.lower()
-        m = self.get_cipher_len(method)
-        if m:
+    def get_cipher(self, password, method, op, iv):
+        password = common.to_bytes(password)
+        m = self._method_info
+        if m[0] > 0:
             key, iv_ = EVP_BytesToKey(password, m[0], m[1])
-            if iv is None:
-                iv = iv_
-            iv = iv[:m[1]]
-            if op == 1:
-                self.cipher_iv = iv[:m[1]]  # this iv is for cipher not decipher
-            if method != 'salsa20-ctr':
-                import M2Crypto.EVP
-                return M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
-                                       key_as_bytes=0, d='md5', salt=None, i=1,
-                                       padding=1)
-            else:
-                return encrypt_salsa20.Salsa20Cipher(method, key, iv, op)
+        else:
+            # key_length == 0 indicates we should use the key directly
+            key, iv = password, b''
 
-        logging.error('method %s not supported' % method)
-        sys.exit(1)
+        iv = iv[:m[1]]
+        if op == 1:
+            # this iv is for cipher not decipher
+            self.cipher_iv = iv[:m[1]]
+        return m[2](method, key, iv, op)
 
     def encrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if not self.method:
-            return string.translate(buf, self.encrypt_table)
+        if self.iv_sent:
+            return self.cipher.update(buf)
         else:
-            if self.iv_sent:
-                return self.cipher.update(buf)
-            else:
-                self.iv_sent = True
-                return self.cipher_iv + self.cipher.update(buf)
+            self.iv_sent = True
+            return self.cipher_iv + self.cipher.update(buf)
 
     def decrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if not self.method:
-            return string.translate(buf, self.decrypt_table)
-        else:
-            if self.decipher is None:
-                decipher_iv_len = self.get_cipher_len(self.method)[1]
-                decipher_iv = buf[:decipher_iv_len]
-                self.decipher = self.get_cipher(self.key, self.method, 0,
-                                                iv=decipher_iv)
-                buf = buf[decipher_iv_len:]
-                if len(buf) == 0:
-                    return buf
-            return self.decipher.update(buf)
+        if self.decipher is None:
+            decipher_iv_len = self._method_info[1]
+            decipher_iv = buf[:decipher_iv_len]
+            self.decipher = self.get_cipher(self.key, self.method, 0,
+                                            iv=decipher_iv)
+            buf = buf[decipher_iv_len:]
+            if len(buf) == 0:
+                return buf
+        return self.decipher.update(buf)
 
 
 def encrypt_all(password, method, op, data):
-    if method is not None and method.lower() == 'table':
-        method = None
-    if not method:
-        [encrypt_table, decrypt_table] = init_table(password)
-        if op:
-            return string.translate(encrypt_table, data)
-        else:
-            return string.translate(decrypt_table, data)
+    result = []
+    method = method.lower()
+    password = common.to_bytes(password)
+    (key_len, iv_len, m) = ciphers_supported[method]
+    if key_len > 0:
+        key, _ = EVP_BytesToKey(password, key_len, iv_len)
     else:
-        import M2Crypto.EVP
-        result = []
-        method = method.lower()
-        (key_len, iv_len) = method_supported[method]
-        (key, _) = EVP_BytesToKey(password, key_len, iv_len)
-        if op:
-            iv = random_string(iv_len)
-            result.append(iv)
-        else:
-            iv = data[:iv_len]
-            data = data[iv_len:]
-        cipher = M2Crypto.EVP.Cipher(method.replace('-', '_'), key, iv, op,
-                                     key_as_bytes=0, d='md5', salt=None, i=1,
-                                     padding=1)
-        result.append(cipher.update(data))
-        f = cipher.final()
-        if f:
-            result.append(f)
-        return ''.join(result)
+        key = password
+    if op:
+        iv = random_string(iv_len)
+        result.append(iv)
+    else:
+        iv = data[:iv_len]
+        data = data[iv_len:]
+    cipher = m(method, key, iv, op)
+    result.append(cipher.update(data))
+    return b''.join(result)
+
+
+def auth_create(data, password, iv, method):
+    if method is None:
+        return data
+    # prepend hmac to data
+    password = common.to_bytes(password)
+    method = method.lower()
+    method_info = auths_supported.get(method)
+    if not method_info:
+        logging.error('method %s not supported' % method)
+        sys.exit(1)
+    key_len, tag_len, m = method_info
+    key, _ = EVP_BytesToKey(password + iv, key_len, 0)
+    tag = m.auth(method, key, data)
+    return tag + data
+
+
+def auth_open(data, password, iv, method):
+    if not method:
+        return data
+    # verify hmac and remove the hmac or return None
+    password = common.to_bytes(password)
+    method = method.lower()
+    method_info = auths_supported.get(method)
+    if not method_info:
+        logging.error('method %s not supported' % method)
+        sys.exit(1)
+    key_len, tag_len, m = method_info
+    key, _ = EVP_BytesToKey(password + iv, key_len, 0)
+    if len(data) <= tag_len:
+        return None
+    result = data[tag_len:]
+    if not m.verify(method, key, result, data[:tag_len]):
+        return None
+    return result
+
+
+CIPHERS_TO_TEST = [
+    b'aes-128-cfb',
+    b'aes-256-cfb',
+    b'rc4-md5',
+    b'salsa20',
+    b'chacha20',
+    b'table',
+]
+
+AUTHS_TO_TEST = [
+    None,
+    b'hmac-md5',
+    b'hmac-sha256',
+    b'poly1305',
+]
+
+
+def test_encryptor():
+    from os import urandom
+    plain = urandom(10240)
+    for method in CIPHERS_TO_TEST:
+        logging.warn(method)
+        encryptor = Encryptor(b'key', method)
+        decryptor = Encryptor(b'key', method)
+        cipher = encryptor.encrypt(plain)
+        plain2 = decryptor.decrypt(cipher)
+        assert plain == plain2
+
+
+def test_encrypt_all():
+    from os import urandom
+    plain = urandom(10240)
+    for method in CIPHERS_TO_TEST:
+        logging.warn(method)
+        cipher = encrypt_all(b'key', method, 1, plain)
+        plain2 = encrypt_all(b'key', method, 0, cipher)
+        assert plain == plain2
+
+
+def test_auth():
+    from os import urandom
+    plain = urandom(10240)
+    for method in AUTHS_TO_TEST:
+        logging.warn(method)
+        boxed = auth_create(plain, b'key', b'iv', method)
+        unboxed = auth_open(boxed, b'key', b'iv', method)
+        assert plain == unboxed
+        if method is not None:
+            b = common.ord(boxed[0])
+            b ^= 1
+            attack = common.chr(b) + boxed[1:]
+            assert auth_open(attack, b'key', b'iv', method) is None
+
+
+if __name__ == '__main__':
+    test_encrypt_all()
+    test_encryptor()
+    test_auth()

@@ -1,0 +1,5 @@
+shadowsocks (2.1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #758900)
+
+ -- Shell.Xu <shell909090@gmail.com>  Sat, 23 Aug 2014 00:56:04 +0800

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (c) 2014 clowwindy
 #
@@ -20,5 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from __future__ import absolute_import, division, print_function, \
-    with_statement
+
+def run_cipher(cipher, decipher):
+    from os import urandom
+    import random
+    import time
+
+    BLOCK_SIZE = 16384
+    rounds = 1 * 1024
+    plain = urandom(BLOCK_SIZE * rounds)
+
+    results = []
+    pos = 0
+    print('test start')
+    start = time.time()
+    while pos < len(plain):
+        l = random.randint(100, 32768)
+        c = cipher.update(plain[pos:pos + l])
+        results.append(c)
+        pos += l
+    pos = 0
+    c = b''.join(results)
+    results = []
+    while pos < len(plain):
+        l = random.randint(100, 32768)
+        results.append(decipher.update(c[pos:pos + l]))
+        pos += l
+    end = time.time()
+    print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
+    assert b''.join(results) == plain

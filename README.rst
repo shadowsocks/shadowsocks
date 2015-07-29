@@ -1,63 +1,66 @@
 shadowsocks
 ===========
 
-shadowsocks is a lightweight tunnel proxy which can help you get through
-firewalls.
+|PyPI version| |Build Status| |Coverage Status|
 
-Both TCP CONNECT and UDP ASSOCIATE are implemented.
+A fast tunnel proxy that helps you bypass firewalls.
 
-`中文说明 <https://github.com/clowwindy/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E>`__
+`中文说明 <https://github.com/shadowsocks/shadowsocks/wiki/Shadowsocks-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E>`__
 
 Install
 -------
 
-First, make sure you have Python 2.6 or 2.7.
+You'll have a client on your local side, and setup a server on a remote
+server.
 
-::
+Client
+~~~~~~
 
-    $ python --version
-    Python 2.6.8
+-  `Windows <https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#windows>`__
+   / `OS
+   X <https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help>`__
+-  `Android <https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android>`__
+   / `iOS <https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help>`__
+-  `OpenWRT <https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#openwrt>`__
 
-Install Shadowsocks.
+Server
+~~~~~~
 
 Debian / Ubuntu:
 ^^^^^^^^^^^^^^^^
 
 ::
 
-    apt-get install python-pip python-gevent python-m2crypto
+    apt-get install python-pip
     pip install shadowsocks
+
+Or simply ``apt-get install shadowsocks`` if you have `Debian
+sid <https://packages.debian.org/unstable/python/shadowsocks>`__ in your
+source list.
 
 CentOS:
 ^^^^^^^
 
 ::
 
-    yum install m2crypto python-setuptools
+    yum install python-setuptools
     easy_install pip
-    pip install shadowsocks
-
-OS X:
-^^^^^
-
-::
-
-    git clone https://github.com/clowwindy/M2Crypto.git
-    cd M2Crypto
-    pip install .
     pip install shadowsocks
 
 Windows:
 ^^^^^^^^
 
-Choose a `GUI
-client <https://github.com/clowwindy/shadowsocks/wiki/Ports-and-Clients>`__
+Download `OpenSSL for
+Windows <http://slproweb.com/products/Win32OpenSSL.html>`__ and install.
+Then install shadowsocks via easy\_install and pip as Linux. If you
+don't know how to use them, you can directly download `the
+package <https://pypi.python.org/pypi/shadowsocks>`__, and use
+``python shadowsocks/server.py`` instead of ``ssserver`` command below.
 
-Usage
------
+Configuration
+-------------
 
-Create a config file ``/etc/shadowsocks.json`` (or put it in other
-path). Example:
+On your server create a config file ``/etc/shadowsocks.json``. Example:
 
 ::
 
@@ -69,86 +72,69 @@ path). Example:
         "password":"mypassword",
         "timeout":300,
         "method":"aes-256-cfb",
-        "fast_open": false,
-        "workers": 1
+        "fast_open": false
     }
 
 Explanation of the fields:
 
-+------------------+-----------------------------------------------------------------------------------------------------+
-| Name             | Explanation                                                                                         |
-+==================+=====================================================================================================+
-| server           | the address your server listens                                                                     |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| server\_port     | server port                                                                                         |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| local\_address   | the address your local listens                                                                      |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| local\_port      | local port                                                                                          |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| password         | password used for encryption                                                                        |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| timeout          | in seconds                                                                                          |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| method           | encryption method, "aes-256-cfb" is recommended                                                     |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| fast\_open       | use `TCP\_FASTOPEN <https://github.com/clowwindy/shadowsocks/wiki/TCP-Fast-Open>`__, true / false   |
-+------------------+-----------------------------------------------------------------------------------------------------+
-| workers          | number of workers, available on Unix/Linux                                                          |
-+------------------+-----------------------------------------------------------------------------------------------------+
++------------------+-----------------------------------------------------------------------------------------------------------+
+| Name             | Explanation                                                                                               |
++==================+===========================================================================================================+
+| server           | the address your server listens                                                                           |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| server\_port     | server port                                                                                               |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| local\_address   | the address your local listens                                                                            |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| local\_port      | local port                                                                                                |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| password         | password used for encryption                                                                              |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| timeout          | in seconds                                                                                                |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| method           | default: "aes-256-cfb", see `Encryption <https://github.com/shadowsocks/shadowsocks/wiki/Encryption>`__   |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| fast\_open       | use `TCP\_FASTOPEN <https://github.com/shadowsocks/shadowsocks/wiki/TCP-Fast-Open>`__, true / false       |
++------------------+-----------------------------------------------------------------------------------------------------------+
+| workers          | number of workers, available on Unix/Linux                                                                |
++------------------+-----------------------------------------------------------------------------------------------------------+
 
-Run ``ssserver -c /etc/shadowsocks.json`` on your server. To run it in
-the background, `use
-supervisor <https://github.com/clowwindy/shadowsocks/wiki/Configure-Shadowsocks-with-Supervisor>`__.
+On your server:
 
-On your client machine, run ``sslocal -c /etc/shadowsocks.json``.
-
-Change the proxy settings in your browser to
+To run in the foreground:
 
 ::
 
-    protocol: socks5
-    hostname: 127.0.0.1
-    port:     your local_port
+    ssserver -c /etc/shadowsocks.json
 
-**Notice: If you want to use encryption methods other than "table",
-please install M2Crypto (See Encryption Section).**
+To run in the background:
 
-It's recommended to use shadowsocks with AutoProxy or Proxy
-SwitchySharp.
+::
 
-Command line args
------------------
+    ssserver -c /etc/shadowsocks.json -d start
+    ssserver -c /etc/shadowsocks.json -d stop
 
-You can use args to override settings from ``config.json``.
+On your client machine, use the same configuration as your server. Check
+the README of your client for more information.
+
+Command Line Options
+--------------------
+
+Check the options via ``-h``.You can use args to override settings from
+``config.json``.
 
 ::
 
     sslocal -s server_name -p server_port -l local_port -k password -m bf-cfb
     ssserver -p server_port -k password -m bf-cfb --workers 2
-    ssserver -c /etc/shadowsocks/config.json
+    ssserver -c /etc/shadowsocks/config.json -d start --pid-file=/tmp/shadowsocks.pid
+    ssserver -c /etc/shadowsocks/config.json -d stop --pid-file=/tmp/shadowsocks.pid
 
-Salsa20
--------
+Documentation
+-------------
 
-Salsa20 is a fast stream cipher.
-
-Use "salsa20-ctr" in shadowsocks.json.
-
-And install these packages:
-
-Debian / Ubuntu:
-^^^^^^^^^^^^^^^^
-
-::
-
-    apt-get install python-numpy
-    pip install salsa20
-
-Wiki
-----
-
-https://github.com/clowwindy/shadowsocks/wiki
+You can find all the documentation in the wiki:
+https://github.com/shadowsocks/shadowsocks/wiki
 
 License
 -------
@@ -158,13 +144,14 @@ MIT
 Bugs and Issues
 ---------------
 
-Please visit `issue
-tracker <https://github.com/clowwindy/shadowsocks/issues?state=open>`__
+-  `Troubleshooting <https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting>`__
+-  `Issue
+   Tracker <https://github.com/shadowsocks/shadowsocks/issues?state=open>`__
+-  `Mailing list <http://groups.google.com/group/shadowsocks>`__
 
-Mailing list: http://groups.google.com/group/shadowsocks
-
-Also see
-`troubleshooting <https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting>`__
-
-.. |Build Status| image:: https://travis-ci.org/clowwindy/shadowsocks.png?branch=master
-   :target: https://travis-ci.org/clowwindy/shadowsocks
+.. |PyPI version| image:: https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+   :target: https://pypi.python.org/pypi/shadowsocks
+.. |Build Status| image:: https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
+   :target: https://travis-ci.org/shadowsocks/shadowsocks
+.. |Coverage Status| image:: http://192.81.132.184/result/shadowsocks
+   :target: http://192.81.132.184/job/Shadowsocks/ws/htmlcov/index.html

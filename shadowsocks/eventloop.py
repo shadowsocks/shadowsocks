@@ -24,13 +24,19 @@
 # from ssloop
 # https://github.com/clowwindy/ssloop
 
+from __future__ import absolute_import, division, print_function, \
+    with_statement
 
+import os
+import socket
 import select
+import errno
+import logging
 from collections import defaultdict
 
 
 __all__ = ['EventLoop', 'POLL_NULL', 'POLL_IN', 'POLL_OUT', 'POLL_ERR',
-           'POLL_HUP', 'POLL_NVAL']
+           'POLL_HUP', 'POLL_NVAL', 'EVENT_NAMES']
 
 POLL_NULL = 0x00
 POLL_IN = 0x01
@@ -38,6 +44,16 @@ POLL_OUT = 0x04
 POLL_ERR = 0x08
 POLL_HUP = 0x10
 POLL_NVAL = 0x20
+
+
+EVENT_NAMES = {
+    POLL_NULL: 'POLL_NULL',
+    POLL_IN: 'POLL_IN',
+    POLL_OUT: 'POLL_OUT',
+    POLL_ERR: 'POLL_ERR',
+    POLL_HUP: 'POLL_HUP',
+    POLL_NVAL: 'POLL_NVAL',
+}
 
 
 class EpollLoop(object):
@@ -86,7 +102,7 @@ class KqueueLoop(object):
                 results[fd] |= POLL_IN
             elif e.filter == select.KQ_FILTER_WRITE:
                 results[fd] |= POLL_OUT
-        return results.iteritems()
+        return results.items()
 
     def add_fd(self, fd, mode):
         self._fds[fd] = mode
@@ -140,20 +156,28 @@ class SelectLoop(object):
 
 class EventLoop(object):
     def __init__(self):
+        self._iterating = False
         if hasattr(select, 'epoll'):
             self._impl = EpollLoop()
+            model = 'epoll'
         elif hasattr(select, 'kqueue'):
             self._impl = KqueueLoop()
+            model = 'kqueue'
         elif hasattr(select, 'select'):
             self._impl = SelectLoop()
+            model = 'select'
         else:
             raise Exception('can not find any available functions in select '
                             'package')
         self._fd_to_f = {}
+        self._handlers = []
+        self._ref_handlers = []
+        self._handlers_to_remove = []
+        logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
-        return ((self._fd_to_f[fd], event) for fd, event in events)
+        return [(self._fd_to_f[fd], fd, event) for fd, event in events]
 
     def add(self, f, mode):
         fd = f.fileno()
@@ -162,12 +186,56 @@ class EventLoop(object):
 
     def remove(self, f):
         fd = f.fileno()
-        self._fd_to_f[fd] = None
+        del self._fd_to_f[fd]
         self._impl.remove_fd(fd)
 
     def modify(self, f, mode):
         fd = f.fileno()
         self._impl.modify_fd(fd, mode)
+
+    def add_handler(self, handler, ref=True):
+        self._handlers.append(handler)
+        if ref:
+            # when all ref handlers are removed, loop stops
+            self._ref_handlers.append(handler)
+
+    def remove_handler(self, handler):
+        if handler in self._ref_handlers:
+            self._ref_handlers.remove(handler)
+        if self._iterating:
+            self._handlers_to_remove.append(handler)
+        else:
+            self._handlers.remove(handler)
+
+    def run(self):
+        events = []
+        while self._ref_handlers:
+            try:
+                events = self.poll(1)
+            except (OSError, IOError) as e:
+                if errno_from_exception(e) in (errno.EPIPE, errno.EINTR):
+                    # EPIPE: Happens when the client closes the connection
+                    # EINTR: Happens when received a signal
+                    # handles them as soon as possible
+                    logging.debug('poll:%s', e)
+                else:
+                    logging.error('poll:%s', e)
+                    import traceback
+                    traceback.print_exc()
+                    continue
+            self._iterating = True
+            for handler in self._handlers:
+                # TODO when there are a lot of handlers
+                try:
+                    handler(events)
+                except (OSError, IOError) as e:
+                    logging.error(e)
+                    import traceback
+                    traceback.print_exc()
+            for handler in self._handlers_to_remove:
+                self._handlers.remove(handler)
+                self._handlers_to_remove = []
+            self._iterating = False
 
 
 # from tornado
@@ -187,3 +255,9 @@ def errno_from_exception(e):
         return e.args[0]
     else:
         return None
+
+
+# from tornado
+def get_sock_error(sock):
+    error_number = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+    return socket.error(error_number, os.strerror(error_number))
