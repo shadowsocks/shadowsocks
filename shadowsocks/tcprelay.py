@@ -703,4 +703,7 @@ class TCPRelay(object):
     def close(self, next_tick=False):
         self._closed = True
         if not next_tick:
+            if self._eventloop:
+                self._eventloop.remove_periodic(self.handle_periodic)
+                self._eventloop.remove(self._server_socket, self)
             self._server_socket.close()

@@ -278,10 +278,11 @@ class UDPRelay(object):
             self._server_socket.close()
             for sock in self._sockets:
                 sock.close()
-            self._eventloop.remove_periodic(self.handle_periodic)
 
     def close(self, next_tick=False):
         self._closed = True
         if not next_tick:
-            self._eventloop.remove(self._server_socket, self)
+            if self._eventloop:
+                self._eventloop.remove_periodic(self.handle_periodic)
+                self._eventloop.remove(self._server_socket, self)
             self._server_socket.close()

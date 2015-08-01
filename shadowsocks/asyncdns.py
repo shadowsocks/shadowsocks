@@ -425,7 +425,9 @@ class DNSResolver(object):
 
     def close(self):
         if self._sock:
-            self._loop.remove(self._sock, self)
+            if self._loop:
+                self._loop.remove_periodic(self.handle_periodic)
+                self._loop.remove(self._sock, self)
             self._sock.close()
             self._sock = None
 
