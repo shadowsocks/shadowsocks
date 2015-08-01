@@ -106,7 +106,6 @@ class UDPRelay(object):
         self._dns_cache = lru_cache.LRUCache(timeout=300)
         self._eventloop = None
         self._closed = False
-        self._last_time = time.time()
         self._sockets = set()
         if 'forbidden_ip' in config:
             self._forbidden_iplist = config['forbidden_ip']
@@ -137,7 +136,7 @@ class UDPRelay(object):
     def _close_client(self, client):
         if hasattr(client, 'close'):
             self._sockets.remove(client.fileno())
-            self._eventloop.remove(client)
+            self._eventloop.remove(client, self)
             client.close()
         else:
             # just an address
@@ -199,7 +198,7 @@ class UDPRelay(object):
             self._client_fd_to_server_addr[client.fileno()] = r_addr
 
             self._sockets.add(client.fileno())
-            self._eventloop.add(client, eventloop.POLL_IN)
+            self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
@@ -257,34 +256,33 @@ class UDPRelay(object):
         if self._closed:
             raise Exception('already closed')
         self._eventloop = loop
-        loop.add_handler(self._handle_events)
 
         server_socket = self._server_socket
         self._eventloop.add(server_socket,
-                            eventloop.POLL_IN | eventloop.POLL_ERR)
+                            eventloop.POLL_IN | eventloop.POLL_ERR, self)
+        loop.add_periodic(self.handle_periodic)
 
-    def _handle_events(self, events):
-        for sock, fd, event in events:
-            if sock == self._server_socket:
-                if event & eventloop.POLL_ERR:
-                    logging.error('UDP server_socket err')
-                self._handle_server()
-            elif sock and (fd in self._sockets):
-                if event & eventloop.POLL_ERR:
-                    logging.error('UDP client_socket err')
-                self._handle_client(sock)
-        now = time.time()
-        if now - self._last_time > 3:
-            self._cache.sweep()
-            self._client_fd_to_server_addr.sweep()
-            self._last_time = now
+    def handle_event(self, sock, fd, event):
+        if sock == self._server_socket:
+            if event & eventloop.POLL_ERR:
+                logging.error('UDP server_socket err')
+            self._handle_server()
+        elif sock and (fd in self._sockets):
+            if event & eventloop.POLL_ERR:
+                logging.error('UDP client_socket err')
+            self._handle_client(sock)
+
+    def handle_periodic(self):
+        self._cache.sweep()
+        self._client_fd_to_server_addr.sweep()
         if self._closed:
             self._server_socket.close()
             for sock in self._sockets:
                 sock.close()
-            self._eventloop.remove_handler(self._handle_events)
+            self._eventloop.remove_periodic(self.handle_periodic)
 
     def close(self, next_tick=False):
         self._closed = True
         if not next_tick:
+            self._eventloop.remove(self._server_socket, self)
             self._server_socket.close()

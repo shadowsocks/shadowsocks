@@ -22,6 +22,7 @@ from __future__ import absolute_import, division, print_function, \
     with_statement
 
 import os
+import time
 import socket
 import select
 import errno
@@ -51,23 +52,8 @@ EVENT_NAMES = {
     POLL_NVAL: 'POLL_NVAL',
 }
 
-
-class EpollLoop(object):
-
-    def __init__(self):
-        self._epoll = select.epoll()
-
-    def poll(self, timeout):
-        return self._epoll.poll(timeout)
-
-    def add_fd(self, fd, mode):
-        self._epoll.register(fd, mode)
-
-    def remove_fd(self, fd):
-        self._epoll.unregister(fd)
-
-    def modify_fd(self, fd, mode):
-        self._epoll.modify(fd, mode)
+# we check timeouts every TIMEOUT_PRECISION seconds
+TIMEOUT_PRECISION = 10
 
 
 class KqueueLoop(object):
@@ -100,17 +86,17 @@ class KqueueLoop(object):
                 results[fd] |= POLL_OUT
         return results.items()
 
-    def add_fd(self, fd, mode):
+    def register(self, fd, mode):
         self._fds[fd] = mode
         self._control(fd, mode, select.KQ_EV_ADD)
 
-    def remove_fd(self, fd):
+    def unregister(self, fd):
         self._control(fd, self._fds[fd], select.KQ_EV_DELETE)
         del self._fds[fd]
 
-    def modify_fd(self, fd, mode):
-        self.remove_fd(fd)
-        self.add_fd(fd, mode)
+    def modify(self, fd, mode):
+        self.unregister(fd)
+        self.register(fd, mode)
 
 
 class SelectLoop(object):
@@ -129,7 +115,7 @@ class SelectLoop(object):
                 results[fd] |= p[1]
         return results.items()
 
-    def add_fd(self, fd, mode):
+    def register(self, fd, mode):
         if mode & POLL_IN:
             self._r_list.add(fd)
         if mode & POLL_OUT:
@@ -137,7 +123,7 @@ class SelectLoop(object):
         if mode & POLL_ERR:
             self._x_list.add(fd)
 
-    def remove_fd(self, fd):
+    def unregister(self, fd):
         if fd in self._r_list:
             self._r_list.remove(fd)
         if fd in self._w_list:
@@ -145,16 +131,15 @@ class SelectLoop(object):
         if fd in self._x_list:
             self._x_list.remove(fd)
 
-    def modify_fd(self, fd, mode):
-        self.remove_fd(fd)
-        self.add_fd(fd, mode)
+    def modify(self, fd, mode):
+        self.unregister(fd)
+        self.register(fd, mode)
 
 
 class EventLoop(object):
     def __init__(self):
-        self._iterating = False
         if hasattr(select, 'epoll'):
-            self._impl = EpollLoop()
+            self._impl = select.epoll()
             model = 'epoll'
         elif hasattr(select, 'kqueue'):
             self._impl = KqueueLoop()
@@ -166,48 +151,50 @@ class EventLoop(object):
             raise Exception('can not find any available functions in select '
                             'package')
         self._fd_to_f = {}
-        self._handlers = []
-        self._ref_handlers = []
-        self._handlers_to_remove = []
+        self._fd_to_handler = {}
+        self._last_time = time.time()
+        self._periodic_callbacks = []
+        self._stopping = False
         logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
         return [(self._fd_to_f[fd], fd, event) for fd, event in events]
 
-    def add(self, f, mode):
+    def add(self, f, mode, handler):
         fd = f.fileno()
         self._fd_to_f[fd] = f
-        self._impl.add_fd(fd, mode)
+        self._impl.register(fd, mode)
+        self._fd_to_handler[fd] = handler
 
-    def remove(self, f):
+    def remove(self, f, handler):
         fd = f.fileno()
         del self._fd_to_f[fd]
-        self._impl.remove_fd(fd)
+        self._impl.unregister(fd)
+        if handler is not None:
+            del self._fd_to_handler[fd]
 
-    def modify(self, f, mode):
+    def add_periodic(self, callback):
+        self._periodic_callbacks.append(callback)
+
+    def remove_periodic(self, callback):
+        self._periodic_callbacks.remove(callback)
+
+    def modify(self, f, mode, handler):
         fd = f.fileno()
-        self._impl.modify_fd(fd, mode)
+        self._impl.modify(fd, mode)
+        if handler is not None:
+            self._fd_to_handler[fd] = handler
 
-    def add_handler(self, handler, ref=True):
-        self._handlers.append(handler)
-        if ref:
-            # when all ref handlers are removed, loop stops
-            self._ref_handlers.append(handler)
-
-    def remove_handler(self, handler):
-        if handler in self._ref_handlers:
-            self._ref_handlers.remove(handler)
-        if self._iterating:
-            self._handlers_to_remove.append(handler)
-        else:
-            self._handlers.remove(handler)
+    def stop(self):
+        self._stopping = True
 
     def run(self):
         events = []
-        while self._ref_handlers:
+        while not self._stopping:
+            now = time.time()
             try:
-                events = self.poll(1)
+                events = self.poll(TIMEOUT_PRECISION)
             except (OSError, IOError) as e:
                 if errno_from_exception(e) in (errno.EPIPE, errno.EINTR):
                     # EPIPE: Happens when the client closes the connection
@@ -219,18 +206,18 @@ class EventLoop(object):
                     import traceback
                     traceback.print_exc()
                     continue
-            self._iterating = True
-            for handler in self._handlers:
-                # TODO when there are a lot of handlers
-                try:
-                    handler(events)
-                except (OSError, IOError) as e:
-                    shell.print_exception(e)
-            if self._handlers_to_remove:
-                for handler in self._handlers_to_remove:
-                    self._handlers.remove(handler)
-                self._handlers_to_remove = []
-            self._iterating = False
+
+            for sock, fd, event in events:
+                handler = self._fd_to_handler.get(fd, None)
+                if handler is not None:
+                    try:
+                        handler.handle_event(sock, fd, event)
+                    except (OSError, IOError) as e:
+                        shell.print_exception(e)
+            if now - self._last_time >= TIMEOUT_PRECISION:
+                for callback in self._periodic_callbacks:
+                    callback()
+                self._last_time = now
 
 
 # from tornado
