@@ -433,7 +433,7 @@ class DNSResolver(object):
 def test():
     dns_resolver = DNSResolver()
     loop = eventloop.EventLoop()
-    dns_resolver.add_to_loop(loop, ref=True)
+    dns_resolver.add_to_loop(loop)
 
     global counter
     counter = 0
@@ -448,6 +448,7 @@ def test():
             counter += 1
             if counter == 9:
                 dns_resolver.close()
+                loop.stop()
         a_callback = callback
         return a_callback
 
