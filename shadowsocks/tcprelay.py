@@ -709,3 +709,4 @@ class TCPRelay(object):
         self._closed = True
         if not next_tick:
             self._server_socket.close()
+            self._server_socket = None
