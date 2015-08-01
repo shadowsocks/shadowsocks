@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import os
 import json
 
 with open('server-multi-passwd-performance.json', 'wb') as f:
