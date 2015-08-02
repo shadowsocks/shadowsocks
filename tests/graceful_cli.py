@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import socket
 import socks
 import time
 
