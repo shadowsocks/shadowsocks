@@ -357,7 +357,7 @@ class DNSResolver(object):
             return
         if event & eventloop.POLL_ERR:
             logging.error('dns socket err')
-            self._loop.remove(self._sock, self)
+            self._loop.remove(self._sock)
             self._sock.close()
             # TODO when dns server is IPv6
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
@@ -380,7 +380,7 @@ class DNSResolver(object):
             del self._cb_to_hostname[callback]
             arr = self._hostname_to_cb.get(hostname, None)
             if arr:
-                arr.remove(callback, self)
+                arr.remove(callback)
                 if not arr:
                     del self._hostname_to_cb[hostname]
                     if hostname in self._hostname_status:
@@ -427,7 +427,7 @@ class DNSResolver(object):
         if self._sock:
             if self._loop:
                 self._loop.remove_periodic(self.handle_periodic)
-                self._loop.remove(self._sock, self)
+                self._loop.remove(self._sock)
             self._sock.close()
             self._sock = None
 

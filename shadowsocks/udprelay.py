@@ -135,7 +135,7 @@ class UDPRelay(object):
     def _close_client(self, client):
         if hasattr(client, 'close'):
             self._sockets.remove(client.fileno())
-            self._eventloop.remove(client, self)
+            self._eventloop.remove(client)
             client.close()
         else:
             # just an address
@@ -288,5 +288,5 @@ class UDPRelay(object):
         if not next_tick:
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
-                self._eventloop.remove(self._server_socket, self)
+                self._eventloop.remove(self._server_socket)
             self._server_socket.close()

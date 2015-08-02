@@ -150,8 +150,7 @@ class EventLoop(object):
         else:
             raise Exception('can not find any available functions in select '
                             'package')
-        self._fd_to_f = {}
-        self._fd_to_handler = {}
+        self._fdmap = {}  # (f, handler)
         self._last_time = time.time()
         self._periodic_callbacks = []
         self._stopping = False
@@ -159,20 +158,17 @@ class EventLoop(object):
 
     def poll(self, timeout=None):
         events = self._impl.poll(timeout)
-        return [(self._fd_to_f[fd], fd, event) for fd, event in events]
+        return [(self._fdmap[fd][0], fd, event) for fd, event in events]
 
     def add(self, f, mode, handler):
         fd = f.fileno()
-        self._fd_to_f[fd] = f
+        self._fdmap[fd] = (f, handler)
         self._impl.register(fd, mode)
-        self._fd_to_handler[fd] = handler
 
-    def remove(self, f, handler):
+    def remove(self, f):
         fd = f.fileno()
-        del self._fd_to_f[fd]
+        del self._fdmap[fd]
         self._impl.unregister(fd)
-        if handler is not None:
-            del self._fd_to_handler[fd]
 
     def add_periodic(self, callback):
         self._periodic_callbacks.append(callback)
@@ -182,9 +178,8 @@ class EventLoop(object):
 
     def modify(self, f, mode, handler):
         fd = f.fileno()
+        self._fdmap[fd] = (f, handler)
         self._impl.modify(fd, mode)
-        if handler is not None:
-            self._fd_to_handler[fd] = handler
 
     def stop(self):
         self._stopping = True
@@ -209,8 +204,9 @@ class EventLoop(object):
                     continue
 
             for sock, fd, event in events:
-                handler = self._fd_to_handler.get(fd, None)
+                handler = self._fdmap.get(fd, None)
                 if handler is not None:
+                    handler = handler[1]
                     try:
                         handler.handle_event(sock, fd, event)
                     except (OSError, IOError) as e:

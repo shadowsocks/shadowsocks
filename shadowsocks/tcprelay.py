@@ -534,13 +534,13 @@ class TCPRelayHandler(object):
             logging.debug('destroy')
         if self._remote_sock:
             logging.debug('destroying remote')
-            self._loop.remove(self._remote_sock, self._server)
+            self._loop.remove(self._remote_sock)
             del self._fd_to_handlers[self._remote_sock.fileno()]
             self._remote_sock.close()
             self._remote_sock = None
         if self._local_sock:
             logging.debug('destroying local')
-            self._loop.remove(self._local_sock, self._server)
+            self._loop.remove(self._local_sock)
             del self._fd_to_handlers[self._local_sock.fileno()]
             self._local_sock.close()
             self._local_sock = None
@@ -691,7 +691,7 @@ class TCPRelay(object):
     def handle_periodic(self):
         if self._closed:
             if self._server_socket:
-                self._eventloop.remove(self._server_socket, self)
+                self._eventloop.remove(self._server_socket)
                 self._server_socket.close()
                 self._server_socket = None
                 logging.info('closed TCP port %d', self._listen_port)
@@ -706,5 +706,5 @@ class TCPRelay(object):
         if not next_tick:
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
-                self._eventloop.remove(self._server_socket, self)
+                self._eventloop.remove(self._server_socket)
             self._server_socket.close()
