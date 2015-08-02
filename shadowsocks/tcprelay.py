@@ -689,18 +689,19 @@ class TCPRelay(object):
                 logging.warn('poll removed fd')
 
     def handle_periodic(self):
-        self._sweep_timeout()
         if self._closed:
             if self._server_socket:
                 self._eventloop.remove(self._server_socket, self)
-                self._eventloop.remove_periodic(self.handle_periodic)
                 self._server_socket.close()
                 self._server_socket = None
-                logging.info('closed listen port %d', self._listen_port)
+                logging.info('closed TCP port %d', self._listen_port)
             if not self._fd_to_handlers:
+                logging.info('stopping')
                 self._eventloop.stop()
+        self._sweep_timeout()
 
     def close(self, next_tick=False):
+        logging.debug('TCP close')
         self._closed = True
         if not next_tick:
             if self._eventloop:

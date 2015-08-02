@@ -69,6 +69,7 @@ if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
 fi
 
 run_test tests/test_large_file.sh
+run_test tests/test_graceful_restart.sh
 run_test tests/test_udp_src.sh
 run_test tests/test_command.sh
 

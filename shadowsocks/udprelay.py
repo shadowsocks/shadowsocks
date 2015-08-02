@@ -272,14 +272,18 @@ class UDPRelay(object):
             self._handle_client(sock)
 
     def handle_periodic(self):
+        if self._closed:
+            if self._server_socket:
+                logging.info('closed UDP port %d', self._listen_port)
+                self._server_socket.close()
+                self._server_socket = None
+                for sock in self._sockets:
+                    sock.close()
         self._cache.sweep()
         self._client_fd_to_server_addr.sweep()
-        if self._closed:
-            self._server_socket.close()
-            for sock in self._sockets:
-                sock.close()
 
     def close(self, next_tick=False):
+        logging.debug('UDP close')
         self._closed = True
         if not next_tick:
             if self._eventloop:

@@ -192,7 +192,7 @@ class EventLoop(object):
     def run(self):
         events = []
         while not self._stopping:
-            now = time.time()
+            asap = False
             try:
                 events = self.poll(TIMEOUT_PRECISION)
             except (OSError, IOError) as e:
@@ -200,6 +200,7 @@ class EventLoop(object):
                     # EPIPE: Happens when the client closes the connection
                     # EINTR: Happens when received a signal
                     # handles them as soon as possible
+                    asap = True
                     logging.debug('poll:%s', e)
                 else:
                     logging.error('poll:%s', e)
@@ -214,7 +215,8 @@ class EventLoop(object):
                         handler.handle_event(sock, fd, event)
                     except (OSError, IOError) as e:
                         shell.print_exception(e)
-            if now - self._last_time >= TIMEOUT_PRECISION:
+            now = time.time()
+            if asap or now - self._last_time >= TIMEOUT_PRECISION:
                 for callback in self._periodic_callbacks:
                     callback()
                 self._last_time = now
