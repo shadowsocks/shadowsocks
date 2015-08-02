@@ -69,7 +69,11 @@ if [ -f /proc/sys/net/ipv4/tcp_fastopen ] ; then
 fi
 
 run_test tests/test_large_file.sh
-run_test tests/test_graceful_restart.sh
+
+if [ "a$JENKINS" != "a1" ] ; then
+    # jenkins blocked SIGQUIT with sigprocmask(), we have to skip this test on Jenkins
+    run_test tests/test_graceful_restart.sh
+fi
 run_test tests/test_udp_src.sh
 run_test tests/test_command.sh
 
