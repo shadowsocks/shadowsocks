@@ -173,14 +173,14 @@ class TCPRelayHandler(object):
                     event |= eventloop.POLL_OUT
                 if self._upstream_status & WAIT_STATUS_READING:
                     event |= eventloop.POLL_IN
-                self._loop.modify(self._local_sock, event, self._server)
+                self._loop.modify(self._local_sock, event)
             if self._remote_sock:
                 event = eventloop.POLL_ERR
                 if self._downstream_status & WAIT_STATUS_READING:
                     event |= eventloop.POLL_IN
                 if self._upstream_status & WAIT_STATUS_WRITING:
                     event |= eventloop.POLL_OUT
-                self._loop.modify(self._remote_sock, event, self._server)
+                self._loop.modify(self._remote_sock, event)
 
     def _write_to_sock(self, data, sock):
         # write data to sock

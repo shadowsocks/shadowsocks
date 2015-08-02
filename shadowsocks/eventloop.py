@@ -176,9 +176,8 @@ class EventLoop(object):
     def remove_periodic(self, callback):
         self._periodic_callbacks.remove(callback)
 
-    def modify(self, f, mode, handler):
+    def modify(self, f, mode):
         fd = f.fileno()
-        self._fdmap[fd] = (f, handler)
         self._impl.modify(fd, mode)
 
     def stop(self):
