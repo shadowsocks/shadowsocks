@@ -23,6 +23,7 @@ sleep 1
 
 # graceful restart server: send SIGQUIT to old process and start a new one
 kill -s SIGQUIT $SERVER
+sleep 0.5
 $PYTHON shadowsocks/server.py -c tests/graceful.json --forbidden-ip "" &
 NEWSERVER=$!
 
@@ -37,7 +38,7 @@ echo old server running: $OLD_SERVER_RUNNING1
 sleep 1
 
 # close connections on old server
-kill -s SIGINT $GCLI
+kill -s SIGKILL $GCLI
 kill -s SIGKILL $GSERVER
 kill -s SIGINT $LOCAL
 
@@ -49,6 +50,7 @@ OLD_SERVER_RUNNING2=$?
 # old server should quit at this moment
 echo old server running: $OLD_SERVER_RUNNING2
 
+kill -s SIGINT $SERVER
 # new server is expected running
 kill -s SIGINT $NEWSERVER || exit 1
 
@@ -57,7 +59,6 @@ if [ $OLD_SERVER_RUNNING1 -ne 0 ]; then
 fi
 
 if [ $OLD_SERVER_RUNNING2 -ne 1 ]; then
-    kill -s SIGINT $SERVER
     sleep 1
     exit 1
 fi
