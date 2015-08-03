@@ -98,6 +98,9 @@ class KqueueLoop(object):
         self.unregister(fd)
         self.register(fd, mode)
 
+    def close(self):
+        self._kqueue.close()
+
 
 class SelectLoop(object):
 
@@ -134,6 +137,9 @@ class SelectLoop(object):
     def modify(self, fd, mode):
         self.unregister(fd)
         self.register(fd, mode)
+
+    def close(self):
+        pass
 
 
 class EventLoop(object):
@@ -215,6 +221,9 @@ class EventLoop(object):
                 for callback in self._periodic_callbacks:
                     callback()
                 self._last_time = now
+
+    def __del__(self):
+        self._impl.close()
 
 
 # from tornado
