@@ -147,10 +147,10 @@ class TCPRelayHandler(object):
         logging.debug('chosen server: %s:%d', server, server_port)
         return server, server_port
 
-    def _update_activity(self):
+    def _update_activity(self, data_len=0):
         # tell the TCP Relay we have activities recently
         # else it will think we are inactive and timed out
-        self._server.update_activity(self)
+        self._server.update_activity(self, data_len)
 
     def _update_stream(self, stream, status):
         # update a stream to a new waiting status
@@ -317,7 +317,6 @@ class TCPRelayHandler(object):
             self._log_error(e)
             if self._config['verbose']:
                 traceback.print_exc()
-            # TODO use logging when debug completed
             self.destroy()
 
     def _create_remote_socket(self, ip, port):
@@ -388,7 +387,6 @@ class TCPRelayHandler(object):
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
         # each stage
-        self._update_activity()
         if not self._local_sock:
             return
         is_local = self._is_local
@@ -402,6 +400,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        self._update_activity(len(data))
         if not is_local:
             data = self._encryptor.decrypt(data)
             if not data:
@@ -424,10 +423,10 @@ class TCPRelayHandler(object):
 
     def _on_remote_read(self):
         # handle all remote read events
-        self._update_activity()
         data = None
         try:
             data = self._remote_sock.recv(BUF_SIZE)
+
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
                     (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
@@ -435,6 +434,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        self._update_activity(len(data))
         if self._is_local:
             data = self._encryptor.decrypt(data)
         else:
@@ -549,7 +549,7 @@ class TCPRelayHandler(object):
 
 
 class TCPRelay(object):
-    def __init__(self, config, dns_resolver, is_local):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         self._is_local = is_local
         self._dns_resolver = dns_resolver
@@ -589,6 +589,7 @@ class TCPRelay(object):
                 self._config['fast_open'] = False
         server_socket.listen(1024)
         self._server_socket = server_socket
+        self._stat_callback = stat_callback
 
     def add_to_loop(self, loop):
         if self._eventloop:
@@ -607,7 +608,10 @@ class TCPRelay(object):
             self._timeouts[index] = None
             del self._handler_to_timeouts[hash(handler)]
 
-    def update_activity(self, handler):
+    def update_activity(self, handler, data_len):
+        if data_len and self._stat_callback:
+            self._stat_callback(self._listen_port, data_len)
+
         # set handler to active
         now = int(time.time())
         if now - handler.last_activity < eventloop.TIMEOUT_PRECISION:

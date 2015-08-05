@@ -81,7 +81,7 @@ def client_key(source_addr, server_af):
 
 
 class UDPRelay(object):
-    def __init__(self, config, dns_resolver, is_local):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         if is_local:
             self._listen_addr = config['local_address']
@@ -121,6 +121,7 @@ class UDPRelay(object):
         server_socket.bind((self._listen_addr, self._listen_port))
         server_socket.setblocking(False)
         self._server_socket = server_socket
+        self._stat_callback = stat_callback
 
     def _get_a_server(self):
         server = self._config['server']
@@ -146,6 +147,8 @@ class UDPRelay(object):
         data, r_addr = server.recvfrom(BUF_SIZE)
         if not data:
             logging.debug('UDP handle_server: data is empty')
+        if self._stat_callback:
+            self._stat_callback(self._listen_port, len(data))
         if self._is_local:
             frag = common.ord(data[2])
             if frag != 0:
@@ -181,7 +184,6 @@ class UDPRelay(object):
 
         af, socktype, proto, canonname, sa = addrs[0]
         key = client_key(r_addr, af)
-        logging.debug(key)
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
@@ -221,6 +223,8 @@ class UDPRelay(object):
         if not data:
             logging.debug('UDP handle_client: data is empty')
             return
+        if self._stat_callback:
+            self._stat_callback(self._listen_port, len(data))
         if not self._is_local:
             addrlen = len(r_addr[0])
             if addrlen > 255:

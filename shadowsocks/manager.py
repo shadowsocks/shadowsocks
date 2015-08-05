@@ -28,7 +28,8 @@ import collections
 from shadowsocks import common, eventloop, tcprelay, udprelay, asyncdns, shell
 
 
-BUF_SIZE = 2048
+BUF_SIZE = 1506
+STAT_SEND_LIMIT = 100
 
 
 class Manager(object):
@@ -44,6 +45,7 @@ class Manager(object):
         self._statistics = collections.defaultdict(int)
         self._control_client_addr = None
         try:
+            # TODO use address instead of port
             self._control_socket.bind(('127.0.0.1',
                                        int(config['manager_port'])))
             self._control_socket.setblocking(False)
@@ -53,6 +55,7 @@ class Manager(object):
             exit(1)
         self._loop.add(self._control_socket,
                        eventloop.POLL_IN, self)
+        self._loop.add_periodic(self.handle_periodic)
 
         port_password = config['port_password']
         del config['port_password']
@@ -70,8 +73,10 @@ class Manager(object):
                                                               port))
             return
         logging.info("adding server at %s:%d" % (config['server'], port))
-        t = tcprelay.TCPRelay(config, self._dns_resolver, False)
-        u = udprelay.UDPRelay(config, self._dns_resolver, False)
+        t = tcprelay.TCPRelay(config, self._dns_resolver, False,
+                              self.stat_callback)
+        u = udprelay.UDPRelay(config, self._dns_resolver, False,
+                              self.stat_callback)
         t.add_to_loop(self._loop)
         u.add_to_loop(self._loop)
         self._relays[port] = (t, u)
@@ -126,9 +131,27 @@ class Manager(object):
             logging.error(e)
             return None
 
+    def stat_callback(self, port, data_len):
+        self._statistics[port] += data_len
+
     def handle_periodic(self):
-        # TODO send statistics
-        pass
+        r = {}
+        i = 0
+
+        def send_data(data_dict):
+            if data_dict:
+                data = common.to_bytes(json.dumps(data_dict,
+                                                  separators=(',', ':')))
+                self._send_control_data(b'stat: ' + data)
+
+        for k, v in self._statistics.items():
+            r[k] = v
+            i += 1
+            if i >= STAT_SEND_LIMIT:
+                send_data(r)
+                r.clear()
+        send_data(r)
+        self._statistics.clear()
 
     def _send_control_data(self, data):
         if self._control_client_addr:
