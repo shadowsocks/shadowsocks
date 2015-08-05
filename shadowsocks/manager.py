@@ -186,14 +186,14 @@ def run(config):
 def test():
     import time
     import threading
-    import os
     import struct
     from shadowsocks import encrypt
 
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=5,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
     enc = []
+    eventloop.TIMEOUT_PRECISION = 1
 
     def run_server():
         config = {
@@ -213,8 +213,9 @@ def test():
         enc.append(manager)
         manager.run()
 
-    threading.Thread(target=run_server).start()
-    time.sleep(2)
+    t = threading.Thread(target=run_server)
+    t.start()
+    time.sleep(1)
     manager = enc[0]
     cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     cli.connect(('127.0.0.1', 6001))
@@ -236,9 +237,8 @@ def test():
     tcp_cli = socket.socket()
     tcp_cli.connect(('127.0.0.1', 7001))
     tcp_cli.send(data)
-    rdata = tcp_cli.recv(4096)
+    tcp_cli.recv(4096)
     tcp_cli.close()
-    rdata = encrypt.encrypt_all(b'1234', 'aes-256-cfb', 0, rdata)
 
     data, addr = cli.recvfrom(1506)
     data = common.to_str(data)
@@ -264,7 +264,8 @@ def test():
     assert '8382' in stats
     logging.info('UDP statistics test passed')
 
-    os._exit(0)
+    manager._loop.stop()
+    t.join()
 
 
 if __name__ == '__main__':
