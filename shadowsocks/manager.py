@@ -40,18 +40,26 @@ class Manager(object):
         self._loop = eventloop.EventLoop()
         self._dns_resolver = asyncdns.DNSResolver()
         self._dns_resolver.add_to_loop(self._loop)
-        self._control_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                             socket.IPPROTO_UDP)
+
         self._statistics = collections.defaultdict(int)
         self._control_client_addr = None
         try:
+            manager_address = config['manager_address']
+            if ':' in manager_address:
+                addr = manager_address.split(':')
+                addr = addr[0], int(addr[1])
+                family = socket.AF_INET
+            else:
+                addr = manager_address
+                family = socket.AF_UNIX
             # TODO use address instead of port
-            self._control_socket.bind(('127.0.0.1',
-                                       int(config['manager_port'])))
+            self._control_socket = socket.socket(family,
+                                                 socket.SOCK_DGRAM)
+            self._control_socket.bind(addr)
             self._control_socket.setblocking(False)
         except (OSError, IOError) as e:
             logging.error(e)
-            logging.error('can not bind to manager port')
+            logging.error('can not bind to manager address')
             exit(1)
         self._loop.add(self._control_socket,
                        eventloop.POLL_IN, self)
