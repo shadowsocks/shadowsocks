@@ -49,7 +49,7 @@ def main():
         else:
             config['port_password'][str(server_port)] = config['password']
 
-    if config['manager_port']:
+    if config.get('manager_port', 0):
         logging.info('entering manager mode')
         manager.run(config)
         return
