@@ -213,7 +213,7 @@ def test():
         enc.append(manager)
         manager.run()
 
-    t = threading.Thread(target=run_server).start()
+    threading.Thread(target=run_server).start()
     time.sleep(2)
     manager = enc[0]
     cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
