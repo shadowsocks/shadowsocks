@@ -151,6 +151,15 @@ def pre_parse_header(data):
         data = data[rand_data_size + 2:]
     elif datatype == 0x81:
         data = data[1:]
+    elif datatype == 0x82 :
+        if len(data) <= 3:
+            return None
+        rand_data_size = struct.unpack('>H', data[1:3])[0]
+        if rand_data_size + 3 >= len(data):
+            logging.warn('header too short, maybe wrong password or '
+                         'encryption method')
+            return None
+        data = data[rand_data_size + 3:]
     return data
 
 def parse_header(data):
@@ -158,8 +167,8 @@ def parse_header(data):
     dest_addr = None
     dest_port = None
     header_length = 0
-    connecttype = (addrtype & 8) and 1 or 0
-    addrtype &= ~8
+    connecttype = (addrtype & 0x10) and 1 or 0
+    addrtype &= ~0x10
     if addrtype == ADDRTYPE_IPV4:
         if len(data) >= 7:
             dest_addr = socket.inet_ntoa(data[1:5])
@@ -173,7 +182,7 @@ def parse_header(data):
             if len(data) >= 2 + addrlen:
                 dest_addr = data[2:2 + addrlen]
                 dest_port = struct.unpack('>H', data[2 + addrlen:4 +
-                                          addrlen])[0]
+                                                     addrlen])[0]
                 header_length = 4 + addrlen
             else:
                 logging.warn('header is too short')
