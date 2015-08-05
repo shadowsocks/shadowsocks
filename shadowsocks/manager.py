@@ -181,3 +181,91 @@ class Manager(object):
 
 def run(config):
     Manager(config).run()
+
+
+def test():
+    import time
+    import threading
+    import os
+    import struct
+    from shadowsocks import encrypt
+
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    enc = []
+
+    def run_server():
+        config = {
+            'server': '127.0.0.1',
+            'local_port': 1081,
+            'port_password': {
+                '8381': 'foobar1',
+                '8382': 'foobar2'
+            },
+            'method': 'aes-256-cfb',
+            'manager_address': '127.0.0.1:6001',
+            'timeout': 60,
+            'fast_open': False,
+            'verbose': 2
+        }
+        manager = Manager(config)
+        enc.append(manager)
+        manager.run()
+
+    t = threading.Thread(target=run_server).start()
+    time.sleep(2)
+    manager = enc[0]
+    cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cli.connect(('127.0.0.1', 6001))
+
+    # test add and remove
+    time.sleep(1)
+    cli.send(b'add: {"server_port":7001, "password":"1234"}')
+    time.sleep(1)
+    assert 7001 in manager._relays
+    cli.send(b'remove: {"server_port":8381}')
+    time.sleep(1)
+    assert 8381 not in manager._relays
+    logging.info('add and remove test passed')
+
+    # test statistics for TCP
+    header = common.pack_addr(b'google.com') + struct.pack('>H', 80)
+    data = encrypt.encrypt_all(b'1234', 'aes-256-cfb', 1,
+                               header + b'GET /\r\n\r\n')
+    tcp_cli = socket.socket()
+    tcp_cli.connect(('127.0.0.1', 7001))
+    tcp_cli.send(data)
+    rdata = tcp_cli.recv(4096)
+    tcp_cli.close()
+    rdata = encrypt.encrypt_all(b'1234', 'aes-256-cfb', 0, rdata)
+
+    data, addr = cli.recvfrom(1506)
+    data = common.to_str(data)
+    assert data.startswith('stat: ')
+    data = data.split('stat:')[1]
+    stats = json.loads(data)
+    assert '7001' in stats
+    logging.info('TCP statistics test passed')
+
+    # test statistics for UDP
+    header = common.pack_addr(b'127.0.0.1') + struct.pack('>H', 80)
+    data = encrypt.encrypt_all(b'foobar2', 'aes-256-cfb', 1,
+                               header + b'test')
+    udp_cli = socket.socket(type=socket.SOCK_DGRAM)
+    udp_cli.sendto(data, ('127.0.0.1', 8382))
+    tcp_cli.close()
+
+    data, addr = cli.recvfrom(1506)
+    data = common.to_str(data)
+    assert data.startswith('stat: ')
+    data = data.split('stat:')[1]
+    stats = json.loads(data)
+    assert '8382' in stats
+    logging.info('UDP statistics test passed')
+
+    os._exit(0)
+
+
+if __name__ == '__main__':
+    test()
