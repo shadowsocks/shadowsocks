@@ -94,7 +94,7 @@ class UDPRelay(object):
             self._remote_addr = None
             self._remote_port = None
         self._dns_resolver = dns_resolver
-        self._password = config['password']
+        self._password = common.to_bytes(config['password'])
         self._method = config['method']
         self._timeout = config['timeout']
         self._is_local = is_local
