@@ -24,7 +24,8 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, \
+    asyncdns, manager
 
 
 def main():
@@ -48,10 +49,17 @@ def main():
         else:
             config['port_password'][str(server_port)] = config['password']
 
+    if config['manager_port']:
+        logging.info('entering manager mode')
+        manager.run(config)
+        return
+
     tcp_servers = []
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()
-    for port, password in config['port_password'].items():
+    port_password = config['port_password']
+    del config['port_password']
+    for port, password in port_password.items():
         a_config = config.copy()
         a_config['server_port'] = int(port)
         a_config['password'] = password

@@ -290,3 +290,5 @@ class UDPRelay(object):
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
+            for client in list(self._cache.values()):
+                client.close()

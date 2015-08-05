@@ -708,3 +708,5 @@ class TCPRelay(object):
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
+            for handler in list(self._fd_to_handlers.values()):
+                handler.destroy()
