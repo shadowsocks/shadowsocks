@@ -114,14 +114,17 @@ class Manager(object):
                 command, config = parsed
                 a_config = self._config.copy()
                 if config:
+                    # let the command override the configuration file
                     a_config.update(config)
                 if 'server_port' not in a_config:
                     logging.error('can not find server_port in config')
                 else:
                     if command == 'add':
                         self.add_port(a_config)
+                        self._send_control_data(b'ok')
                     elif command == 'remove':
                         self.remove_port(a_config)
+                        self._send_control_data(b'ok')
                     elif command == 'ping':
                         self._send_control_data(b'pong')
                     else:
@@ -152,6 +155,7 @@ class Manager(object):
 
         def send_data(data_dict):
             if data_dict:
+                # use compact JSON format (without space)
                 data = common.to_bytes(json.dumps(data_dict,
                                                   separators=(',', ':')))
                 self._send_control_data(b'stat: ' + data)
@@ -159,6 +163,7 @@ class Manager(object):
         for k, v in self._statistics.items():
             r[k] = v
             i += 1
+            # split the data into segments that fit in UDP packets
             if i >= STAT_SEND_LIMIT:
                 send_data(r)
                 r.clear()
@@ -229,9 +234,14 @@ def test():
     cli.send(b'add: {"server_port":7001, "password":"1234"}')
     time.sleep(1)
     assert 7001 in manager._relays
+    data, addr = cli.recvfrom(1506)
+    assert b'ok' in data
+
     cli.send(b'remove: {"server_port":8381}')
     time.sleep(1)
     assert 8381 not in manager._relays
+    data, addr = cli.recvfrom(1506)
+    assert b'ok' in data
     logging.info('add and remove test passed')
 
     # test statistics for TCP
