@@ -55,8 +55,7 @@ class ServerMgr(object):
                                    socket.SOL_UDP)
         self._sock.bind((Config.MANAGE_BIND_IP, Config.MANAGE_PORT))
         self._sock.setblocking(False)
-        loop.add(self._sock, eventloop.POLL_IN)
-        loop.add_handler(self.handle_events)
+        loop.add(self._sock, eventloop.POLL_IN, self)
 
     def _handle_data(self, sock):
         data, addr = sock.recvfrom(128)
@@ -70,25 +69,25 @@ class ServerMgr(object):
             elif args[3] == '1':
                 server_pool.ServerPool.get_instance().new_server(args[1], args[2])
 
-    def handle_events(self, events):
-        for sock, fd, event in events:
-            if sock != self._sock:
-                continue
-            if event & eventloop.POLL_ERR:
-                logging.error('mgr socket err')
-                self._loop.remove(self._sock)
-                self._sock.close()
-                # TODO when dns server is IPv6
-                self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                           socket.SOL_UDP)
-                self._sock.setblocking(False)
-                self._loop.add(self._sock, eventloop.POLL_IN)
-            else:
-                self._handle_data(sock)
-            break
+    def handle_events(self, sock, event):
+        if sock != self._sock:
+            return
+        if event & eventloop.POLL_ERR:
+            logging.error('mgr socket err')
+            self._loop.remove(self._sock)
+            self._sock.close()
+            # TODO when dns server is IPv6
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                       socket.SOL_UDP)
+            self._sock.setblocking(False)
+            self._loop.add(self._sock, eventloop.POLL_IN, self)
+        else:
+            self._handle_data(sock)
 
     def close(self):
         if self._sock:
+            if self._loop:
+                self._loop.remove(self._sock)
             self._sock.close()
             self._sock = None
 
