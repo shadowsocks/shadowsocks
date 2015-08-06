@@ -1,6 +1,8 @@
 How to Contribute
 =================
 
+Notice this is the repository for Shadowsocks Python version. If you have problems with Android / iOS / Windows etc clients, please post your questions in their issue trackers.
+
 Pull Requests
 -------------
 
