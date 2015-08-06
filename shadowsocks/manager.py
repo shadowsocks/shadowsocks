@@ -46,13 +46,17 @@ class Manager(object):
         try:
             manager_address = config['manager_address']
             if ':' in manager_address:
-                addr = manager_address.split(':')
+                addr = manager_address.rsplit(':', 1)
                 addr = addr[0], int(addr[1])
-                family = socket.AF_INET
+                addrs = socket.getaddrinfo(addr[0], addr[1])
+                if addrs:
+                    family = addrs[0][0]
+                else:
+                    logging.error('invalid address: %s', manager_address)
+                    exit(1)
             else:
                 addr = manager_address
                 family = socket.AF_UNIX
-            # TODO use address instead of port
             self._control_socket = socket.socket(family,
                                                  socket.SOCK_DGRAM)
             self._control_socket.bind(addr)
