@@ -258,7 +258,7 @@ def test():
     data = common.to_str(data)
     assert data.startswith('stat: ')
     data = data.split('stat:')[1]
-    stats = json.loads(data)
+    stats = shell.parse_json_in_str(data)
     assert '7001' in stats
     logging.info('TCP statistics test passed')
 

@@ -148,8 +148,7 @@ def get_config(is_local):
             logging.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
-                    config = json.loads(f.read().decode('utf8'),
-                                        object_hook=_decode_dict)
+                    config = parse_json_in_str(f.read().decode('utf8'))
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -359,3 +358,8 @@ def _decode_dict(data):
             value = _decode_dict(value)
         rv[key] = value
     return rv
+
+
+def parse_json_in_str(data):
+    # parse json and convert everything from unicode to str
+    return json.loads(data, object_hook=_decode_dict)
