@@ -140,7 +140,7 @@ class Manager(object):
             return data, None
         command, config_json = parts
         try:
-            config = json.loads(config_json)
+            config = shell.parse_json_in_str(config_json)
             return command, config
         except Exception as e:
             logging.error(e)
@@ -231,7 +231,7 @@ def test():
 
     # test add and remove
     time.sleep(1)
-    cli.send(b'add: {"server_port":7001, "password":"1234"}')
+    cli.send(b'add: {"server_port":7001, "password":"asdfadsfasdf"}')
     time.sleep(1)
     assert 7001 in manager._relays
     data, addr = cli.recvfrom(1506)
@@ -246,7 +246,7 @@ def test():
 
     # test statistics for TCP
     header = common.pack_addr(b'google.com') + struct.pack('>H', 80)
-    data = encrypt.encrypt_all(b'1234', 'aes-256-cfb', 1,
+    data = encrypt.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb', 1,
                                header + b'GET /\r\n\r\n')
     tcp_cli = socket.socket()
     tcp_cli.connect(('127.0.0.1', 7001))
