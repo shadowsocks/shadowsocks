@@ -1,3 +1,6 @@
+2.8.2 2015-08-10
+- Fix a encoding problem in manager
+
 2.8.1 2015-08-06
 - Respond ok to add and remove commands
 
