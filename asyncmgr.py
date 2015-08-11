@@ -69,7 +69,7 @@ class ServerMgr(object):
             elif args[3] == '1':
                 server_pool.ServerPool.get_instance().new_server(args[1], args[2])
 
-    def handle_events(self, sock, event):
+    def handle_event(self, sock, event):
         if sock != self._sock:
             return
         if event & eventloop.POLL_ERR:
