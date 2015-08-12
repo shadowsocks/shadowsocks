@@ -118,12 +118,12 @@ class DbTransfer(object):
 			if ServerPool.get_instance().server_is_run(port) > 0:
 				if not allow:
 					logging.info('db stop server at port [%s]' % (port,))
-					ServerPool.get_instance().del_server(port)
+					ServerPool.get_instance().cb_del_server(port)
 				elif (port in ServerPool.get_instance().tcp_servers_pool and ServerPool.get_instance().tcp_servers_pool[port]._config['password'] != passwd) \
 					or (port in ServerPool.get_instance().tcp_ipv6_servers_pool and ServerPool.get_instance().tcp_ipv6_servers_pool[port]._config['password'] != passwd):
 					#password changed
 					logging.info('db stop server at port [%s] reason: password changed' % (port,))
-					ServerPool.get_instance().del_server(port)
+					ServerPool.get_instance().cb_del_server(port)
 
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
@@ -134,7 +134,7 @@ class DbTransfer(object):
 				pass
 			else:
 				logging.info('db stop server at port [%s] reason: port not exist' % (row['port']))
-				ServerPool.get_instance().del_server(row['port'])
+				ServerPool.get_instance().cb_del_server(row['port'])
 
 	@staticmethod
 	def thread_db():
