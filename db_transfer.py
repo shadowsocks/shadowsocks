@@ -124,6 +124,7 @@ class DbTransfer(object):
 					#password changed
 					logging.info('db stop server at port [%s] reason: password changed' % (port,))
 					ServerPool.get_instance().cb_del_server(port)
+					ServerPool.get_instance().new_server(port, passwd)
 
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
