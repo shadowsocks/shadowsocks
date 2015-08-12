@@ -77,9 +77,6 @@ from shadowsocks.common import pre_parse_header, parse_header, pack_addr
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
 
-# we check timeouts every TIMEOUT_PRECISION seconds
-TIMEOUT_PRECISION = 4
-
 # for each handler, we have 2 stream directions:
 #    upstream:    from client to server direction
 #                 read local and write to remote
@@ -119,6 +116,14 @@ CMD_SYN_STATUS_64 = 7
 CMD_DISCONNECT = 8
 
 CMD_VER_STR = "\x08"
+
+RSP_STATE_EMPTY = ""
+RSP_STATE_REJECT = "\x00"
+RSP_STATE_CONNECTED = "\x01"
+RSP_STATE_CONNECTEDREMOTE = "\x02"
+RSP_STATE_ERROR = "\x03"
+RSP_STATE_DISCONNECT = "\x04"
+RSP_STATE_REDIRECT = "\x05"
 
 class UDPLocalAddress(object):
     def __init__(self, addr):
@@ -470,7 +475,7 @@ class TCPRelayHandler(object):
                     addr = self.get_local_address()
 
                     for i in xrange(2):
-                        rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, "\x02")
+                        rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, RSP_STATE_CONNECTEDREMOTE)
                         self._write_to_sock(rsp_data, self._local_sock, addr)
 
                     return
@@ -651,7 +656,7 @@ class TCPRelayHandler(object):
     def handle_client(self, addr, cmd, request_id, data):
         self.add_local_address(addr)
         if cmd == CMD_DISCONNECT:
-            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
             self._write_to_sock(rsp_data, self._local_sock, addr)
             self.destroy()
             self.destroy_local()
@@ -667,7 +672,7 @@ class TCPRelayHandler(object):
         if self._stage == STAGE_RSP_ID:
             if cmd == CMD_CONNECT:
                 for i in xrange(2):
-                    rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, "\x01")
+                    rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, RSP_STATE_CONNECTED)
                     self._write_to_sock(rsp_data, self._local_sock, addr)
             elif cmd == CMD_CONNECT_REMOTE:
                 local_id = data[0:4]
@@ -684,35 +689,35 @@ class TCPRelayHandler(object):
                     logging.info('TCP connect %s:%d from %s:%d' % (remote_addr, remote_port, addr[0], addr[1]))
                 else:
                     # ileagal request
-                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                     self._write_to_sock(rsp_data, self._local_sock, addr)
         elif self._stage == STAGE_CONNECTING:
             if cmd == CMD_CONNECT_REMOTE:
                 local_id = data[0:4]
                 if self._local_id == local_id:
                     for i in xrange(2):
-                        rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, "\x02")
+                        rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, RSP_STATE_CONNECTEDREMOTE)
                         self._write_to_sock(rsp_data, self._local_sock, addr)
                 else:
                     # ileagal request
-                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                     self._write_to_sock(rsp_data, self._local_sock, addr)
         elif self._stage == STAGE_STREAM:
             if len(data) < 4:
                 # ileagal request
-                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                 self._write_to_sock(rsp_data, self._local_sock, addr)
                 return
             local_id = data[0:4]
             if self._local_id != local_id:
                 # ileagal request
-                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                 self._write_to_sock(rsp_data, self._local_sock, addr)
                 return
             else:
                 data = data[4:]
             if cmd == CMD_CONNECT_REMOTE:
-                rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, "\x02")
+                rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, RSP_STATE_CONNECTEDREMOTE)
                 self._write_to_sock(rsp_data, self._local_sock, addr)
             elif cmd == CMD_POST:
                 recv_id = struct.unpack(">I", data[0:4])[0]
@@ -725,7 +730,7 @@ class TCPRelayHandler(object):
                 self._recvqueue.insert(pack_id, data[16:])
                 self._sendingqueue.set_finish(recv_id, [])
             elif cmd == CMD_DISCONNECT:
-                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                 self._write_to_sock(rsp_data, self._local_sock, addr)
                 self.destroy()
                 self.destroy_local()
@@ -747,7 +752,7 @@ class TCPRelayHandler(object):
             local_id = data[0:4]
             if self._local_id != local_id:
                 # ileagal request
-                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+                rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
                 self._write_to_sock(rsp_data, self._local_sock, addr)
                 return
             else:
@@ -830,7 +835,7 @@ class TCPRelayHandler(object):
     def destroy_local(self):
         if self._local_sock:
             logging.debug('disconnect local')
-            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, "")
+            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
             addr = None
             addr = self.get_local_address()
             self._write_to_sock(rsp_data, self._local_sock, addr)
@@ -842,8 +847,9 @@ def client_key(source_addr, server_af):
     # notice this is server af, not dest af
     return '%s:%s:%d' % (source_addr[0], source_addr[1], server_af)
 
+
 class UDPRelay(object):
-    def __init__(self, config, dns_resolver, is_local):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         if is_local:
             self._listen_addr = config['local_address']
@@ -856,7 +862,7 @@ class UDPRelay(object):
             self._remote_addr = None
             self._remote_port = None
         self._dns_resolver = dns_resolver
-        self._password = config['password']
+        self._password = common.to_bytes(config['password'])
         self._method = config['method']
         self._timeout = config['timeout']
         self._is_local = is_local
@@ -897,6 +903,7 @@ class UDPRelay(object):
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 32)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 32)
         self._server_socket = server_socket
+        self._stat_callback = stat_callback
 
     def _get_a_server(self):
         server = self._config['server']
@@ -957,6 +964,8 @@ class UDPRelay(object):
         data, r_addr = server.recvfrom(BUF_SIZE)
         if not data:
             logging.debug('UDP handle_server: data is empty')
+        if self._stat_callback:
+            self._stat_callback(self._listen_port, len(data))
         if self._is_local:
             frag = common.ord(data[2])
             if frag != 0:
@@ -996,7 +1005,7 @@ class UDPRelay(object):
                                         break
                             # return req id
                             self._reqid_to_hd[req_id] = (data[2][0:4], None)
-                            rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, req_id, "\x01")
+                            rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, req_id, RSP_STATE_CONNECTED)
                             data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
                             self.write_to_server_socket(data_to_send, r_addr)
                     elif data[0] == CMD_CONNECT_REMOTE:
@@ -1014,7 +1023,7 @@ class UDPRelay(object):
                                     self.update_activity(handle)
                                 else:
                                     # disconnect
-                                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], "")
+                                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
                                     data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
                                     self.write_to_server_socket(data_to_send, r_addr)
                             else:
@@ -1022,7 +1031,7 @@ class UDPRelay(object):
                                 self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
                         else:
                             # disconnect
-                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], "")
+                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
                             data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
                             self.write_to_server_socket(data_to_send, r_addr)
                     elif data[0] > CMD_CONNECT_REMOTE and data[0] <= CMD_DISCONNECT:
@@ -1031,7 +1040,7 @@ class UDPRelay(object):
                             self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
                         else:
                             # disconnect
-                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], "")
+                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
                             data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
                             self.write_to_server_socket(data_to_send, r_addr)
                     return
@@ -1062,7 +1071,6 @@ class UDPRelay(object):
 
         af, socktype, proto, canonname, sa = addrs[0]
         key = client_key(r_addr, af)
-        logging.debug(key)
         client = self._cache.get(key, None)
         if not client:
             # TODO async getaddrinfo
@@ -1103,6 +1111,8 @@ class UDPRelay(object):
         if not data:
             logging.debug('UDP handle_client: data is empty')
             return
+        if self._stat_callback:
+            self._stat_callback(self._listen_port, len(data))
         if not self._is_local:
             addrlen = len(r_addr[0])
             if addrlen > 255:
@@ -1121,7 +1131,7 @@ class UDPRelay(object):
             header_result = parse_header(data)
             if header_result is None:
                 return
-            connecttype, dest_addr, dest_port, header_length = header_result
+            #connecttype, dest_addr, dest_port, header_length = header_result
             #logging.debug('UDP handle_client %s:%d to %s:%d' % (common.to_str(r_addr[0]), r_addr[1], dest_addr, dest_port))
 
             response = b'\x00\x00\x00' + data
@@ -1270,3 +1280,5 @@ class UDPRelay(object):
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
+            for client in list(self._cache.values()):
+                client.close()
