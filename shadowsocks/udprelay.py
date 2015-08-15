@@ -1036,8 +1036,11 @@ class UDPRelay(object):
                             self.write_to_server_socket(data_to_send, r_addr)
                     elif data[0] > CMD_CONNECT_REMOTE and data[0] <= CMD_DISCONNECT:
                         if data[1] in self._reqid_to_hd:
-                            self.update_activity(self._reqid_to_hd[data[1]])
-                            self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
+                            if type(self._reqid_to_hd[data[1]]) is tuple:
+                                pass
+                            else:
+                                self.update_activity(self._reqid_to_hd[data[1]])
+                                self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
                         else:
                             # disconnect
                             rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
