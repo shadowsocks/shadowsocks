@@ -1,6 +1,8 @@
 How to Contribute
 =================
 
+Notice this is the repository for Shadowsocks Python version. If you have problems with Android / iOS / Windows etc clients, please post your questions in their issue trackers.
+
 Pull Requests
 -------------
 
@@ -21,6 +23,8 @@ a pull request, or ask some of your friends to do so.
 3. We don't answer questions of any other types here. Since very few people
 are watching the issue tracker here, you'll probably get no help from here.
 Read [Troubleshooting] and get help from forums or [mailing lists].
+4. Issues in languages other than English will be Google translated into English
+later.
 
 
 [Troubleshooting]: https://github.com/clowwindy/shadowsocks/wiki/Troubleshooting

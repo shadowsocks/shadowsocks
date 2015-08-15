@@ -8,7 +8,7 @@ mkdir -p tmp
 $PYTHON shadowsocks/local.py -c tests/aes.json &
 LOCAL=$!
 
-$PYTHON shadowsocks/server.py -c tests/aes.json &
+$PYTHON shadowsocks/server.py -c tests/aes.json --forbidden-ip "" &
 SERVER=$!
 
 sleep 3

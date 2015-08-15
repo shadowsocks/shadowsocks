@@ -1,3 +1,41 @@
+2.8.2 2015-08-10
+- Fix a encoding problem in manager
+
+2.8.1 2015-08-06
+- Respond ok to add and remove commands
+
+2.8 2015-08-06
+- Add Shadowsocks manager
+
+2.7 2015-08-02
+- Optimize speed for multiple ports
+
+2.6.11 2015-07-10
+- Fix a compatibility issue in UDP Relay
+
+2.6.10 2015-06-08
+- Optimize LRU cache
+- Refine logging
+
+2.6.9 2015-05-19
+- Fix a stability issue on Windows
+
+2.6.8 2015-02-10
+- Support multiple server ip on client side
+- Support --version
+- Minor fixes
+
+2.6.7 2015-02-02
+- Support --user
+- Support CIDR format in --forbidden-ip
+- Minor fixes
+
+2.6.6 2015-01-23
+- Fix a crash in forbidden list
+
+2.6.5 2015-01-18
+- Try both 32 bit and 64 bit dll on Windows
+
 2.6.4 2015-01-14
 - Also search lib* when searching libraries
 

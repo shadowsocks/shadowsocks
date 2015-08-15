@@ -1,37 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2014-2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import time
 import os
 import socket
 import struct
 import re
 import logging
 
-from shadowsocks import common, lru_cache, eventloop
+from shadowsocks import common, lru_cache, eventloop, shell
 
 
 CACHE_SWEEP_INTERVAL = 30
@@ -227,22 +220,8 @@ def parse_response(data):
                 response.answers.append((an[1], an[2], an[3]))
             return response
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logging.error(e)
+        shell.print_exception(e)
         return None
-
-
-def is_ip(address):
-    for family in (socket.AF_INET, socket.AF_INET6):
-        try:
-            if type(address) != str:
-                address = address.decode('utf8')
-            socket.inet_pton(family, address)
-            return family
-        except (TypeError, ValueError, OSError, IOError):
-            pass
-    return False
 
 
 def is_valid_hostname(hostname):
@@ -276,7 +255,6 @@ class DNSResolver(object):
         self._hostname_to_cb = {}
         self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
-        self._last_time = time.time()
         self._sock = None
         self._servers = None
         self._parse_resolv()
@@ -296,7 +274,7 @@ class DNSResolver(object):
                             parts = line.split()
                             if len(parts) >= 2:
                                 server = parts[1]
-                                if is_ip(server) == socket.AF_INET:
+                                if common.is_ip(server) == socket.AF_INET:
                                     if type(server) != str:
                                         server = server.decode('utf8')
                                     self._servers.append(server)
@@ -316,7 +294,7 @@ class DNSResolver(object):
                     parts = line.split()
                     if len(parts) >= 2:
                         ip = parts[0]
-                        if is_ip(ip):
+                        if common.is_ip(ip):
                             for i in range(1, len(parts)):
                                 hostname = parts[i]
                                 if hostname:
@@ -324,7 +302,7 @@ class DNSResolver(object):
         except IOError:
             self._hosts['localhost'] = '127.0.0.1'
 
-    def add_to_loop(self, loop, ref=False):
+    def add_to_loop(self, loop):
         if self._loop:
             raise Exception('already add to loop')
         self._loop = loop
@@ -332,8 +310,8 @@ class DNSResolver(object):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                    socket.SOL_UDP)
         self._sock.setblocking(False)
-        loop.add(self._sock, eventloop.POLL_IN)
-        loop.add_handler(self.handle_events, ref=ref)
+        loop.add(self._sock, eventloop.POLL_IN, self)
+        loop.add_periodic(self.handle_periodic)
 
     def _call_callback(self, hostname, ip, error=None):
         callbacks = self._hostname_to_cb.get(hostname, [])
@@ -374,30 +352,27 @@ class DNSResolver(object):
                             self._call_callback(hostname, None)
                             break
 
-    def handle_events(self, events):
-        for sock, fd, event in events:
-            if sock != self._sock:
-                continue
-            if event & eventloop.POLL_ERR:
-                logging.error('dns socket err')
-                self._loop.remove(self._sock)
-                self._sock.close()
-                # TODO when dns server is IPv6
-                self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                           socket.SOL_UDP)
-                self._sock.setblocking(False)
-                self._loop.add(self._sock, eventloop.POLL_IN)
-            else:
-                data, addr = sock.recvfrom(1024)
-                if addr[0] not in self._servers:
-                    logging.warn('received a packet other than our dns')
-                    break
-                self._handle_data(data)
-            break
-        now = time.time()
-        if now - self._last_time > CACHE_SWEEP_INTERVAL:
-            self._cache.sweep()
-            self._last_time = now
+    def handle_event(self, sock, fd, event):
+        if sock != self._sock:
+            return
+        if event & eventloop.POLL_ERR:
+            logging.error('dns socket err')
+            self._loop.remove(self._sock)
+            self._sock.close()
+            # TODO when dns server is IPv6
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                       socket.SOL_UDP)
+            self._sock.setblocking(False)
+            self._loop.add(self._sock, eventloop.POLL_IN, self)
+        else:
+            data, addr = sock.recvfrom(1024)
+            if addr[0] not in self._servers:
+                logging.warn('received a packet other than our dns')
+                return
+            self._handle_data(data)
+
+    def handle_periodic(self):
+        self._cache.sweep()
 
     def remove_callback(self, callback):
         hostname = self._cb_to_hostname.get(callback)
@@ -423,7 +398,7 @@ class DNSResolver(object):
             hostname = hostname.encode('utf8')
         if not hostname:
             callback(None, Exception('empty hostname'))
-        elif is_ip(hostname):
+        elif common.is_ip(hostname):
             callback((hostname, hostname), None)
         elif hostname in self._hosts:
             logging.debug('hit hosts: %s', hostname)
@@ -450,6 +425,9 @@ class DNSResolver(object):
 
     def close(self):
         if self._sock:
+            if self._loop:
+                self._loop.remove_periodic(self.handle_periodic)
+                self._loop.remove(self._sock)
             self._sock.close()
             self._sock = None
 
@@ -457,7 +435,7 @@ class DNSResolver(object):
 def test():
     dns_resolver = DNSResolver()
     loop = eventloop.EventLoop()
-    dns_resolver.add_to_loop(loop, ref=True)
+    dns_resolver.add_to_loop(loop)
 
     global counter
     counter = 0
@@ -471,8 +449,8 @@ def test():
             print(result, error)
             counter += 1
             if counter == 9:
-                loop.remove_handler(dns_resolver.handle_events)
                 dns_resolver.close()
+                loop.stop()
         a_callback = callback
         return a_callback
 

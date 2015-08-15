@@ -1,25 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -29,10 +23,13 @@ import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes, to_str
+from shadowsocks.common import to_bytes, to_str, IPNetwork
+from shadowsocks import encrypt
 
 
 VERBOSE_LEVEL = 5
+
+verbose = 0
 
 
 def check_python():
@@ -48,6 +45,14 @@ def check_python():
         sys.exit(1)
 
 
+def print_exception(e):
+    global verbose
+    logging.error(e)
+    if verbose > 0:
+        import traceback
+        traceback.print_exc()
+
+
 def print_shadowsocks():
     version = ''
     try:
@@ -55,7 +60,7 @@ def print_shadowsocks():
         version = pkg_resources.get_distribution('shadowsocks').version
     except Exception:
         pass
-    print('shadowsocks %s' % version)
+    print('Shadowsocks %s' % version)
 
 
 def find_config():
@@ -68,16 +73,38 @@ def find_config():
     return None
 
 
-def check_config(config):
+def check_config(config, is_local):
+    if config.get('daemon', None) == 'stop':
+        # no need to specify configuration for daemon stop
+        return
+
+    if is_local and not config.get('password', None):
+        logging.error('password not specified')
+        print_help(is_local)
+        sys.exit(2)
+
+    if not is_local and not config.get('password', None) \
+            and not config.get('port_password', None) \
+            and not config.get('manager_address'):
+        logging.error('password or port_password not specified')
+        print_help(is_local)
+        sys.exit(2)
+
+    if 'local_port' in config:
+        config['local_port'] = int(config['local_port'])
+
+    if config.get('server_port', None) and type(config['server_port']) != list:
+        config['server_port'] = int(config['server_port'])
+
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
-    if config.get('server', '') in [b'127.0.0.1', b'localhost']:
+    if config.get('server', '') in ['127.0.0.1', 'localhost']:
         logging.warn('warning: server set to listen on %s:%s, are you sure?' %
                      (to_str(config['server']), config['server_port']))
-    if (config.get('method', '') or '').lower() == b'table':
+    if (config.get('method', '') or '').lower() == 'table':
         logging.warn('warning: table is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
-    if (config.get('method', '') or '').lower() == b'rc4':
+    if (config.get('method', '') or '').lower() == 'rc4':
         logging.warn('warning: RC4 is not safe; please use a safer cipher, '
                      'like AES-256-CFB')
     if config.get('timeout', 300) < 100:
@@ -89,19 +116,28 @@ def check_config(config):
     if config.get('password') in [b'mypassword']:
         logging.error('DON\'T USE DEFAULT PASSWORD! Please change it in your '
                       'config.json!')
-        exit(1)
+        sys.exit(1)
+    if config.get('user', None) is not None:
+        if os.name != 'posix':
+            logging.error('user can be used only on Unix')
+            sys.exit(1)
+
+    encrypt.try_cipher(config['password'], config['method'])
 
 
 def get_config(is_local):
+    global verbose
+
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
         shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
-        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=']
+        longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
+                    'version']
     else:
         shortopts = 'hd:s:p:k:m:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=']
+                    'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -113,8 +149,7 @@ def get_config(is_local):
             logging.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
-                    config = json.loads(f.read().decode('utf8'),
-                                        object_hook=_decode_dict)
+                    config = parse_json_in_str(f.read().decode('utf8'))
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -122,7 +157,6 @@ def get_config(is_local):
         else:
             config = {}
 
-        optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
         v_count = 0
         for key, value in optlist:
             if key == '-p':
@@ -132,11 +166,11 @@ def get_config(is_local):
             elif key == '-l':
                 config['local_port'] = int(value)
             elif key == '-s':
-                config['server'] = to_bytes(value)
+                config['server'] = to_str(value)
             elif key == '-m':
-                config['method'] = to_bytes(value)
+                config['method'] = to_str(value)
             elif key == '-b':
-                config['local_address'] = to_bytes(value)
+                config['local_address'] = to_str(value)
             elif key == '-v':
                 v_count += 1
                 # '-vv' turns on more verbose mode
@@ -147,6 +181,10 @@ def get_config(is_local):
                 config['fast_open'] = True
             elif key == '--workers':
                 config['workers'] = int(value)
+            elif key == '--manager-address':
+                config['manager_address'] = value
+            elif key == '--user':
+                config['user'] = to_str(value)
             elif key == '--forbidden-ip':
                 config['forbidden_ip'] = to_str(value).split(',')
             elif key in ('-h', '--help'):
@@ -155,12 +193,15 @@ def get_config(is_local):
                 else:
                     print_server_help()
                 sys.exit(0)
+            elif key == '--version':
+                print_shadowsocks()
+                sys.exit(0)
             elif key == '-d':
-                config['daemon'] = value
+                config['daemon'] = to_str(value)
             elif key == '--pid-file':
-                config['pid-file'] = value
+                config['pid-file'] = to_str(value)
             elif key == '--log-file':
-                config['log-file'] = value
+                config['log-file'] = to_str(value)
             elif key == '-q':
                 v_count -= 1
                 config['verbose'] = v_count
@@ -174,43 +215,33 @@ def get_config(is_local):
         print_help(is_local)
         sys.exit(2)
 
-    config['password'] = config.get('password', '')
-    config['method'] = config.get('method', b'aes-256-cfb')
+    config['password'] = to_bytes(config.get('password', b''))
+    config['method'] = to_str(config.get('method', 'aes-256-cfb'))
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
     config['workers'] = config.get('workers', 1)
     config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
     config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
-    config['workers'] = config.get('workers', 1)
     config['verbose'] = config.get('verbose', False)
-    config['local_address'] = config.get('local_address', '127.0.0.1')
+    config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
     if is_local:
         if config.get('server', None) is None:
             logging.error('server addr not specified')
             print_local_help()
             sys.exit(2)
+        else:
+            config['server'] = to_str(config['server'])
     else:
-        config['server'] = config.get('server', '0.0.0.0')
-    config['server_port'] = config.get('server_port', 8388)
-
-    if is_local and not config.get('password', None):
-        logging.error('password not specified')
-        print_help(is_local)
-        sys.exit(2)
-
-    if not is_local and not config.get('password', None) \
-            and not config.get('port_password', None):
-        logging.error('password or port_password not specified')
-        print_help(is_local)
-        sys.exit(2)
-
-    if 'local_port' in config:
-        config['local_port'] = int(config['local_port'])
-
-    if 'server_port' in config and type(config['server_port']) != list:
-        config['server_port'] = int(config['server_port'])
+        config['server'] = to_str(config.get('server', '0.0.0.0'))
+        try:
+            config['forbidden_ip'] = \
+                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
+        except Exception as e:
+            logging.error(e)
+            sys.exit(2)
+    config['server_port'] = config.get('server_port', None)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
@@ -224,11 +255,12 @@ def get_config(is_local):
         level = logging.ERROR
     else:
         level = logging.INFO
+    verbose = config['verbose']
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    check_config(config)
+    check_config(config, is_local)
 
     return config
 
@@ -241,15 +273,12 @@ def print_help(is_local):
 
 
 def print_local_help():
-    print('''usage: sslocal [-h] -s SERVER_ADDR [-p SERVER_PORT]
-               [-b LOCAL_ADDR] [-l LOCAL_PORT] -k PASSWORD [-m METHOD]
-               [-t TIMEOUT] [-c CONFIG] [--fast-open] [-v] -[d] [-q]
+    print('''usage: sslocal [OPTION]...
 A fast tunnel proxy that helps you bypass firewalls.
 
 You can supply configurations via either config file or command line arguments.
 
 Proxy options:
-  -h, --help             show this help message and exit
   -c CONFIG              path to config file
   -s SERVER_ADDR         server address
   -p SERVER_PORT         server port, default: 8388
@@ -261,26 +290,26 @@ Proxy options:
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
 
 General options:
+  -h, --help             show this help message and exit
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
+  --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
+  --version              show version information
 
 Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
 
 
 def print_server_help():
-    print('''usage: ssserver [-h] [-s SERVER_ADDR] [-p SERVER_PORT] -k PASSWORD
-                -m METHOD [-t TIMEOUT] [-c CONFIG] [--fast-open]
-                [--workers WORKERS] [-v] [-d start] [-q]
+    print('''usage: ssserver [OPTION]...
 A fast tunnel proxy that helps you bypass firewalls.
 
 You can supply configurations via either config file or command line arguments.
 
 Proxy options:
-  -h, --help             show this help message and exit
   -c CONFIG              path to config file
   -s SERVER_ADDR         server address, default: 0.0.0.0
   -p SERVER_PORT         server port, default: 8388
@@ -290,13 +319,17 @@ Proxy options:
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
+  --manager-address ADDR optional server manager UDP address, see wiki
 
 General options:
+  -h, --help             show this help message and exit
   -d start/stop/restart  daemon mode
   --pid-file PID_FILE    pid file for daemon mode
   --log-file LOG_FILE    log file for daemon mode
+  --user USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
+  --version              show version information
 
 Online help: <https://github.com/shadowsocks/shadowsocks>
 ''')
@@ -326,3 +359,8 @@ def _decode_dict(data):
             value = _decode_dict(value)
         rv[key] = value
     return rv
+
+
+def parse_json_in_str(data):
+    # parse json and convert everything from unicode to str
+    return json.loads(data, object_hook=_decode_dict)

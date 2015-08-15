@@ -1,25 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2014-2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -29,7 +23,7 @@ import sys
 import logging
 import signal
 import time
-from shadowsocks import common
+from shadowsocks import common, shell
 
 # this module is ported from ShadowVPN daemon.c
 
@@ -43,9 +37,6 @@ def daemon_exec(config):
             command = 'start'
         pid_file = config['pid-file']
         log_file = config['log-file']
-        command = common.to_str(command)
-        pid_file = common.to_str(pid_file)
-        log_file = common.to_str(log_file)
         if command == 'start':
             daemon_start(pid_file, log_file)
         elif command == 'stop':
@@ -67,7 +58,7 @@ def write_pid_file(pid_file, pid):
         fd = os.open(pid_file, os.O_RDWR | os.O_CREAT,
                      stat.S_IRUSR | stat.S_IWUSR)
     except OSError as e:
-        logging.error(e)
+        shell.print_exception(e)
         return -1
     flags = fcntl.fcntl(fd, fcntl.F_GETFD)
     assert flags != -1
@@ -136,7 +127,7 @@ def daemon_start(pid_file, log_file):
         freopen(log_file, 'a', sys.stdout)
         freopen(log_file, 'a', sys.stderr)
     except IOError as e:
-        logging.error(e)
+        shell.print_exception(e)
         sys.exit(1)
 
 
@@ -149,7 +140,7 @@ def daemon_stop(pid_file):
             if not buf:
                 logging.error('not running')
     except IOError as e:
-        logging.error(e)
+        shell.print_exception(e)
         if e.errno == errno.ENOENT:
             # always exit 0 if we are sure daemon is not running
             logging.error('not running')
@@ -164,7 +155,7 @@ def daemon_stop(pid_file):
                 logging.error('not running')
                 # always exit 0 if we are sure daemon is not running
                 return
-            logging.error(e)
+            shell.print_exception(e)
             sys.exit(1)
     else:
         logging.error('pid is not positive: %d', pid)
@@ -183,3 +174,35 @@ def daemon_stop(pid_file):
         sys.exit(1)
     print('stopped')
     os.unlink(pid_file)
+
+
+def set_user(username):
+    if username is None:
+        return
+
+    import pwd
+    import grp
+
+    try:
+        pwrec = pwd.getpwnam(username)
+    except KeyError:
+        logging.error('user not found: %s' % username)
+        raise
+    user = pwrec[0]
+    uid = pwrec[2]
+    gid = pwrec[3]
+
+    cur_uid = os.getuid()
+    if uid == cur_uid:
+        return
+    if cur_uid != 0:
+        logging.error('can not set user as nonroot user')
+        # will raise later
+
+    # inspired by supervisor
+    if hasattr(os, 'setgroups'):
+        groups = [grprec[2] for grprec in grp.getgrall() if user in grprec[3]]
+        groups.insert(0, gid)
+        os.setgroups(groups)
+    os.setgid(gid)
+    os.setuid(uid)

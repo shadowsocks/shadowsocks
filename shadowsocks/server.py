@@ -1,25 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014 clowwindy
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# Copyright 2015 clowwindy
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -30,18 +24,16 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import utils, daemon, encrypt, eventloop, tcprelay, udprelay,\
-    asyncdns
+from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, \
+    asyncdns, manager
 
 
 def main():
-    utils.check_python()
+    shell.check_python()
 
-    config = utils.get_config(False)
+    config = shell.get_config(False)
 
     daemon.daemon_exec(config)
-
-    utils.print_shadowsocks()
 
     if config['port_password']:
         if config['password']:
@@ -50,18 +42,25 @@ def main():
                          'will be ignored')
     else:
         config['port_password'] = {}
-        server_port = config['server_port']
-        if type(server_port) == list:
-            for a_server_port in server_port:
-                config['port_password'][a_server_port] = config['password']
-        else:
-            config['port_password'][str(server_port)] = config['password']
+        server_port = config.get('server_port', None)
+        if server_port:
+            if type(server_port) == list:
+                for a_server_port in server_port:
+                    config['port_password'][a_server_port] = config['password']
+            else:
+                config['port_password'][str(server_port)] = config['password']
 
-    encrypt.try_cipher(config['password'], config['method'])
+    if config.get('manager_address', 0):
+        logging.info('entering manager mode')
+        manager.run(config)
+        return
+
     tcp_servers = []
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()
-    for port, password in config['port_password'].items():
+    port_password = config['port_password']
+    del config['port_password']
+    for port, password in port_password.items():
         a_config = config.copy()
         a_config['server_port'] = int(port)
         a_config['password'] = password
@@ -86,13 +85,12 @@ def main():
             loop = eventloop.EventLoop()
             dns_resolver.add_to_loop(loop)
             list(map(lambda s: s.add_to_loop(loop), tcp_servers + udp_servers))
+
+            daemon.set_user(config.get('user', None))
             loop.run()
-        except (KeyboardInterrupt, IOError, OSError) as e:
-            logging.error(e)
-            if config['verbose']:
-                import traceback
-                traceback.print_exc()
-            os._exit(1)
+        except Exception as e:
+            shell.print_exception(e)
+            sys.exit(1)
 
     if int(config['workers']) > 1:
         if os.name == 'posix':

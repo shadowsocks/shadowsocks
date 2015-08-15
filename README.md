@@ -7,6 +7,13 @@ shadowsocks
 
 A fast tunnel proxy that helps you bypass firewalls.
 
+Features:
+- TCP & UDP support
+- User management API
+- TCP Fast Open
+- Workers and graceful restart
+- Destination IP blacklist
+
 Server
 ------
 
@@ -28,12 +35,19 @@ See [Install Server on Windows]
 
 ### Usage
 
-    ssserver -p 8000 -k password -m rc4-md5
+    ssserver -p 443 -k password -m aes-256-cfb
 
 To run in the background:
 
-    ssserver -p 8000 -k password -m rc4-md5 -d start
-    ssserver -p 8000 -k password -m rc4-md5 -d stop
+    sudo ssserver -p 443 -k password -m aes-256-cfb --user nobody -d start
+
+To stop:
+
+    sudo ssserver -d stop
+
+To check the log:
+
+    sudo less /var/log/shadowsocks.log
 
 Check all the options via `-h`. You can also use a [Configuration] file
 instead.
@@ -55,7 +69,20 @@ You can find all the documentation in the [Wiki].
 
 License
 -------
-MIT
+
+Copyright 2015 clowwindy
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may
+not use this file except in compliance with the License. You may obtain
+a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
 
 Bugs and Issues
 ----------------
@@ -66,11 +93,11 @@ Bugs and Issues
 
 
 
-[Android]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#android
+[Android]:           https://github.com/shadowsocks/shadowsocks-android
 [Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
 [Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
-[Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/htmlcov/index.html
+[Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/PYENV/py34/label/linux/htmlcov/index.html
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
@@ -83,4 +110,4 @@ Bugs and Issues
 [Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
 [Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
 [Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
-[Windows]:           https://github.com/shadowsocks/shadowsocks/wiki/Ports-and-Clients#windows
+[Windows]:           https://github.com/shadowsocks/shadowsocks-csharp
