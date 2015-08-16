@@ -5,7 +5,7 @@ shadowsocks
 [![Build Status]][Travis CI]
 [![Coverage Status]][Coverage]
 
-A fast tunnel proxy that helps you bypass firewalls.
+A fast tunnel proxy that helps you [bypass firewalls].
 
 Features:
 - TCP & UDP support
@@ -95,6 +95,7 @@ Bugs and Issues
 
 [Android]:           https://github.com/shadowsocks/shadowsocks-android
 [Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
+[bypass firewalls]:  https://github.com/shadowsocks/shadowsocks/wiki/Objective
 [Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
 [Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
 [Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/PYENV/py34/label/linux/htmlcov/index.html
