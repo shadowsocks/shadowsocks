@@ -21,7 +21,6 @@ import os
 import sys
 import hashlib
 import logging
-import random
 
 from shadowsocks import common
 from shadowsocks.crypto import rc4_md5, openssl, sodium, table
@@ -35,10 +34,7 @@ method_supported.update(table.ciphers)
 
 
 def random_string(length):
-    try:
-        return os.urandom(length)
-    except (AttributeError, NotImplementedError):
-        return ''.join(chr(random.randrange(255)) for _ in range(length))
+    return os.urandom(length)
 
 
 cached_keys = {}

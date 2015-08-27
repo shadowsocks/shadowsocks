@@ -341,6 +341,8 @@ class TCPRelayHandler(object):
                     logging.error('unknown command %d', cmd)
                     self.destroy()
                     return
+            if False and ord(data[0]) != 0x88: # force new header
+                raise Exception('can not parse header')
             data = pre_parse_header(data)
             if data is None:
                 raise Exception('can not parse header')
