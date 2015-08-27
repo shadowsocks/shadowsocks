@@ -1,1 +1,1 @@
-Removed according to regulations.
+Fuck the regulations!
