@@ -23,6 +23,7 @@ import socket
 import errno
 import struct
 import logging
+import binascii
 import traceback
 import random
 
@@ -31,9 +32,6 @@ from shadowsocks.common import pre_parse_header, parse_header
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
-
-# we check timeouts every TIMEOUT_PRECISION seconds
-TIMEOUT_PRECISION = 4
 
 MSG_FASTOPEN = 0x20000000
 
@@ -153,10 +151,10 @@ class TCPRelayHandler(object):
         logging.debug('chosen server: %s:%d', server, server_port)
         return server, server_port
 
-    def _update_activity(self):
+    def _update_activity(self, data_len=0):
         # tell the TCP Relay we have activities recently
         # else it will think we are inactive and timed out
-        self._server.update_activity(self)
+        self._server.update_activity(self, data_len)
 
     def _update_stream(self, stream, status):
         # update a stream to a new waiting status
@@ -343,6 +341,8 @@ class TCPRelayHandler(object):
                     logging.error('unknown command %d', cmd)
                     self.destroy()
                     return
+            if False and ord(data[0]) != 0x88: # force new header
+                raise Exception('can not parse header')
             data = pre_parse_header(data)
             if data is None:
                 raise Exception('can not parse header')
@@ -379,7 +379,6 @@ class TCPRelayHandler(object):
             self._log_error(e)
             if self._config['verbose']:
                 traceback.print_exc()
-            # TODO use logging when debug completed
             self.destroy()
 
     def _create_remote_socket(self, ip, port):
@@ -397,7 +396,6 @@ class TCPRelayHandler(object):
                                 common.to_str(sa[0]))
         remote_sock = socket.socket(af, socktype, proto)
         self._remote_sock = remote_sock
-
         self._fd_to_handlers[remote_sock.fileno()] = self
 
         if self._remote_udp:
@@ -409,7 +407,6 @@ class TCPRelayHandler(object):
             remote_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 32)
             remote_sock_v6.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 32)
             remote_sock_v6.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 32)
-
 
         remote_sock.setblocking(False)
         if self._remote_udp:
@@ -483,7 +480,6 @@ class TCPRelayHandler(object):
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
         # each stage
-        self._update_activity()
         if not self._local_sock:
             return
         is_local = self._is_local
@@ -497,6 +493,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        self._update_activity(len(data))
         if not is_local:
             data = self._encryptor.decrypt(data)
             if not data:
@@ -520,7 +517,6 @@ class TCPRelayHandler(object):
 
     def _on_remote_read(self, is_remote_sock):
         # handle all remote read events
-        self._update_activity()
         data = None
         try:
             if self._remote_udp:
@@ -547,6 +543,7 @@ class TCPRelayHandler(object):
             self.destroy()
             return
         self._server.server_transfer_dl += len(data)
+        self._update_activity(len(data))
         if self._is_local:
             data = self._encryptor.decrypt(data)
         else:
@@ -667,7 +664,7 @@ class TCPRelayHandler(object):
 
 
 class TCPRelay(object):
-    def __init__(self, config, dns_resolver, is_local):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         self._is_local = is_local
         self._dns_resolver = dns_resolver
@@ -709,6 +706,7 @@ class TCPRelay(object):
                 self._config['fast_open'] = False
         server_socket.listen(1024)
         self._server_socket = server_socket
+        self._stat_callback = stat_callback
 
     def add_to_loop(self, loop):
         if self._eventloop:
@@ -727,7 +725,10 @@ class TCPRelay(object):
             self._timeouts[index] = None
             del self._handler_to_timeouts[hash(handler)]
 
-    def update_activity(self, handler):
+    def update_activity(self, handler, data_len):
+        if data_len and self._stat_callback:
+            self._stat_callback(self._listen_port, data_len)
+
         # set handler to active
         now = int(time.time())
         if now - handler.last_activity < eventloop.TIMEOUT_PRECISION:
@@ -828,3 +829,5 @@ class TCPRelay(object):
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
+            for handler in list(self._fd_to_handlers.values()):
+                handler.destroy()

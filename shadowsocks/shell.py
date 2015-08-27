@@ -136,7 +136,7 @@ def get_config(is_local):
     else:
         shortopts = 'hd:s:p:k:m:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=', 'version']
+                    'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -148,8 +148,7 @@ def get_config(is_local):
             logging.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
-                    config = json.loads(f.read().decode('utf8'),
-                                        object_hook=_decode_dict)
+                    config = parse_json_in_str(f.read().decode('utf8'))
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -181,6 +180,8 @@ def get_config(is_local):
                 config['fast_open'] = True
             elif key == '--workers':
                 config['workers'] = int(value)
+            elif key == '--manager-address':
+                config['manager_address'] = value
             elif key == '--user':
                 config['user'] = to_str(value)
             elif key == '--forbidden-ip':
@@ -317,6 +318,7 @@ Proxy options:
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
+  --manager-address ADDR optional server manager UDP address, see wiki
 
 General options:
   -h, --help             show this help message and exit
@@ -356,3 +358,8 @@ def _decode_dict(data):
             value = _decode_dict(value)
         rv[key] = value
     return rv
+
+
+def parse_json_in_str(data):
+    # parse json and convert everything from unicode to str
+    return json.loads(data, object_hook=_decode_dict)
