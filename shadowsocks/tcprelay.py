@@ -30,6 +30,10 @@ import random
 from shadowsocks import encrypt, eventloop, shell, common
 from shadowsocks.common import pre_parse_header, parse_header
 
+# set it 'False' to use both new protocol and the original shadowsocks protocal
+# set it 'True' to use new protocol ONLY, to avoid GFW detecting
+FORCE_NEW_PROTOCOL = False
+
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
 
@@ -341,7 +345,7 @@ class TCPRelayHandler(object):
                     logging.error('unknown command %d', cmd)
                     self.destroy()
                     return
-            if False and ord(data[0]) != 0x88: # force new header
+            if FORCE_NEW_PROTOCOL and ord(data[0]) != 0x88:
                 raise Exception('can not parse header')
             data = pre_parse_header(data)
             if data is None:
