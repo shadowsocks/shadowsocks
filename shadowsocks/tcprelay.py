@@ -114,6 +114,7 @@ class TCPRelayHandler(object):
         self._stage = STAGE_INIT
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
+        self._encrypt_correct = True
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
@@ -281,6 +282,31 @@ class TCPRelayHandler(object):
                 logging.error('write_all_to_sock:unknown socket')
         return True
 
+    def _get_redirect_host(self, client_address, ogn_data):
+        # test
+        host_list = [("www.bing.com", 80), ("www.microsoft.com", 80), ("www.baidu.com", 443), ("www.qq.com", 80), ("www.csdn.net", 80), ("1.2.3.4", 1000)]
+        hash_code = binascii.crc32(ogn_data)
+        addrs = socket.getaddrinfo(client_address[0], client_address[1], 0, socket.SOCK_STREAM, socket.SOL_TCP)
+        af, socktype, proto, canonname, sa = addrs[0]
+        address_bytes = common.inet_pton(af, sa[0])
+        if len(address_bytes) == 16:
+            addr = struct.unpack('>Q', address_bytes[8:])[0]
+        if len(address_bytes) == 4:
+            addr = struct.unpack('>I', address_bytes)[0]
+        else:
+            addr = 0
+        return host_list[((hash_code & 0xffffffff) + addr + 3) % len(host_list)]
+
+    def _handel_protocol_error(self, client_address, ogn_data):
+        logging.warn("Protocol ERROR, TCP ogn data %s" % (binascii.hexlify(ogn_data), ))
+        self._encrypt_correct = False
+        #create redirect or disconnect by hash code
+        host, port = self._get_redirect_host(client_address, ogn_data)
+        data = "\x03" + chr(len(host)) + host + struct.pack('>H', port)
+        logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
+        #raise Exception('can not parse header')
+        return data + ogn_data
+
     def _handle_stage_connecting(self, data):
         if self._is_local:
             data = self._encryptor.encrypt(data)
@@ -348,16 +374,14 @@ class TCPRelayHandler(object):
 
             before_parse_data = data
             if FORCE_NEW_PROTOCOL and ord(data[0]) != 0x88:
-                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
-                raise Exception('can not parse header')
+                data = self._handel_protocol_error(self._client_address, ogn_data)
             data = pre_parse_header(data)
             if data is None:
-                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
-                raise Exception('can not parse header')
+                data = self._handel_protocol_error(self._client_address, ogn_data)
             header_result = parse_header(data)
             if header_result is None:
-                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
-                raise Exception('can not parse header')
+                data = self._handel_protocol_error(self._client_address, ogn_data)
+                header_result = parse_header(data)
             connecttype, remote_addr, remote_port, header_length = header_result
             logging.info('%s connecting %s:%d from %s:%d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
@@ -505,7 +529,8 @@ class TCPRelayHandler(object):
         ogn_data = data
         self._update_activity(len(data))
         if not is_local:
-            data = self._encryptor.decrypt(data)
+            if self._encrypt_correct:
+                data = self._encryptor.decrypt(data)
             if not data:
                 return
         self._server.server_transfer_ul += len(data)
@@ -557,7 +582,8 @@ class TCPRelayHandler(object):
         if self._is_local:
             data = self._encryptor.decrypt(data)
         else:
-            data = self._encryptor.encrypt(data)
+            if self._encrypt_correct:
+                data = self._encryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
         except Exception as e:
