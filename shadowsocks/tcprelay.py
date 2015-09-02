@@ -30,6 +30,10 @@ import random
 from shadowsocks import encrypt, eventloop, shell, common
 from shadowsocks.common import pre_parse_header, parse_header
 
+# set it 'False' to use both new protocol and the original shadowsocks protocal
+# set it 'True' to use new protocol ONLY, to avoid GFW detecting
+FORCE_NEW_PROTOCOL = False
+
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
 
@@ -315,7 +319,7 @@ class TCPRelayHandler(object):
                         traceback.print_exc()
                     self.destroy()
 
-    def _handle_stage_addr(self, data):
+    def _handle_stage_addr(self, ogn_data, data):
         try:
             if self._is_local:
                 cmd = common.ord(data[1])
@@ -341,13 +345,18 @@ class TCPRelayHandler(object):
                     logging.error('unknown command %d', cmd)
                     self.destroy()
                     return
-            if False and ord(data[0]) != 0x88: # force new header
+
+            before_parse_data = data
+            if FORCE_NEW_PROTOCOL and ord(data[0]) != 0x88:
+                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
                 raise Exception('can not parse header')
             data = pre_parse_header(data)
             if data is None:
+                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
                 raise Exception('can not parse header')
             header_result = parse_header(data)
             if header_result is None:
+                logging.warn("TCP data %s decrypt %s" % (binascii.hexlify(ogn_data), binascii.hexlify(before_parse_data)))
                 raise Exception('can not parse header')
             connecttype, remote_addr, remote_port, header_length = header_result
             logging.info('%s connecting %s:%d from %s:%d' %
@@ -493,6 +502,7 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
+        ogn_data = data
         self._update_activity(len(data))
         if not is_local:
             data = self._encryptor.decrypt(data)
@@ -513,7 +523,7 @@ class TCPRelayHandler(object):
             self._handle_stage_connecting(data)
         elif (is_local and self._stage == STAGE_ADDR) or \
                 (not is_local and self._stage == STAGE_INIT):
-            self._handle_stage_addr(data)
+            self._handle_stage_addr(ogn_data, data)
 
     def _on_remote_read(self, is_remote_sock):
         # handle all remote read events
