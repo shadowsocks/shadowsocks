@@ -87,8 +87,8 @@ def find_library(possible_lib_names, search_symbol, library_name):
             else:
                 logging.warn('can\'t find symbol %s in %s', search_symbol,
                              path)
-        except Exception:
-            pass
+        except ValueError as e:
+            print(e)
     return None
 
 
