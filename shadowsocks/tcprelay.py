@@ -27,7 +27,7 @@ import binascii
 import traceback
 import random
 
-from shadowsocks import encrypt, eventloop, shell, common
+from shadowsocks import encrypt, obfs, eventloop, shell, common
 from shadowsocks.common import pre_parse_header, parse_header
 
 # set it 'False' to use both new protocol and the original shadowsocks protocal
@@ -115,6 +115,7 @@ class TCPRelayHandler(object):
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
         self._encrypt_correct = True
+        self._obfs = obfs.Obfs(config.get('obfs', 'plain'))
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
@@ -197,7 +198,7 @@ class TCPRelayHandler(object):
         # write data to sock
         # if only some of the data are written, put remaining in the buffer
         # and update the stream to wait for writing
-        if not data or not sock:
+        if not sock:
             return False
         #logging.debug("_write_to_sock %s %s %s" % (self._remote_sock, sock, self._remote_udp))
         uncomplete = False
@@ -249,6 +250,9 @@ class TCPRelayHandler(object):
             return True
         else:
             try:
+                if sock == self._local_sock and self._encrypt_correct:
+                    obfs_encode = self._obfs.encode(data)
+                    data = obfs_encode
                 l = len(data)
                 s = sock.send(data)
                 if s < l:
@@ -298,13 +302,13 @@ class TCPRelayHandler(object):
         return host_list[((hash_code & 0xffffffff) + addr + 3) % len(host_list)]
 
     def _handel_protocol_error(self, client_address, ogn_data):
+        #raise Exception('can not parse header')
         logging.warn("Protocol ERROR, TCP ogn data %s" % (binascii.hexlify(ogn_data), ))
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
         data = "\x03" + chr(len(host)) + host + struct.pack('>H', port)
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
-        #raise Exception('can not parse header')
         return data + ogn_data
 
     def _handle_stage_connecting(self, data):
@@ -530,7 +534,13 @@ class TCPRelayHandler(object):
         self._update_activity(len(data))
         if not is_local:
             if self._encrypt_correct:
-                data = self._encryptor.decrypt(data)
+                obfs_decode = self._obfs.decode(data)
+                if obfs_decode[2]:
+                    self._write_to_sock("", self._local_sock)
+                if obfs_decode[1]:
+                    data = self._encryptor.decrypt(obfs_decode[0])
+                else:
+                    data = obfs_decode[0]
             if not data:
                 return
         self._server.server_transfer_ul += len(data)
