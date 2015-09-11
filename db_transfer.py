@@ -79,7 +79,7 @@ class DbTransfer(object):
 		try:
 			import switchrule
 			keys = switchrule.getKeys()
-		except Exception, e:
+		except Exception as e:
 			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
 		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
 								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
@@ -102,13 +102,13 @@ class DbTransfer(object):
 		#需要动态载入switchrule，以便实时修改规则
 		try:
 			import switchrule
-		except Exception, e:
+		except Exception as e:
 			logging.error('load switchrule.py fail')
 		cur_servers = {}
 		for row in rows:
 			try:
 				allow = switchrule.isTurnOn(row) and row['enable'] == 1 and row['u'] + row['d'] < row['transfer_enable']
-			except Exception, e:
+			except Exception as e:
 				allow = False
 
 			port = row['port']

@@ -120,7 +120,7 @@ class ServerPool(object):
 
 					if a_config['server_ipv6'] == "::":
 						ipv6_ok = True
-				except Exception, e:
+				except Exception as e:
 					logging.warn("IPV6 %s " % (e,))
 
 		if 'server' in self.config:
@@ -142,7 +142,7 @@ class ServerPool(object):
 					udp_server.add_to_loop(self.loop)
 					self.udp_servers_pool.update({port: udp_server})
 
-				except Exception, e:
+				except Exception as e:
 					if not ipv6_ok:
 						logging.warn("IPV4 %s " % (e,))
 
@@ -155,7 +155,7 @@ class ServerPool(object):
 			udpsock = socket(AF_INET, SOCK_DGRAM)
 			udpsock.sendto('%s:%s:0:0' % (Config.MANAGE_PASS, port), (Config.MANAGE_BIND_IP, Config.MANAGE_PORT))
 			udpsock.close()
-		except Exception, e:
+		except Exception as e:
 			logging.warn(e)
 		return True
 
@@ -169,12 +169,12 @@ class ServerPool(object):
 			try:
 				self.tcp_servers_pool[port].close(False)
 				del self.tcp_servers_pool[port]
-			except Exception, e:
+			except Exception as e:
 				logging.warn(e)
 			try:
 				self.udp_servers_pool[port].close(False)
 				del self.udp_servers_pool[port]
-			except Exception, e:
+			except Exception as e:
 				logging.warn(e)
 
 		if 'server_ipv6' in self.config:
@@ -185,12 +185,12 @@ class ServerPool(object):
 				try:
 					self.tcp_ipv6_servers_pool[port].close(False)
 					del self.tcp_ipv6_servers_pool[port]
-				except Exception, e:
+				except Exception as e:
 					logging.warn(e)
 				try:
 					self.udp_ipv6_servers_pool[port].close(False)
 					del self.udp_ipv6_servers_pool[port]
-				except Exception, e:
+				except Exception as e:
 					logging.warn(e)
 
 			return True

@@ -707,8 +707,8 @@ class TCPRelay(object):
         self._closed = False
         self._eventloop = None
         self._fd_to_handlers = {}
-        self.server_transfer_ul = 0L
-        self.server_transfer_dl = 0L
+        self.server_transfer_ul = 0
+        self.server_transfer_dl = 0
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers
