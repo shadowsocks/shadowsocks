@@ -873,8 +873,8 @@ class UDPRelay(object):
         self._dns_cache = lru_cache.LRUCache(timeout=300)
         self._eventloop = None
         self._closed = False
-        self.server_transfer_ul = 0L
-        self.server_transfer_dl = 0L
+        self.server_transfer_ul = 0
+        self.server_transfer_dl = 0
 
         self._sockets = set()
         self._fd_to_handlers = {}
