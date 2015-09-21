@@ -33,6 +33,8 @@ from shadowsocks.common import pre_parse_header, parse_header
 # set it 'False' to use both new protocol and the original shadowsocks protocal
 # set it 'True' to use new protocol ONLY, to avoid GFW detecting
 FORCE_NEW_PROTOCOL = False
+# set it 'True' if run as a local client and connect to a server which support new protocol
+CLIENT_NEW_PROTOCOL = False
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
@@ -250,9 +252,12 @@ class TCPRelayHandler(object):
             return True
         else:
             try:
-                if sock == self._local_sock and self._encrypt_correct:
-                    obfs_encode = self._obfs.encode(data)
-                    data = obfs_encode
+                if self._is_local:
+                    pass
+                else:
+                    if sock == self._local_sock and self._encrypt_correct:
+                        obfs_encode = self._obfs.server_encode(data)
+                        data = obfs_encode
                 l = len(data)
                 s = sock.send(data)
                 if s < l:
@@ -303,7 +308,7 @@ class TCPRelayHandler(object):
 
     def _handel_protocol_error(self, client_address, ogn_data):
         #raise Exception('can not parse header')
-        logging.warn("Protocol ERROR, TCP ogn data %s" % (binascii.hexlify(ogn_data), ))
+        logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
@@ -314,6 +319,7 @@ class TCPRelayHandler(object):
     def _handle_stage_connecting(self, data):
         if self._is_local:
             data = self._encryptor.encrypt(data)
+            data = self._obfs.client_encode(data)
         self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
@@ -377,15 +383,18 @@ class TCPRelayHandler(object):
                     return
 
             before_parse_data = data
-            if FORCE_NEW_PROTOCOL and ord(data[0]) != 0x88:
-                data = self._handel_protocol_error(self._client_address, ogn_data)
-            data = pre_parse_header(data)
-            if data is None:
-                data = self._handel_protocol_error(self._client_address, ogn_data)
-            header_result = parse_header(data)
-            if header_result is None:
-                data = self._handel_protocol_error(self._client_address, ogn_data)
+            if self._is_local:
                 header_result = parse_header(data)
+            else:
+                if FORCE_NEW_PROTOCOL and common.ord(data[0]) != 0x88:
+                    data = self._handel_protocol_error(self._client_address, ogn_data)
+                data = pre_parse_header(data)
+                if data is None:
+                    data = self._handel_protocol_error(self._client_address, ogn_data)
+                header_result = parse_header(data)
+                if header_result is None:
+                    data = self._handel_protocol_error(self._client_address, ogn_data)
+                    header_result = parse_header(data)
             connecttype, remote_addr, remote_port, header_length = header_result
             logging.info('%s connecting %s:%d from %s:%d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
@@ -401,6 +410,12 @@ class TCPRelayHandler(object):
                 self._write_to_sock((b'\x05\x00\x00\x01'
                                      b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
+                if CLIENT_NEW_PROTOCOL:
+                    rnd_len = random.randint(1, 32)
+                    total_len = 7 + rnd_len + len(data)
+                    data = b'\x88' + struct.pack('>H', total_len) + chr(rnd_len) + (b' ' * (rnd_len - 1)) + data
+                    crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
+                    data += struct.pack('<I', crc)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
@@ -534,7 +549,7 @@ class TCPRelayHandler(object):
         self._update_activity(len(data))
         if not is_local:
             if self._encrypt_correct:
-                obfs_decode = self._obfs.decode(data)
+                obfs_decode = self._obfs.server_decode(data)
                 if obfs_decode[2]:
                     self._write_to_sock("", self._local_sock)
                 if obfs_decode[1]:
@@ -547,6 +562,7 @@ class TCPRelayHandler(object):
         if self._stage == STAGE_STREAM:
             if self._is_local:
                 data = self._encryptor.encrypt(data)
+                data = self._obfs.client_encode(data)
             self._write_to_sock(data, self._remote_sock)
             return
         elif is_local and self._stage == STAGE_INIT:
@@ -590,7 +606,10 @@ class TCPRelayHandler(object):
         self._server.server_transfer_dl += len(data)
         self._update_activity(len(data))
         if self._is_local:
-            data = self._encryptor.decrypt(data)
+            obfs_decode = self._obfs.client_decode(data)
+            if obfs_decode[1]:
+                self._write_to_sock("", self._remote_sock)
+            data = self._encryptor.decrypt(obfs_decode[0])
         else:
             if self._encrypt_correct:
                 data = self._encryptor.encrypt(data)

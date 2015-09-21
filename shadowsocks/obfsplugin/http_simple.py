@@ -40,7 +40,15 @@ class http_simple(object):
         self.port = 0
         self.recv_buffer = ""
 
-    def encode(self, buf):
+    def client_encode(self, buf):
+        # TODO
+        return buf
+
+    def client_decode(self, buf):
+        # TODO
+        return (buf, False)
+
+    def server_encode(self, buf):
         if self.has_sent_header:
             return buf
         else:
@@ -50,7 +58,7 @@ class http_simple(object):
             self.has_sent_header = True
             return header + buf
 
-    def decode(self, buf):
+    def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
         else:

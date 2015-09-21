@@ -196,16 +196,20 @@ class RecvQueue(object):
             if self.end_id == pack_id:
                 self.end_id = pack_id + 1
             elif self.end_id < pack_id:
-                for eid in xrange(self.end_id, pack_id):
+                eid = self.end_id
+                while eid < pack_id:
                     self.miss_queue.add(eid)
+                    eid += 1
                 self.end_id = pack_id + 1
             else:
                 self.miss_queue.remove(pack_id)
 
     def set_end(self, end_id):
         if end_id > self.end_id:
-            for eid in xrange(self.end_id, end_id):
+            eid = self.end_id
+            while eid < pack_id:
                 self.miss_queue.add(eid)
+                eid += 1
             self.end_id = end_id
 
     def get_begin_id(self):
@@ -302,7 +306,7 @@ class TCPRelayHandler(object):
         #loop.add(local_sock, eventloop.POLL_IN | eventloop.POLL_ERR)
         self.last_activity = 0
         self._update_activity()
-        self._random_mtu_size = [random.randint(POST_MTU_MIN, POST_MTU_MAX) for i in xrange(1024)]
+        self._random_mtu_size = [random.randint(POST_MTU_MIN, POST_MTU_MAX) for i in range(1024)]
         self._random_mtu_index = 0
 
         self._rand_data = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10" * 4
@@ -474,7 +478,7 @@ class TCPRelayHandler(object):
 
                     addr = self.get_local_address()
 
-                    for i in xrange(2):
+                    for i in range(2):
                         rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, RSP_STATE_CONNECTEDREMOTE)
                         self._write_to_sock(rsp_data, self._local_sock, addr)
 
@@ -671,7 +675,7 @@ class TCPRelayHandler(object):
 
         if self._stage == STAGE_RSP_ID:
             if cmd == CMD_CONNECT:
-                for i in xrange(2):
+                for i in range(2):
                     rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, RSP_STATE_CONNECTED)
                     self._write_to_sock(rsp_data, self._local_sock, addr)
             elif cmd == CMD_CONNECT_REMOTE:
@@ -695,7 +699,7 @@ class TCPRelayHandler(object):
             if cmd == CMD_CONNECT_REMOTE:
                 local_id = data[0:4]
                 if self._local_id == local_id:
-                    for i in xrange(2):
+                    for i in range(2):
                         rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT_REMOTE, RSP_STATE_CONNECTEDREMOTE)
                         self._write_to_sock(rsp_data, self._local_sock, addr)
                 else:
@@ -927,7 +931,7 @@ class UDPRelay(object):
     def _pre_parse_udp_header(self, data):
         if data is None:
             return
-        datatype = ord(data[0])
+        datatype = common.ord(data[0])
         if datatype == 0x8:
             if len(data) >= 8:
                 crc = binascii.crc32(data) & 0xffffffff
@@ -935,17 +939,17 @@ class UDPRelay(object):
                     logging.warn('uncorrect CRC32, maybe wrong password or '
                                  'encryption method')
                     return None
-                cmd = ord(data[1])
+                cmd = common.ord(data[1])
                 request_id = struct.unpack('>H', data[2:4])[0]
                 data = data[4:-4]
                 return (cmd, request_id, data)
-            elif len(data) >= 6 and ord(data[1]) == 0x0:
+            elif len(data) >= 6 and common.ord(data[1]) == 0x0:
                 crc = binascii.crc32(data) & 0xffffffff
                 if crc != 0xffffffff:
                     logging.warn('uncorrect CRC32, maybe wrong password or '
                                  'encryption method')
                     return None
-                cmd = ord(data[1])
+                cmd = common.ord(data[1])
                 data = data[2:-4]
                 return (cmd, 0, data)
             else:
@@ -994,12 +998,12 @@ class UDPRelay(object):
                 try:
                     if data[0] == 0:
                         if len(data[2]) >= 4:
-                            for i in xrange(64):
+                            for i in range(64):
                                 req_id = random.randint(1, 65535)
                                 if req_id not in self._reqid_to_hd:
                                     break
                             if req_id in self._reqid_to_hd:
-                                for i in xrange(64):
+                                for i in range(64):
                                     req_id = random.randint(1, 65535)
                                     if type(self._reqid_to_hd[req_id]) is tuple:
                                         break

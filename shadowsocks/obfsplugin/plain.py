@@ -33,9 +33,16 @@ class plain(object):
     def __init__(self, method):
         self.method = method
 
-    def encode(self, buf):
+    def client_encode(self, buf):
         return buf
 
-    def decode(self, buf):
+    def client_decode(self, buf):
+        # (buffer_to_recv, is_need_to_encode_and_send_back)
+        return (buf, False)
+
+    def server_encode(self, buf):
+        return buf
+
+    def server_decode(self, buf):
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (buf, True, False)

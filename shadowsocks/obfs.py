@@ -49,13 +49,15 @@ class Obfs(object):
         m = self._method_info
         return m[0](method)
 
-    def encode(self, buf):
-        #if len(buf) == 0:
-        #    return buf
-        return self.obfs.encode(buf)
+    def client_encode(self, buf):
+        return self.obfs.client_encode(buf)
 
-    def decode(self, buf):
-        #if len(buf) == 0:
-        #    return (buf, True, False)
-        return self.obfs.decode(buf)
+    def client_decode(self, buf):
+        return self.obfs.client_decode(buf)
+
+    def server_encode(self, buf):
+        return self.obfs.server_encode(buf)
+
+    def server_decode(self, buf):
+        return self.obfs.server_decode(buf)
 
