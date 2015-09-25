@@ -117,11 +117,11 @@ class TCPRelayHandler(object):
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
         self._encrypt_correct = True
-        self._obfs = obfs.Obfs(config.get('obfs', 'plain'))
+        self._obfs = obfs.Obfs(config['obfs'])
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
-        self._udp_data_send_buffer = ''
+        self._udp_data_send_buffer = b''
         self._upstream_status = WAIT_STATUS_READING
         self._downstream_status = WAIT_STATUS_INIT
         self._client_address = local_sock.getpeername()[:2]
@@ -293,7 +293,7 @@ class TCPRelayHandler(object):
 
     def _get_redirect_host(self, client_address, ogn_data):
         # test
-        host_list = [("www.bing.com", 80), ("www.microsoft.com", 80), ("www.baidu.com", 443), ("www.qq.com", 80), ("www.csdn.net", 80), ("1.2.3.4", 1000)]
+        host_list = [(b"www.bing.com", 80), (b"www.microsoft.com", 80), (b"www.baidu.com", 443), (b"www.qq.com", 80), (b"www.csdn.net", 80), (b"1.2.3.4", 1000)]
         hash_code = binascii.crc32(ogn_data)
         addrs = socket.getaddrinfo(client_address[0], client_address[1], 0, socket.SOCK_STREAM, socket.SOL_TCP)
         af, socktype, proto, canonname, sa = addrs[0]
@@ -312,7 +312,7 @@ class TCPRelayHandler(object):
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
-        data = "\x03" + chr(len(host)) + host + struct.pack('>H', port)
+        data = b"\x03" + common.chr(len(host)) + host + struct.pack('>H', port)
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
         return data + ogn_data
 
@@ -551,7 +551,7 @@ class TCPRelayHandler(object):
             if self._encrypt_correct:
                 obfs_decode = self._obfs.server_decode(data)
                 if obfs_decode[2]:
-                    self._write_to_sock("", self._local_sock)
+                    self._write_to_sock(b'', self._local_sock)
                 if obfs_decode[1]:
                     data = self._encryptor.decrypt(obfs_decode[0])
                 else:
@@ -588,10 +588,10 @@ class TCPRelayHandler(object):
                 port = struct.pack('>H', addr[1])
                 try:
                     ip = socket.inet_aton(addr[0])
-                    data = '\x00\x01' + ip + port + data
+                    data = b'\x00\x01' + ip + port + data
                 except Exception as e:
                     ip = socket.inet_pton(socket.AF_INET6, addr[0])
-                    data = '\x00\x04' + ip + port + data
+                    data = b'\x00\x04' + ip + port + data
                 data = struct.pack('>H', len(data) + 2) + data
                 #logging.info('UDP over TCP recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._client_address[0], self._client_address[1]))
             else:
@@ -608,7 +608,7 @@ class TCPRelayHandler(object):
         if self._is_local:
             obfs_decode = self._obfs.client_decode(data)
             if obfs_decode[1]:
-                self._write_to_sock("", self._remote_sock)
+                self._write_to_sock(b'', self._remote_sock)
             data = self._encryptor.decrypt(obfs_decode[0])
         else:
             if self._encrypt_correct:

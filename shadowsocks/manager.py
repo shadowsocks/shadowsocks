@@ -44,7 +44,7 @@ class Manager(object):
         self._statistics = collections.defaultdict(int)
         self._control_client_addr = None
         try:
-            manager_address = config['manager_address']
+            manager_address = common.to_str(config['manager_address'])
             if ':' in manager_address:
                 addr = manager_address.rsplit(':', 1)
                 addr = addr[0], int(addr[1])

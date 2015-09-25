@@ -115,15 +115,15 @@ CMD_POST_64 = 6
 CMD_SYN_STATUS_64 = 7
 CMD_DISCONNECT = 8
 
-CMD_VER_STR = "\x08"
+CMD_VER_STR = b"\x08"
 
-RSP_STATE_EMPTY = ""
-RSP_STATE_REJECT = "\x00"
-RSP_STATE_CONNECTED = "\x01"
-RSP_STATE_CONNECTEDREMOTE = "\x02"
-RSP_STATE_ERROR = "\x03"
-RSP_STATE_DISCONNECT = "\x04"
-RSP_STATE_REDIRECT = "\x05"
+RSP_STATE_EMPTY = b""
+RSP_STATE_REJECT = b"\x00"
+RSP_STATE_CONNECTED = b"\x01"
+RSP_STATE_CONNECTEDREMOTE = b"\x02"
+RSP_STATE_ERROR = b"\x03"
+RSP_STATE_DISCONNECT = b"\x04"
+RSP_STATE_REDIRECT = b"\x05"
 
 class UDPLocalAddress(object):
     def __init__(self, addr):
@@ -309,7 +309,7 @@ class TCPRelayHandler(object):
         self._random_mtu_size = [random.randint(POST_MTU_MIN, POST_MTU_MAX) for i in range(1024)]
         self._random_mtu_index = 0
 
-        self._rand_data = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10" * 4
+        self._rand_data = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10" * 4
 
     def __hash__(self):
         # default __hash__ is id / 16
@@ -589,29 +589,29 @@ class TCPRelayHandler(object):
 
     def _pack_rsp_data(self, cmd, data):
         reqid_str = struct.pack(">H", self._request_id)
-        return ''.join([CMD_VER_STR, chr(cmd), reqid_str, data, self._rand_data[:random.randint(0, len(self._rand_data))], reqid_str])
+        return b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, data, self._rand_data[:random.randint(0, len(self._rand_data))], reqid_str])
 
     def _pack_rnd_data(self, data):
         length = random.randint(0, len(self._rand_data))
         if length == 0:
             return data
         elif length == 1:
-            return "\x81" + data
+            return b"\x81" + data
         elif length < 256:
-            return "\x80" + chr(length) + self._rand_data[:length - 2] + data
+            return b"\x80" + common.chr(length) + self._rand_data[:length - 2] + data
         else:
-            return "\x82" + struct.pack(">H", length) + self._rand_data[:length - 3] + data
+            return b"\x82" + struct.pack(">H", length) + self._rand_data[:length - 3] + data
 
     def _pack_post_data(self, cmd, pack_id, data):
         reqid_str = struct.pack(">H", self._request_id)
         recv_id = self._recvqueue.get_begin_id()
-        rsp_data = ''.join([CMD_VER_STR, chr(cmd), reqid_str, struct.pack(">I", recv_id), struct.pack(">I", pack_id), data, reqid_str])
+        rsp_data = b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, struct.pack(">I", recv_id), struct.pack(">I", pack_id), data, reqid_str])
         return rsp_data
 
     def _pack_post_data_64(self, cmd, send_id, pack_id, data):
         reqid_str = struct.pack(">H", self._request_id)
         recv_id = self._recvqueue.get_begin_id()
-        rsp_data = ''.join([CMD_VER_STR, chr(cmd), reqid_str, struct.pack(">Q", recv_id), struct.pack(">Q", pack_id), data, reqid_str])
+        rsp_data = b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, struct.pack(">Q", recv_id), struct.pack(">Q", pack_id), data, reqid_str])
         return rsp_data
 
     def sweep_timeout(self):
@@ -619,7 +619,7 @@ class TCPRelayHandler(object):
         if self._stage == STAGE_STREAM:
             pack_id, missing = self._recvqueue.get_missing_id(0)
             logging.info("sweep_timeout %s %s" % (pack_id, missing))
-            data = ''
+            data = b''
             for pid in missing:
                 data += struct.pack(">H", pid)
             rsp_data = self._pack_post_data(CMD_SYN_STATUS, pack_id, data)
@@ -642,7 +642,7 @@ class TCPRelayHandler(object):
         # post CMD_SYN_STATUS
         send_id = self._sendingqueue.get_end_id()
         post_pack_id, missing = self._recvqueue.get_missing_id(0)
-        pack_ids_data = ''
+        pack_ids_data = b''
         for pid in missing:
             pack_ids_data += struct.pack(">H", pid)
 
@@ -959,9 +959,9 @@ class UDPRelay(object):
         return data
 
     def _pack_rsp_data(self, cmd, request_id, data):
-        _rand_data = "123456789abcdefghijklmnopqrstuvwxyz" * 2
+        _rand_data = b"123456789abcdefghijklmnopqrstuvwxyz" * 2
         reqid_str = struct.pack(">H", request_id)
-        return ''.join([CMD_VER_STR, chr(cmd), reqid_str, data, _rand_data[:random.randint(0, len(_rand_data))], reqid_str])
+        return b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, data, _rand_data[:random.randint(0, len(_rand_data))], reqid_str])
 
     def _handle_server(self):
         server = self._server_socket
