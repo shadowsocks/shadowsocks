@@ -238,7 +238,7 @@ class random_head(object):
         if self.has_sent_header:
             return buf
         self.has_sent_header = True
-        return os.urandom(common.ord(os.urandom(1)[0]) % 96)
+        return os.urandom(common.ord(os.urandom(1)[0]) % 96 + 1)
 
     def server_decode(self, buf):
         if self.has_recv_header:
