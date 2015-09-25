@@ -29,12 +29,19 @@ from shadowsocks import eventloop
 from shadowsocks import tcprelay
 from shadowsocks import udprelay
 from shadowsocks import asyncdns
-import thread
 import threading
 import sys
 import asyncmgr
 import Config
 from socket import *
+
+class MainThread(threading.Thread):
+	def __init__(self, params):
+		threading.Thread.__init__(self)
+		self.params = params
+
+	def run(self):
+		ServerPool._loop(*self.params)
 
 class ServerPool(object):
 
@@ -53,7 +60,8 @@ class ServerPool(object):
 		self.udp_ipv6_servers_pool = {}
 
 		self.loop = eventloop.EventLoop()
-		thread.start_new_thread(ServerPool._loop, (self.loop, self.dns_resolver, self.mgr))
+		thread = MainThread( (self.loop, self.dns_resolver, self.mgr) )
+		thread.start()
 
 	@staticmethod
 	def get_instance():

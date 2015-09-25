@@ -74,7 +74,7 @@ def main():
                              (a_config['server'], int(port)))
                 tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
                 udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
-                if a_config['server_ipv6'] == "::":
+                if a_config['server_ipv6'] == b"::":
                     ipv6_ok = True
             except Exception as e:
                 shell.print_exception(e)
