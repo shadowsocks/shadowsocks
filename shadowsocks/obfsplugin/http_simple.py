@@ -24,7 +24,8 @@ import logging
 import binascii
 import base64
 import datetime
-from shadowsocks.common import to_bytes, to_str
+from shadowsocks import common
+from shadowsocks.common import to_bytes, to_str, ord
 
 def create_http_obfs(method):
     return http_simple(method)
@@ -35,10 +36,14 @@ def create_http2_obfs(method):
 def create_tls_obfs(method):
     return tls_simple(method)
 
+def create_random_head_obfs(method):
+    return random_head(method)
+
 obfs = {
         'http_simple': (create_http_obfs,),
         'http2_simple': (create_http2_obfs,),
         'tls_simple': (create_tls_obfs,),
+        'random_head': (create_random_head_obfs,),
 }
 
 def match_begin(str1, str2):
@@ -213,5 +218,32 @@ class tls_simple(object):
         self.has_recv_header = True
         if not match_begin(buf, b'\x16\x03\x01'):
             return (buf, True, False)
+        # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
+        return (b'', False, True)
+
+class random_head(object):
+    def __init__(self, method):
+        self.method = method
+        self.has_sent_header = False
+        self.has_recv_header = False
+
+    def client_encode(self, buf):
+        return buf
+
+    def client_decode(self, buf):
+        # (buffer_to_recv, is_need_to_encode_and_send_back)
+        return (buf, False)
+
+    def server_encode(self, buf):
+        if self.has_sent_header:
+            return buf
+        self.has_sent_header = True
+        return os.urandom(common.ord(os.urandom(1)[0]) % 96)
+
+    def server_decode(self, buf):
+        if self.has_recv_header:
+            return (buf, True, False)
+
+        self.has_recv_header = True
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
