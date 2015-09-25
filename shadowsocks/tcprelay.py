@@ -259,10 +259,13 @@ class TCPRelayHandler(object):
                         obfs_encode = self._obfs.server_encode(data)
                         data = obfs_encode
                 l = len(data)
-                s = sock.send(data)
-                if s < l:
-                    data = data[s:]
-                    uncomplete = True
+                if l > 0:
+                    s = sock.send(data)
+                    if s < l:
+                        data = data[s:]
+                        uncomplete = True
+                else:
+                    return
             except (OSError, IOError) as e:
                 error_no = eventloop.errno_from_exception(e)
                 if error_no in (errno.EAGAIN, errno.EINPROGRESS,

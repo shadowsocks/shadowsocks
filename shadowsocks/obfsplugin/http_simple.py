@@ -32,9 +32,13 @@ def create_http_obfs(method):
 def create_http2_obfs(method):
     return http2_simple(method)
 
+def create_tls_obfs(method):
+    return tls_simple(method)
+
 obfs = {
         'http_simple': (create_http_obfs,),
         'http2_simple': (create_http2_obfs,),
+        'tls_simple': (create_tls_obfs,),
 }
 
 def match_begin(str1, str2):
@@ -63,12 +67,12 @@ class http_simple(object):
     def server_encode(self, buf):
         if self.has_sent_header:
             return buf
-        else:
-            header = b'HTTP/1.1 200 OK\r\nServer: openresty\r\nDate: '
-            header += to_bytes(datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT'))
-            header += b'\r\nContent-Type: text/plain; charset=utf-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nKeep-Alive: timeout=20\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\n\r\n'
-            self.has_sent_header = True
-            return header + buf
+
+        header = b'HTTP/1.1 200 OK\r\nServer: openresty\r\nDate: '
+        header += to_bytes(datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT'))
+        header += b'\r\nContent-Type: text/plain; charset=utf-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nKeep-Alive: timeout=20\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\n\r\n'
+        self.has_sent_header = True
+        return header + buf
 
     def get_data_from_http_header(self, buf):
         ret_buf = b''
@@ -87,36 +91,39 @@ class http_simple(object):
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
-        else:
-            buf = self.recv_buffer + buf
-            if len(buf) > 10:
-                if match_begin(buf, b'GET /') or match_begin(buf, b'POST /'):
-                    pass
-                else: #not http header, run on original protocol
+
+        buf = self.recv_buffer + buf
+        if len(buf) > 10:
+            if match_begin(buf, b'GET /') or match_begin(buf, b'POST /'):
+                if len(buf) > 65536:
                     self.has_sent_header = True
                     self.has_recv_header = True
                     self.recv_buffer = None
                     return (buf, True, False)
-            else:
-                self.recv_buffer = buf
-                return (b'', True, False)
+            else: #not http header, run on original protocol
+                self.has_sent_header = True
+                self.has_recv_header = True
+                self.recv_buffer = None
+                return (buf, True, False)
+        else:
+            self.recv_buffer = buf
+            return (b'', True, False)
 
-            datas = buf.split(b'\r\n\r\n', 1)
-            ret_buf = b''
-            if datas and len(datas) > 1:
-                ret_buf = self.get_data_from_http_header(buf)
-                ret_buf += datas[1]
-                if len(ret_buf) >= 15:
-                    self.has_recv_header = True
-                    return (ret_buf, True, False)
-                self.recv_buffer = buf
-                return (b'', True, False)
-            else:
-                self.recv_buffer = buf
-                return (b'', True, False)
-            self.has_sent_header = True
-            self.has_recv_header = True
-            return (buf, True, False)
+        datas = buf.split(b'\r\n\r\n', 1)
+        if datas and len(datas) > 1:
+            ret_buf = self.get_data_from_http_header(buf)
+            ret_buf += datas[1]
+            if len(ret_buf) >= 15:
+                self.has_recv_header = True
+                return (ret_buf, True, False)
+            self.recv_buffer = buf
+            return (b'', True, False)
+        else:
+            self.recv_buffer = buf
+            return (b'', True, False)
+        self.has_sent_header = True
+        self.has_recv_header = True
+        return (buf, True, False)
 
 class http2_simple(object):
     def __init__(self, method):
@@ -138,43 +145,73 @@ class http2_simple(object):
     def server_encode(self, buf):
         if self.has_sent_header:
             return buf
-        else:
-            header = b'HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n'
-            self.has_sent_header = True
-            return header + buf
+
+        header = b'HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n'
+        self.has_sent_header = True
+        return header + buf
 
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
-        else:
-            buf = self.recv_buffer + buf
-            if len(buf) > 10:
-                if match_begin(buf, b'GET /'):
-                    pass
-                else: #not http header, run on original protocol
-                    self.has_sent_header = True
-                    self.has_recv_header = True
-                    self.recv_buffer = None
-                    return (buf, True, False)
-            else:
-                self.recv_buffer = buf
-                return (b'', True, False)
 
-            datas = buf.split(b'\r\n\r\n', 1)
-            if datas and len(datas) > 1 and len(datas[0]) >= 4:
-                lines = buf.split(b'\r\n')
-                if lines and len(lines) >= 4:
-                    if match_begin(lines[4], b'HTTP2-Settings: '):
-                        ret_buf = base64.urlsafe_b64decode(lines[4][16:])
-                        ret_buf += datas[1]
-                        self.has_recv_header = True
-                        return (ret_buf, True, False)
-                self.recv_buffer = buf
-                return (b'', True, False)
-            else:
-                self.recv_buffer = buf
-                return (b'', True, False)
-            self.has_sent_header = True
-            self.has_recv_header = True
+        buf = self.recv_buffer + buf
+        if len(buf) > 10:
+            if match_begin(buf, b'GET /'):
+                pass
+            else: #not http header, run on original protocol
+                self.has_sent_header = True
+                self.has_recv_header = True
+                self.recv_buffer = None
+                return (buf, True, False)
+        else:
+            self.recv_buffer = buf
+            return (b'', True, False)
+
+        datas = buf.split(b'\r\n\r\n', 1)
+        if datas and len(datas) > 1 and len(datas[0]) >= 4:
+            lines = buf.split(b'\r\n')
+            if lines and len(lines) >= 4:
+                if match_begin(lines[4], b'HTTP2-Settings: '):
+                    ret_buf = base64.urlsafe_b64decode(lines[4][16:])
+                    ret_buf += datas[1]
+                    self.has_recv_header = True
+                    return (ret_buf, True, False)
+            self.recv_buffer = buf
+            return (b'', True, False)
+        else:
+            self.recv_buffer = buf
+            return (b'', True, False)
+        self.has_sent_header = True
+        self.has_recv_header = True
+        return (buf, True, False)
+
+class tls_simple(object):
+    def __init__(self, method):
+        self.method = method
+        self.has_sent_header = False
+        self.has_recv_header = False
+
+    def client_encode(self, buf):
+        return buf
+
+    def client_decode(self, buf):
+        # (buffer_to_recv, is_need_to_encode_and_send_back)
+        return (buf, False)
+
+    def server_encode(self, buf):
+        if self.has_sent_header:
+            return buf
+        self.has_sent_header = True
+        # TODO
+        #server_hello = b''
+        return b'\x16\x03\x01'
+
+    def server_decode(self, buf):
+        if self.has_recv_header:
             return (buf, True, False)
 
+        self.has_recv_header = True
+        if not match_begin(buf, b'\x16\x03\x01'):
+            return (buf, True, False)
+        # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
+        return (b'', False, True)
