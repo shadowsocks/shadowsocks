@@ -238,12 +238,15 @@ class random_head(object):
         if self.has_sent_header:
             return buf
         self.has_sent_header = True
-        return os.urandom(common.ord(os.urandom(1)[0]) % 96 + 1)
+        return os.urandom(common.ord(os.urandom(1)[0]) % 96 + 4)
 
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
 
+        crc = binascii.crc32(buf) & 0xffffffff
+        if crc != 0xffffffff:
+            return (buf, True, False)
         self.has_recv_header = True
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
