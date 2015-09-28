@@ -217,6 +217,7 @@ class tls_simple(object):
 
         self.has_recv_header = True
         if not match_begin(buf, b'\x16\x03\x01'):
+            self.has_sent_header = True
             return (buf, True, False)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
@@ -244,9 +245,10 @@ class random_head(object):
         if self.has_recv_header:
             return (buf, True, False)
 
+        self.has_recv_header = True
         crc = binascii.crc32(buf) & 0xffffffff
         if crc != 0xffffffff:
+            self.has_sent_header = True
             return (buf, True, False)
-        self.has_recv_header = True
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
