@@ -23,12 +23,13 @@ import hashlib
 import logging
 
 from shadowsocks import common
-from shadowsocks.obfsplugin import plain, http_simple
+from shadowsocks.obfsplugin import plain, http_simple, verify_simple
 
 
 method_supported = {}
 method_supported.update(plain.obfs)
 method_supported.update(http_simple.obfs)
+method_supported.update(verify_simple.obfs)
 
 class Obfs(object):
     def __init__(self, method):
@@ -49,15 +50,27 @@ class Obfs(object):
         m = self._method_info
         return m[0](method)
 
+    def client_pre_encrypt(self, buf):
+        return self.obfs.client_pre_encrypt(buf)
+
     def client_encode(self, buf):
         return self.obfs.client_encode(buf)
 
     def client_decode(self, buf):
         return self.obfs.client_decode(buf)
 
+    def client_post_decrypt(self, buf):
+        return self.obfs.client_post_decrypt(buf)
+
+    def server_pre_encrypt(self, buf):
+        return self.obfs.server_pre_encrypt(buf)
+
     def server_encode(self, buf):
         return self.obfs.server_encode(buf)
 
     def server_decode(self, buf):
         return self.obfs.server_decode(buf)
+
+    def server_post_decrypt(self, buf):
+        return self.obfs.server_post_decrypt(buf)
 

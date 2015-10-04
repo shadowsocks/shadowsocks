@@ -321,6 +321,7 @@ class TCPRelayHandler(object):
 
     def _handle_stage_connecting(self, data):
         if self._is_local:
+            data = self._obfs.client_pre_encrypt(data)
             data = self._encryptor.encrypt(data)
             data = self._obfs.client_encode(data)
         self._data_to_write_to_remote.append(data)
@@ -419,6 +420,7 @@ class TCPRelayHandler(object):
                     data = b'\x88' + struct.pack('>H', total_len) + chr(rnd_len) + (b' ' * (rnd_len - 1)) + data
                     crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
                     data += struct.pack('<I', crc)
+                data = self._obfs.client_pre_encrypt(data)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
@@ -559,11 +561,17 @@ class TCPRelayHandler(object):
                     data = self._encryptor.decrypt(obfs_decode[0])
                 else:
                     data = obfs_decode[0]
+                try:
+                    data = self._obfs.server_post_decrypt(data)
+                except Exception as e:
+                    shell.print_exception(e)
+                    self.destroy()
             if not data:
                 return
         self._server.server_transfer_ul += len(data)
         if self._stage == STAGE_STREAM:
             if self._is_local:
+                data = self._obfs.client_pre_encrypt(data)
                 data = self._encryptor.encrypt(data)
                 data = self._obfs.client_encode(data)
             self._write_to_sock(data, self._remote_sock)
@@ -613,8 +621,10 @@ class TCPRelayHandler(object):
             if obfs_decode[1]:
                 self._write_to_sock(b'', self._remote_sock)
             data = self._encryptor.decrypt(obfs_decode[0])
+            data = self._obfs.client_post_decrypt(data)
         else:
             if self._encrypt_correct:
+                data = self._obfs.server_pre_encrypt(data)
                 data = self._encryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
@@ -729,7 +739,6 @@ class TCPRelayHandler(object):
             self._local_sock = None
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
-
 
 class TCPRelay(object):
     def __init__(self, config, dns_resolver, is_local, stat_callback=None):

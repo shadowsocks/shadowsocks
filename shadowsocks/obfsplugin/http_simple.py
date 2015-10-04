@@ -24,6 +24,8 @@ import logging
 import binascii
 import base64
 import datetime
+
+from shadowsocks.obfsplugin import plain
 from shadowsocks import common
 from shadowsocks.common import to_bytes, to_str, ord
 
@@ -52,7 +54,7 @@ def match_begin(str1, str2):
             return True
     return False
 
-class http_simple(object):
+class http_simple(plain.plain):
     def __init__(self, method):
         self.method = method
         self.has_sent_header = False
@@ -130,7 +132,7 @@ class http_simple(object):
         self.has_recv_header = True
         return (buf, True, False)
 
-class http2_simple(object):
+class http2_simple(plain.plain):
     def __init__(self, method):
         self.method = method
         self.has_sent_header = False
@@ -190,7 +192,7 @@ class http2_simple(object):
         self.has_recv_header = True
         return (buf, True, False)
 
-class tls_simple(object):
+class tls_simple(plain.plain):
     def __init__(self, method):
         self.method = method
         self.has_sent_header = False
@@ -222,7 +224,7 @@ class tls_simple(object):
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
 
-class random_head(object):
+class random_head(plain.plain):
     def __init__(self, method):
         self.method = method
         self.has_sent_header = False
@@ -252,3 +254,4 @@ class random_head(object):
             return (buf, True, False)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
+

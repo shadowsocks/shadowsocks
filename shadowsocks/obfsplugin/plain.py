@@ -33,6 +33,9 @@ class plain(object):
     def __init__(self, method):
         self.method = method
 
+    def client_pre_encrypt(self, buf):
+        return buf
+
     def client_encode(self, buf):
         return buf
 
@@ -40,9 +43,19 @@ class plain(object):
         # (buffer_to_recv, is_need_to_encode_and_send_back)
         return (buf, False)
 
+    def client_post_decrypt(self, buf):
+        return buf
+
+    def server_pre_encrypt(self, buf):
+        return buf
+
     def server_encode(self, buf):
         return buf
 
     def server_decode(self, buf):
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (buf, True, False)
+
+    def server_post_decrypt(self, buf):
+        return buf
+
