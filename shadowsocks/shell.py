@@ -216,6 +216,7 @@ def get_config(is_local):
 
     config['password'] = to_bytes(config.get('password', b''))
     config['method'] = to_str(config.get('method', 'aes-256-cfb'))
+    config['obfs'] = to_str(config.get('obfs', 'plain'))
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['fast_open'] = config.get('fast_open', False)
