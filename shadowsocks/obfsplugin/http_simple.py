@@ -43,9 +43,13 @@ def create_random_head_obfs(method):
 
 obfs = {
         'http_simple': (create_http_obfs,),
+        'http_simple_compatible': (create_http_obfs,),
         'http2_simple': (create_http2_obfs,),
+        'http2_simple_compatible': (create_http2_obfs,),
         'tls_simple': (create_tls_obfs,),
+        'tls_simple_compatible': (create_tls_obfs,),
         'random_head': (create_random_head_obfs,),
+        'random_head_compatible': (create_random_head_obfs,),
 }
 
 def match_begin(str1, str2):
@@ -95,6 +99,13 @@ class http_simple(plain.plain):
                 return ret_buf
         return b''
 
+    def not_match_return(self, buf):
+        self.has_sent_header = True
+        self.has_recv_header = True
+        if self.method == 'http_simple':
+            return (b'E', False, False)
+        return (buf, True, False)
+
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
@@ -103,15 +114,11 @@ class http_simple(plain.plain):
         if len(buf) > 10:
             if match_begin(buf, b'GET /') or match_begin(buf, b'POST /'):
                 if len(buf) > 65536:
-                    self.has_sent_header = True
-                    self.has_recv_header = True
                     self.recv_buffer = None
-                    return (buf, True, False)
+                    return self.not_match_return(buf)
             else: #not http header, run on original protocol
-                self.has_sent_header = True
-                self.has_recv_header = True
                 self.recv_buffer = None
-                return (buf, True, False)
+                return self.not_match_return(buf)
         else:
             self.recv_buffer = buf
             return (b'', True, False)
@@ -128,9 +135,7 @@ class http_simple(plain.plain):
         else:
             self.recv_buffer = buf
             return (b'', True, False)
-        self.has_sent_header = True
-        self.has_recv_header = True
-        return (buf, True, False)
+        return self.not_match_return(buf)
 
 class http2_simple(plain.plain):
     def __init__(self, method):
@@ -157,6 +162,13 @@ class http2_simple(plain.plain):
         self.has_sent_header = True
         return header + buf
 
+    def not_match_return(self, buf):
+        self.has_sent_header = True
+        self.has_recv_header = True
+        if self.method == 'http2_simple':
+            return (b'E', False, False)
+        return (buf, True, False)
+
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
@@ -166,10 +178,8 @@ class http2_simple(plain.plain):
             if match_begin(buf, b'GET /'):
                 pass
             else: #not http header, run on original protocol
-                self.has_sent_header = True
-                self.has_recv_header = True
                 self.recv_buffer = None
-                return (buf, True, False)
+                return self.not_match_return(buf)
         else:
             self.recv_buffer = buf
             return (b'', True, False)
@@ -188,9 +198,7 @@ class http2_simple(plain.plain):
         else:
             self.recv_buffer = buf
             return (b'', True, False)
-        self.has_sent_header = True
-        self.has_recv_header = True
-        return (buf, True, False)
+        return self.not_match_return(buf)
 
 class tls_simple(plain.plain):
     def __init__(self, method):
@@ -220,6 +228,8 @@ class tls_simple(plain.plain):
         self.has_recv_header = True
         if not match_begin(buf, b'\x16\x03\x01'):
             self.has_sent_header = True
+            if self.method == 'tls_simple':
+                return (b'E', False, False)
             return (buf, True, False)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
@@ -251,6 +261,8 @@ class random_head(plain.plain):
         crc = binascii.crc32(buf) & 0xffffffff
         if crc != 0xffffffff:
             self.has_sent_header = True
+            if self.method == 'random_head':
+                return (b'E', False, False)
             return (buf, True, False)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
