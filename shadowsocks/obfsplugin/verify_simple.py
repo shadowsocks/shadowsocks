@@ -48,6 +48,8 @@ class verify_simple(plain.plain):
         self.method = method
         self.recv_buf = b''
         self.unit_len = 8100
+        self.decrypt_packet_num = 0
+        self.raw_trans = False
 
     def pack_data(self, buf):
         if len(buf) == 0:
@@ -75,7 +77,37 @@ class verify_simple(plain.plain):
         return (buf, False)
 
     def client_post_decrypt(self, buf):
-        return buf
+        if self.raw_trans:
+            return buf
+        self.recv_buf += buf
+        out_buf = b''
+        while len(self.recv_buf) > 2:
+            length = struct.unpack('>H', self.recv_buf[:2])[0]
+            if length >= 8192:
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.decrypt_packet_num == 0:
+                    return None
+                else:
+                    raise Exception('server_post_decrype data error')
+            if length > len(self.recv_buf):
+                break
+
+            if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.decrypt_packet_num == 0:
+                    return None
+                else:
+                    raise Exception('server_post_decrype data uncorrect CRC32')
+
+            pos = common.ord(self.recv_buf[2]) + 2
+            out_buf += self.recv_buf[pos:length - 4]
+            self.recv_buf = self.recv_buf[length:]
+
+        if out_buf:
+            self.decrypt_packet_num += 1
+        return out_buf
 
     def server_pre_encrypt(self, buf):
         ret = b''
@@ -93,21 +125,35 @@ class verify_simple(plain.plain):
         return (buf, True, False)
 
     def server_post_decrypt(self, buf):
+        if self.raw_trans:
+            return buf
         self.recv_buf += buf
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
             if length >= 8192:
-                raise Exception('server_post_decrype data error')
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.decrypt_packet_num == 0:
+                    return b'E'
+                else:
+                    raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
                 break
 
             if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
-                raise Exception('server_post_decrype data uncorrect CRC32')
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.decrypt_packet_num == 0:
+                    return b'E'
+                else:
+                    raise Exception('server_post_decrype data uncorrect CRC32')
 
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]
             self.recv_buf = self.recv_buf[length:]
 
+        if out_buf:
+            self.decrypt_packet_num += 1
         return out_buf
 

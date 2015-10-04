@@ -7,7 +7,7 @@
     "password":"m",
     "timeout":300,
     "method":"aes-256-cfb",
-    "obfs":"http_simple",
+    "obfs":"http_simple_compatible",
     "fast_open": false,
     "workers": 1
 }
