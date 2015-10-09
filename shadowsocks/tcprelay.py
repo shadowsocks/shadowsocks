@@ -390,7 +390,7 @@ class TCPRelayHandler(object):
             if self._is_local:
                 header_result = parse_header(data)
             else:
-                if data is None or FORCE_NEW_PROTOCOL and common.ord(data[0]) != 0x88:
+                if data is None or FORCE_NEW_PROTOCOL and common.ord(data[0]) != 0x88 and (~common.ord(data[0]) & 0xff) != 0x88:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                 data = pre_parse_header(data)
                 if data is None:
