@@ -78,9 +78,11 @@ class DbTransfer(object):
 		#数据库所有用户信息
 		try:
 			import switchrule
+			reload(switchrule)
 			keys = switchrule.getKeys()
 		except Exception as e:
 			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
+		reload(cymysql)
 		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
 								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
@@ -102,6 +104,7 @@ class DbTransfer(object):
 		#需要动态载入switchrule，以便实时修改规则
 		try:
 			import switchrule
+			reload(switchrule)
 		except Exception as e:
 			logging.error('load switchrule.py fail')
 		cur_servers = {}
