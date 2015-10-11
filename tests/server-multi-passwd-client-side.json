@@ -1,8 +1,0 @@
-{
-    "server": "127.0.0.1",
-    "server_port": "8385",
-    "local_port": 1081,
-    "password": "foobar5",
-    "timeout": 60,
-    "method": "aes-256-cfb"
-}

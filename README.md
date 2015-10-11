@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 shadowsocks
 ===========
 
@@ -111,3 +112,6 @@ Bugs and Issues
 [Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
 [Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
 [Windows]:           https://github.com/shadowsocks/shadowsocks-csharp
+=======
+Removed according to regulations.
+>>>>>>> 938bba32a4008bdde9c064dda6a0597987ddef54
