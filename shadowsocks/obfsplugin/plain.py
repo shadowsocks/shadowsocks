@@ -25,13 +25,20 @@ import logging
 def create_obfs(method):
     return plain(method)
 
-obfs = {
+obfs_map = {
         'plain': (create_obfs,),
 }
 
 class plain(object):
     def __init__(self, method):
         self.method = method
+        self.server_info = None
+
+    def init_data(self):
+        return b''
+
+    def set_server_info(self, server_info):
+        self.server_info = server_info
 
     def client_pre_encrypt(self, buf):
         return buf

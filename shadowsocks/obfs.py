@@ -27,19 +27,28 @@ from shadowsocks.obfsplugin import plain, http_simple, verify_simple
 
 
 method_supported = {}
-method_supported.update(plain.obfs)
-method_supported.update(http_simple.obfs)
-method_supported.update(verify_simple.obfs)
+method_supported.update(plain.obfs_map)
+method_supported.update(http_simple.obfs_map)
+method_supported.update(verify_simple.obfs_map)
 
-class Obfs(object):
+class server_info(object):
+    def __init__(self, data):
+        self.data = data
+
+class obfs(object):
     def __init__(self, method):
         self.method = method
         self._method_info = self.get_method_info(method)
         if self._method_info:
             self.obfs = self.get_obfs(method)
         else:
-            logging.error('method %s not supported' % method)
-            sys.exit(1)
+            raise Exception('method %s not supported' % method)
+
+    def init_data(self):
+        return self.obfs.init_data()
+
+    def set_server_info(self, server_info):
+        return self.obfs.set_server_info(server_info)
 
     def get_method_info(self, method):
         method = method.lower()

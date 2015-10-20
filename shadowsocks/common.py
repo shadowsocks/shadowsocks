@@ -160,7 +160,7 @@ def pre_parse_header(data):
                          'encryption method')
             return None
         data = data[rand_data_size + 3:]
-    elif datatype == 0x88:
+    elif datatype == 0x88 or (~datatype & 0xff) == 0x88:
         if len(data) <= 7 + 7:
             return None
         data_size = struct.unpack('>H', data[1:3])[0]
