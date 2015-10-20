@@ -1095,6 +1095,12 @@ class UDPRelay(object):
             self._sockets.add(client.fileno())
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
+            logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
+
+            logging.info('UDP data to %s:%d from %s:%d' %
+                        (common.to_str(server_addr), server_port,
+                            r_addr[0], r_addr[1]))
+
         if self._is_local:
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
@@ -1254,11 +1260,21 @@ class UDPRelay(object):
         if sock == self._server_socket:
             if event & eventloop.POLL_ERR:
                 logging.error('UDP server_socket err')
-            self._handle_server()
+            try:
+                self._handle_server()
+            except Exception as e:
+                shell.print_exception(e)
+                if self._config['verbose']:
+                    traceback.print_exc()
         elif sock and (fd in self._sockets):
             if event & eventloop.POLL_ERR:
                 logging.error('UDP client_socket err')
-            self._handle_client(sock)
+            try:
+                self._handle_client(sock)
+            except Exception as e:
+                shell.print_exception(e)
+                if self._config['verbose']:
+                    traceback.print_exc()
         else:
             if sock:
                 handler = self._fd_to_handlers.get(fd, None)
@@ -1275,7 +1291,10 @@ class UDPRelay(object):
                 for sock in self._sockets:
                     sock.close()
                 logging.info('closed UDP port %d', self._listen_port)
+        before_sweep_size = len(self._sockets)
         self._cache.sweep()
+        if before_sweep_size != len(self._sockets):
+            logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
         self._client_fd_to_server_addr.sweep()
         self._sweep_timeout()
 

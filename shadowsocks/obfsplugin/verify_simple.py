@@ -27,8 +27,9 @@ import datetime
 import struct
 import zlib
 
-from shadowsocks.obfsplugin import plain
+import shadowsocks
 from shadowsocks import common
+from shadowsocks.obfsplugin import plain
 from shadowsocks.common import to_bytes, to_str, ord
 
 def create_verify_obfs(method):
@@ -37,7 +38,7 @@ def create_verify_obfs(method):
 def create_verify_deflate(method):
     return verify_deflate(method)
 
-obfs = {
+obfs_map = {
         'verify_simple': (create_verify_obfs,),
         'verify_deflate': (create_verify_deflate,),
 }
@@ -48,6 +49,10 @@ def match_begin(str1, str2):
             return True
     return False
 
+class sub_encode_obfs(object):
+    def __init__(self):
+        self.sub_obfs = None
+
 class verify_simple(plain.plain):
     def __init__(self, method):
         self.method = method
@@ -55,6 +60,26 @@ class verify_simple(plain.plain):
         self.unit_len = 8100
         self.decrypt_packet_num = 0
         self.raw_trans = False
+        self.sub_obfs = None
+
+    def init_data(self):
+        return sub_encode_obfs()
+
+    def set_server_info(self, server_info):
+        try:
+            if server_info.param:
+                self.sub_obfs = shadowsocks.obfs.obfs(server_info.param)
+                if server_info.data.sub_obfs is None:
+                    server_info.data.sub_obfs = self.sub_obfs.init_data()
+                _server_info = shadowsocks.obfs.server_info(server_info.data.sub_obfs)
+                _server_info.host = server_info.host
+                _server_info.port = server_info.port
+                _server_info.tcp_mss = server_info.tcp_mss
+                _server_info.param = ''
+                self.sub_obfs.set_server_info(_server_info)
+        except Exception as e:
+            shadowsocks.shell.print_exception(e)
+        self.server_info = server_info
 
     def pack_data(self, buf):
         if len(buf) == 0:
@@ -75,10 +100,13 @@ class verify_simple(plain.plain):
         return ret
 
     def client_encode(self, buf):
+        if self.sub_obfs is not None:
+            return self.sub_obfs.client_encode(buf)
         return buf
 
     def client_decode(self, buf):
-        # (buffer_to_recv, is_need_to_encode_and_send_back)
+        if self.sub_obfs is not None:
+            return self.sub_obfs.client_decode(buf)
         return (buf, False)
 
     def client_post_decrypt(self, buf):
@@ -123,10 +151,13 @@ class verify_simple(plain.plain):
         return ret
 
     def server_encode(self, buf):
+        if self.sub_obfs is not None:
+            return self.sub_obfs.server_encode(buf)
         return buf
 
     def server_decode(self, buf):
-        # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
+        if self.sub_obfs is not None:
+            return self.sub_obfs.server_decode(buf)
         return (buf, True, False)
 
     def server_post_decrypt(self, buf):
@@ -169,6 +200,26 @@ class verify_deflate(plain.plain):
         self.unit_len = 32700
         self.decrypt_packet_num = 0
         self.raw_trans = False
+        self.sub_obfs = None
+
+    def init_data(self):
+        return sub_encode_obfs()
+
+    def set_server_info(self, server_info):
+        try:
+            if server_info.param:
+                self.sub_obfs = shadowsocks.obfs.obfs(server_info.param)
+                if server_info.data.sub_obfs is None:
+                    server_info.data.sub_obfs = self.sub_obfs.init_data()
+                _server_info = shadowsocks.obfs.server_info(server_info.data.sub_obfs)
+                _server_info.host = server_info.host
+                _server_info.port = server_info.port
+                _server_info.tcp_mss = server_info.tcp_mss
+                _server_info.param = ''
+                self.sub_obfs.set_server_info(_server_info)
+        except Exception as e:
+            shadowsocks.shell.print_exception(e)
+        self.server_info = server_info
 
     def pack_data(self, buf):
         if len(buf) == 0:
@@ -186,10 +237,13 @@ class verify_deflate(plain.plain):
         return ret
 
     def client_encode(self, buf):
+        if self.sub_obfs is not None:
+            return self.sub_obfs.client_encode(buf)
         return buf
 
     def client_decode(self, buf):
-        # (buffer_to_recv, is_need_to_encode_and_send_back)
+        if self.sub_obfs is not None:
+            return self.sub_obfs.client_decode(buf)
         return (buf, False)
 
     def client_post_decrypt(self, buf):
@@ -225,10 +279,13 @@ class verify_deflate(plain.plain):
         return ret
 
     def server_encode(self, buf):
+        if self.sub_obfs is not None:
+            return self.sub_obfs.server_encode(buf)
         return buf
 
     def server_decode(self, buf):
-        # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
+        if self.sub_obfs is not None:
+            return self.sub_obfs.server_decode(buf)
         return (buf, True, False)
 
     def server_post_decrypt(self, buf):
@@ -248,7 +305,7 @@ class verify_deflate(plain.plain):
             if length > len(self.recv_buf):
                 break
 
-            out_buf += zlib.decompress(b'x\x9c' + self.recv_buf[2:length])
+            out_buf += zlib.decompress(b'\x78\x9c' + self.recv_buf[2:length])
             self.recv_buf = self.recv_buf[length:]
 
         if out_buf:

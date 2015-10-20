@@ -1,13 +1,14 @@
 {
-    "server":"0.0.0.0",
+    "server": "0.0.0.0",
     "server_ipv6": "::",
-    "server_port":8388,
+    "server_port": 8388,
     "local_address": "127.0.0.1",
-    "local_port":1080,
-    "password":"m",
-    "timeout":300,
-    "method":"aes-256-cfb",
-    "obfs":"http_simple_compatible",
+    "local_port": 1080,
+    "password": "m",
+    "timeout": 300,
+    "method": "aes-256-cfb",
+    "obfs": "http_simple_compatible",
+    "obfs_param": "",
     "fast_open": false,
     "workers": 1
 }

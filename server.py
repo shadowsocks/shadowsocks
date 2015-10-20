@@ -22,7 +22,7 @@ class MainThread(threading.Thread):
 
 def main():
 	shell.check_python()
-	if len(sys.argv) <= 3:
+	if True:
 		db_transfer.DbTransfer.thread_db()
 	else:
 		thread = MainThread()

@@ -25,8 +25,8 @@ import binascii
 import base64
 import datetime
 
-from shadowsocks.obfsplugin import plain
 from shadowsocks import common
+from shadowsocks.obfsplugin import plain
 from shadowsocks.common import to_bytes, to_str, ord
 
 def create_http_obfs(method):
@@ -41,7 +41,7 @@ def create_tls_obfs(method):
 def create_random_head_obfs(method):
     return random_head(method)
 
-obfs = {
+obfs_map = {
         'http_simple': (create_http_obfs,),
         'http_simple_compatible': (create_http_obfs,),
         'http2_simple': (create_http2_obfs,),
