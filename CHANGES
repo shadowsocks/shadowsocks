@@ -1,5 +1,10 @@
-2.6.11 2015-07-10
-- Fix a compatibility issue in UDP Relay
+2.6.11 2015-10-20
+- Obfs plugin
+- Obfs parameters
+- UDP over TCP
+- TCP over UDP (experimental)
+- Fix socket leaks
+- Catch abnormal UDP package
 
 2.6.10 2015-06-08
 - Optimize LRU cache
