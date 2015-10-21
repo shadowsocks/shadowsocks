@@ -30,11 +30,8 @@ import random
 from shadowsocks import encrypt, obfs, eventloop, shell, common
 from shadowsocks.common import pre_parse_header, parse_header
 
-# set it 'False' to use both new protocol and the original shadowsocks protocal
-# set it 'True' to use new protocol ONLY, to avoid GFW detecting
-FORCE_NEW_PROTOCOL = False
 # set it 'True' if run as a local client and connect to a server which support new protocol
-CLIENT_NEW_PROTOCOL = False
+CLIENT_NEW_PROTOCOL = False #deprecated
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
@@ -404,8 +401,6 @@ class TCPRelayHandler(object):
             if self._is_local:
                 header_result = parse_header(data)
             else:
-                if data is None or FORCE_NEW_PROTOCOL and common.ord(data[0]) != 0x88 and (~common.ord(data[0]) & 0xff) != 0x88:
-                    data = self._handel_protocol_error(self._client_address, ogn_data)
                 data = pre_parse_header(data)
                 if data is None:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
