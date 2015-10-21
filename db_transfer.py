@@ -8,6 +8,7 @@ import sys
 from server_pool import ServerPool
 import Config
 import traceback
+from shadowsocks import common
 
 class DbTransfer(object):
 
@@ -115,7 +116,7 @@ class DbTransfer(object):
 				allow = False
 
 			port = row['port']
-			passwd = row['passwd']
+			passwd = common.to_bytes(row['passwd'])
 
 			if port not in cur_servers:
 				cur_servers[port] = passwd

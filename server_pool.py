@@ -187,9 +187,9 @@ class ServerPool(object):
 
 		if 'server_ipv6' in self.config:
 			if port not in self.tcp_ipv6_servers_pool:
-				logging.info("stopped server at %s:%d already stop" % (self.config['server_ipv6'], port))
+				logging.info("stopped server at [%s]:%d already stop" % (self.config['server_ipv6'], port))
 			else:
-				logging.info("stopped server at %s:%d" % (self.config['server_ipv6'], port))
+				logging.info("stopped server at [%s]:%d" % (self.config['server_ipv6'], port))
 				try:
 					self.tcp_ipv6_servers_pool[port].close(False)
 					del self.tcp_ipv6_servers_pool[port]
