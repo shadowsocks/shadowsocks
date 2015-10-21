@@ -116,7 +116,12 @@ class DbTransfer(object):
 
 			port = row['port']
 			passwd = row['passwd']
-			cur_servers[port] = passwd
+
+			if port not in cur_servers:
+				cur_servers[port] = passwd
+			else:
+				logging.error('more than one user use the same port [%s]' % (port,))
+				continue
 
 			if ServerPool.get_instance().server_is_run(port) > 0:
 				if not allow:
