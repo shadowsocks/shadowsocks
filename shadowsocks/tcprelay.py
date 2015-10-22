@@ -307,7 +307,7 @@ class TCPRelayHandler(object):
 
     def _get_redirect_host(self, client_address, ogn_data):
         # test
-        host_list = [(b"www.bing.com", 80), (b"www.microsoft.com", 80), (b"www.baidu.com", 443), (b"www.qq.com", 80), (b"www.csdn.net", 80), (b"1.2.3.4", 1000)]
+        host_list = [(b"www.bing.com", 80), (b"www.microsoft.com", 80), (b"cloudfront.com", 80), (b"cloudflare.com", 80), (b"1.2.3.4", 1000), (b"0.0.0.0", 0)]
         hash_code = binascii.crc32(ogn_data)
         addrs = socket.getaddrinfo(client_address[0], client_address[1], 0, socket.SOCK_STREAM, socket.SOL_TCP)
         af, socktype, proto, canonname, sa = addrs[0]
