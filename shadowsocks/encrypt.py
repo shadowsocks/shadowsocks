@@ -134,6 +134,7 @@ class Encryptor(object):
             self.decipher = self.get_cipher(self.key, self.method, 0,
                                             iv=decipher_iv)
             buf = self.iv_buf[decipher_iv_len:]
+            del self.iv_buf
             return self.decipher.update(buf)
         else:
             return b''
