@@ -110,17 +110,19 @@ class http_simple(plain.plain):
         if self.has_recv_header:
             return (buf, True, False)
 
-        buf = self.recv_buffer + buf
+        self.recv_buffer += buf
+        buf = self.recv_buffer
         if len(buf) > 10:
             if match_begin(buf, b'GET /') or match_begin(buf, b'POST /'):
                 if len(buf) > 65536:
                     self.recv_buffer = None
+                    logging.warn('http_simple: over size')
                     return self.not_match_return(buf)
             else: #not http header, run on original protocol
                 self.recv_buffer = None
+                logging.debug('http_simple: not match begin')
                 return self.not_match_return(buf)
         else:
-            self.recv_buffer = buf
             return (b'', True, False)
 
         datas = buf.split(b'\r\n\r\n', 1)
@@ -130,12 +132,9 @@ class http_simple(plain.plain):
             if len(ret_buf) >= 15:
                 self.has_recv_header = True
                 return (ret_buf, True, False)
-            self.recv_buffer = buf
             return (b'', True, False)
         else:
-            self.recv_buffer = buf
             return (b'', True, False)
-        return self.not_match_return(buf)
 
 class http2_simple(plain.plain):
     def __init__(self, method):
@@ -173,7 +172,8 @@ class http2_simple(plain.plain):
         if self.has_recv_header:
             return (buf, True, False)
 
-        buf = self.recv_buffer + buf
+        self.recv_buffer += buf
+        buf = self.recv_buffer
         if len(buf) > 10:
             if match_begin(buf, b'GET /'):
                 pass
@@ -181,7 +181,6 @@ class http2_simple(plain.plain):
                 self.recv_buffer = None
                 return self.not_match_return(buf)
         else:
-            self.recv_buffer = buf
             return (b'', True, False)
 
         datas = buf.split(b'\r\n\r\n', 1)
@@ -193,10 +192,8 @@ class http2_simple(plain.plain):
                     ret_buf += datas[1]
                     self.has_recv_header = True
                     return (ret_buf, True, False)
-            self.recv_buffer = buf
             return (b'', True, False)
         else:
-            self.recv_buffer = buf
             return (b'', True, False)
         return self.not_match_return(buf)
 

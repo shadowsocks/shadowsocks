@@ -54,6 +54,16 @@ def to_str(s):
             return s.decode('utf-8')
     return s
 
+def int32(x):
+    if x > 0xFFFFFFFF or x < 0:
+        x &= 0xFFFFFFFF
+    if x > 0x7FFFFFFF:
+        x = int(0x100000000 - x)
+        if x < 0x80000000:
+            return -x
+        else:
+            return -2147483648
+    return x
 
 def inet_ntop(family, ipstr):
     if family == socket.AF_INET:

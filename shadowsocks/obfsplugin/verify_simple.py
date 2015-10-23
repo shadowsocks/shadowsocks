@@ -312,14 +312,18 @@ class client_queue(object):
     def insert(self, connection_id):
         self.update()
         if not self.enable:
+            logging.warn('auth_simple: not enable')
             return False
         if connection_id < self.front:
+            logging.warn('auth_simple: duplicate id')
             return False
         if not self.is_active():
             self.re_enable(connection_id)
         if connection_id > self.front + 0x4000:
+            logging.warn('auth_simple: wrong id')
             return False
         if connection_id in self.alloc:
+            logging.warn('auth_simple: duplicate id 2')
             return False
         if self.back <= connection_id:
             self.back = connection_id + 1
@@ -347,6 +351,7 @@ class obfs_auth_data(object):
                 if self.client_id[c_id].is_active():
                     active += 1
             if active >= max_client:
+                logging.warn('auth_simple: max active clients exceeded')
                 return False
 
             if len(self.client_id) < max_client:
@@ -368,6 +373,7 @@ class obfs_auth_data(object):
                     else:
                         self.client_id[client_id].re_enable(connection_id)
                     return self.client_id[client_id].insert(connection_id)
+            logging.warn('auth_simple: no inactive client [assert]')
             return False
         else:
             return self.client_id[client_id].insert(connection_id)
@@ -457,6 +463,7 @@ class auth_simple(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
+                    logging.info('auth_simple: over size')
                     return b'E'
                 else:
                     raise Exception('server_post_decrype data error')
@@ -464,6 +471,7 @@ class auth_simple(verify_base):
                 break
 
             if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
+                logging.info('auth_simple: crc32 error, data %s' % (binascii.hexlify(self.recv_buf[:length]),))
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -474,20 +482,29 @@ class auth_simple(verify_base):
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]
             if not self.has_recv_header:
-                if len(out_buf) < 8:
+                if len(out_buf) < 12:
                     self.raw_trans = True
                     self.recv_buf = b''
+                    logging.info('auth_simple: too short')
                     return b'E'
-                client_id = struct.unpack('<I', out_buf[:4])[0]
-                connection_id = struct.unpack('<I', out_buf[4:8])[0]
-                if self.server_info.data.insert(client_id, connection_id):
+                utc_time = struct.unpack('<I', out_buf[:4])[0]
+                client_id = struct.unpack('<I', out_buf[4:8])[0]
+                connection_id = struct.unpack('<I', out_buf[8:12])[0]
+                time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
+                if time_dif < 60 * -3 or time_dif > 60 * 3:
+                    self.raw_trans = True
+                    self.recv_buf = b''
+                    logging.info('auth_simple: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))
+                    return b'E'
+                elif self.server_info.data.insert(client_id, connection_id):
                     self.has_recv_header = True
-                    out_buf = out_buf[8:]
+                    out_buf = out_buf[12:]
                     self.client_id = client_id
                     self.connection_id = connection_id
                 else:
                     self.raw_trans = True
                     self.recv_buf = b''
+                    logging.info('auth_simple: auth fail, data %s' % (binascii.hexlify(out_buf),))
                     return b'E'
             self.recv_buf = self.recv_buf[length:]
 
