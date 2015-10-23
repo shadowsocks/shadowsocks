@@ -115,8 +115,6 @@ class TCPRelayHandler(object):
                                             config['method'])
         self._encrypt_correct = True
         self._obfs = obfs.obfs(config['obfs'])
-        if server.obfs_data is None:
-            server.obfs_data = self._obfs.init_data()
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
@@ -769,7 +767,7 @@ class TCPRelay(object):
         self.server_transfer_ul = 0
         self.server_transfer_dl = 0
         self.server_connections = 0
-        self.obfs_data = None
+        self.obfs_data = obfs.obfs(config['obfs']).init_data()
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers
