@@ -22,8 +22,10 @@ import sys
 import hashlib
 import logging
 import binascii
+import struct
 import base64
 import datetime
+import random
 
 from shadowsocks import common
 from shadowsocks.obfsplugin import plain
@@ -66,14 +68,53 @@ class http_simple(plain.plain):
         self.host = None
         self.port = 0
         self.recv_buffer = b''
+        self.user_agent = [b"Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0",
+            b"Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/44.0",
+            b"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+            b"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Ubuntu/11.10 Chromium/27.0.1453.93 Chrome/27.0.1453.93 Safari/537.36",
+            b"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0",
+            b"Mozilla/5.0 (compatible; WOW64; MSIE 10.0; Windows NT 6.2)",
+            b"Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27",
+            b"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.3; Trident/7.0; .NET4.0E; .NET4.0C)",
+            b"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
+            b"Mozilla/5.0 (Linux; Android 4.4; Nexus 5 Build/BuildID) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36",
+            b"Mozilla/5.0 (iPad; CPU OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3",
+            b"Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3"]
+
+    def encode_head(self, buf):
+        ret = b''
+        for ch in buf:
+            ret += '%' + binascii.hexlify(ch)
+        return ret
 
     def client_encode(self, buf):
-        # TODO
-        return buf
+        if self.has_sent_header:
+            return buf
+        if len(buf) > 64:
+            headlen = random.randint(1, 64)
+        else:
+            headlen = len(buf)
+        headdata = buf[:headlen]
+        buf = buf[headlen:]
+        port = b''
+        if self.server_info.port != 80:
+            port = b':' + common.to_bytes(str(self.server_info.port))
+        http_head = b"GET /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
+        http_head += b"Host: " + (self.server_info.param or self.server_info.host) + port + b"\r\n"
+        http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
+        http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\n\r\n"
+        self.has_sent_header = True
+        return http_head + buf
 
     def client_decode(self, buf):
-        # TODO
-        return (buf, False)
+        if self.has_recv_header:
+            return (buf, False)
+        pos = buf.find(b'\r\n\r\n')
+        if pos >= 0:
+            self.has_recv_header = True
+            return (buf[pos + 4:], False)
+        else:
+            return (b'', False)
 
     def server_encode(self, buf):
         if self.has_sent_header:
@@ -146,12 +187,19 @@ class http2_simple(plain.plain):
         self.recv_buffer = b''
 
     def client_encode(self, buf):
-        # TODO
-        return buf
+        if self.has_sent_header:
+            return buf
+        #TODO
 
     def client_decode(self, buf):
-        # TODO
-        return (buf, False)
+        if self.has_recv_header:
+            return (buf, False)
+        pos = buf.find(b'\r\n\r\n')
+        if pos >= 0:
+            self.has_recv_header = True
+            return (buf[pos + 4:], False)
+        else:
+            return (b'', False)
 
     def server_encode(self, buf):
         if self.has_sent_header:
@@ -204,9 +252,11 @@ class tls_simple(plain.plain):
         self.has_recv_header = False
 
     def client_encode(self, buf):
+        #TODO
         return buf
 
     def client_decode(self, buf):
+        #TODO
         # (buffer_to_recv, is_need_to_encode_and_send_back)
         return (buf, False)
 
@@ -236,13 +286,31 @@ class random_head(plain.plain):
         self.method = method
         self.has_sent_header = False
         self.has_recv_header = False
+        self.raw_trans_sent = False
+        self.raw_trans_recv = False
+        self.send_buffer = b''
 
     def client_encode(self, buf):
-        return buf
+        if self.raw_trans_sent:
+            return buf
+        self.send_buffer += buf
+        if not self.has_sent_header:
+            self.has_sent_header = True
+            data = os.urandom(common.ord(os.urandom(1)[0]) % 96 + 4)
+            crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
+            return data + struct.pack('<I', crc)
+        if self.raw_trans_recv:
+            ret = self.send_buffer
+            self.send_buffer = b''
+            self.raw_trans_sent = True
+            return ret
+        return b''
 
     def client_decode(self, buf):
-        # (buffer_to_recv, is_need_to_encode_and_send_back)
-        return (buf, False)
+        if self.raw_trans_recv:
+            return (buf, False)
+        self.raw_trans_recv = True
+        return (b'', True)
 
     def server_encode(self, buf):
         if self.has_sent_header:

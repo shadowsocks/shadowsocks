@@ -333,7 +333,8 @@ class TCPRelayHandler(object):
             data = self._obfs.client_pre_encrypt(data)
             data = self._encryptor.encrypt(data)
             data = self._obfs.client_encode(data)
-        self._data_to_write_to_remote.append(data)
+        if data:
+            self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             # for sslocal and fastopen, we basically wait for data and use
@@ -429,7 +430,9 @@ class TCPRelayHandler(object):
                     data += struct.pack('<I', crc)
                 data = self._obfs.client_pre_encrypt(data)
                 data_to_send = self._encryptor.encrypt(data)
-                self._data_to_write_to_remote.append(data_to_send)
+                data_to_send = self._obfs.client_encode(data_to_send)
+                if data_to_send:
+                    self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
                 self._dns_resolver.resolve(self._chosen_server[0],
                                            self._handle_dns_resolved)
@@ -628,7 +631,8 @@ class TCPRelayHandler(object):
         if self._is_local:
             obfs_decode = self._obfs.client_decode(data)
             if obfs_decode[1]:
-                self._write_to_sock(b'', self._remote_sock)
+                send_back = self._obfs.client_encode(b'')
+                self._write_to_sock(send_back, self._remote_sock)
             data = self._encryptor.decrypt(obfs_decode[0])
             data = self._obfs.client_post_decrypt(data)
         else:
