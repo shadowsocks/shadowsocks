@@ -285,6 +285,7 @@ class UDPRelay(object):
                 logging.info('closed UDP port %d', self._listen_port)
         self._cache.sweep()
         self._client_fd_to_server_addr.sweep()
+        self._dns_cache.sweep()
 
     def close(self, next_tick=False):
         logging.debug('UDP close')
