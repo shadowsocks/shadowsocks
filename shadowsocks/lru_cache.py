@@ -88,12 +88,12 @@ class LRUCache(collections.MutableMapping):
                                 self.close_callback(value)
                                 self._closed_values.add(value)
             for key in self._time_to_keys[least]:
-                self._last_visits.popleft()
                 if key in self._store:
                     if now - self._keys_to_last_time[key] > self.timeout:
                         del self._store[key]
                         del self._keys_to_last_time[key]
                         c += 1
+            self._last_visits.popleft()
             del self._time_to_keys[least]
         if c:
             self._closed_values.clear()
