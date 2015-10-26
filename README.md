@@ -1,3 +1,9 @@
+About shadowsocks-rm
+----------------
+
+This project is https://github.com/shadowsocks/shadowsocks clone. I JUST fix bug on the original code. Unless it is necessary to have additional features.
+
+
 shadowsocks
 ===========
 
