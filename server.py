@@ -3,7 +3,8 @@ import time
 import sys
 import threading
 import os
-os.chdir(os.path.split(os.path.realpath(__file__))[0])
+
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 import server_pool
 import db_transfer
