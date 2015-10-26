@@ -26,10 +26,10 @@ import logging
 
 if __name__ == '__main__':
     import sys
-    try:
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-    except:
-        sys.path.insert(0, os.path.join(sys.path[0], '../'))
+    import inspect
+    file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
+    os.chdir(file_path)
+    sys.path.insert(0, os.path.join(file_path, '../'))
 
 from shadowsocks import common, lru_cache, eventloop, shell
 

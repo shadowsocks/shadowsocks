@@ -24,12 +24,10 @@ import logging
 import signal
 
 if __name__ == '__main__':
-    try:
-        os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-    except:
-        os.chdir(os.path.dirname(sys.path[0]))
-        sys.path.insert(0, os.path.join(sys.path[0], '../'))
+    import inspect
+    file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
+    os.chdir(file_path)
+    sys.path.insert(0, os.path.join(file_path, '../'))
 
 from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, \
     asyncdns, manager
