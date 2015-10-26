@@ -29,7 +29,7 @@ from shadowsocks import common, eventloop, tcprelay, udprelay, asyncdns, shell
 
 
 BUF_SIZE = 1506
-STAT_SEND_LIMIT = 100
+STAT_SEND_LIMIT = 50
 
 
 class Manager(object):
@@ -167,7 +167,9 @@ class Manager(object):
             if i >= STAT_SEND_LIMIT:
                 send_data(r)
                 r.clear()
-        send_data(r)
+                i = 0
+        if len(r) > 0:
+            send_data(r)
         self._statistics.clear()
 
     def _send_control_data(self, data):
