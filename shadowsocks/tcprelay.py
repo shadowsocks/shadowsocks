@@ -263,8 +263,8 @@ class TCPRelayHandler(object):
                     if sock == self._local_sock and self._encrypt_correct:
                         obfs_encode = self._obfs.server_encode(data)
                         data = obfs_encode
-                l = len(data)
-                if l > 0:
+                if data:
+                    l = len(data)
                     s = sock.send(data)
                     if s < l:
                         data = data[s:]

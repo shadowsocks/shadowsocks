@@ -338,7 +338,9 @@ class obfs_auth_data(object):
     def __init__(self):
         self.sub_obfs = None
         self.client_id = {}
-        self.startup_time = int(time.time() - 30) & 0xffffffff
+        self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
+        self.local_client_id = b''
+        self.connection_id = 0
 
     def update(self, client_id, connection_id):
         if client_id in self.client_id:
@@ -404,8 +406,26 @@ class auth_simple(verify_base):
         data += struct.pack('<I', crc)
         return data
 
+    def auth_data(self):
+        utc_time = int(time.time()) & 0xFFFFFFFF
+        if self.server_info.data.connection_id > 0xFF000000:
+            self.server_info.data.local_client_id = b''
+        if not self.server_info.data.local_client_id:
+            self.server_info.data.local_client_id = os.urandom(4)
+            logging.debug("local_client_id %s" % (binascii.hexlify(self.server_info.data.local_client_id),))
+            self.server_info.data.connection_id = struct.unpack('<I', os.urandom(4))[0] & 0xFFFFFF
+        self.server_info.data.connection_id += 1
+        return b''.join([struct.pack('<I', utc_time),
+                self.server_info.data.local_client_id,
+                struct.pack('<I', self.server_info.data.connection_id)])
+
     def client_pre_encrypt(self, buf):
         ret = b''
+        if not self.has_sent_header:
+            datalen = max(len(buf), common.ord(os.urandom(1)[0]) % 32 + 4)
+            ret += self.pack_data(self.auth_data() + buf[:datalen])
+            buf = buf[datalen:]
+            self.has_sent_header = True
         while len(buf) > self.unit_len:
             ret += self.pack_data(buf[:self.unit_len])
             buf = buf[self.unit_len:]
