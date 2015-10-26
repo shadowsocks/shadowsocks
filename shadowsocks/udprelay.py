@@ -1293,6 +1293,7 @@ class UDPRelay(object):
                 logging.info('closed UDP port %d', self._listen_port)
         before_sweep_size = len(self._sockets)
         self._cache.sweep()
+        self._dns_cache.sweep()
         if before_sweep_size != len(self._sockets):
             logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
         self._client_fd_to_server_addr.sweep()
