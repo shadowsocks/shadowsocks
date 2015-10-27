@@ -24,6 +24,13 @@ import struct
 import re
 import logging
 
+if __name__ == '__main__':
+    import sys
+    import inspect
+    file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
+    os.chdir(file_path)
+    sys.path.insert(0, os.path.join(file_path, '../'))
+
 from shadowsocks import common, lru_cache, eventloop, shell
 
 
@@ -71,6 +78,17 @@ QTYPE_CNAME = 5
 QTYPE_NS = 2
 QCLASS_IN = 1
 
+def detect_ipv6_supprot():
+    if 'has_ipv6' in dir(socket):
+        s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        try:
+            s.connect(('ipv6.google.com', 0))
+            return True
+        except:
+            pass
+    return False
+
+IPV6_CONNECTION_SUPPORT = detect_ipv6_supprot()
 
 def build_address(address):
     address = address.strip(b'.')
@@ -338,17 +356,17 @@ class DNSResolver(object):
                         answer[2] == QCLASS_IN:
                     ip = answer[0]
                     break
-            if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
-                    == STATUS_IPV4:
-                self._hostname_status[hostname] = STATUS_IPV6
-                self._send_req(hostname, QTYPE_AAAA)
+            if not ip and self._hostname_status.get(hostname, STATUS_IPV4) \
+                    == STATUS_IPV6:
+                self._hostname_status[hostname] = STATUS_IPV4
+                self._send_req(hostname, QTYPE_A)
             else:
                 if ip:
                     self._cache[hostname] = ip
                     self._call_callback(hostname, ip)
-                elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
+                elif self._hostname_status.get(hostname, None) == STATUS_IPV4:
                     for question in response.questions:
-                        if question[1] == QTYPE_AAAA:
+                        if question[1] == QTYPE_A:
                             self._call_callback(hostname, None)
                             break
 
@@ -414,14 +432,21 @@ class DNSResolver(object):
                 return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
-                self._hostname_status[hostname] = STATUS_IPV4
-                self._send_req(hostname, QTYPE_A)
+                if IPV6_CONNECTION_SUPPORT:
+                    self._hostname_status[hostname] = STATUS_IPV6
+                    self._send_req(hostname, QTYPE_AAAA)
+                else:
+                    self._hostname_status[hostname] = STATUS_IPV4
+                    self._send_req(hostname, QTYPE_A)
                 self._hostname_to_cb[hostname] = [callback]
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
                 # TODO send again only if waited too long
-                self._send_req(hostname, QTYPE_A)
+                if IPV6_CONNECTION_SUPPORT:
+                    self._send_req(hostname, QTYPE_AAAA)
+                else:
+                    self._send_req(hostname, QTYPE_A)
 
     def close(self):
         if self._sock:
@@ -479,3 +504,4 @@ def test():
 
 if __name__ == '__main__':
     test()
+

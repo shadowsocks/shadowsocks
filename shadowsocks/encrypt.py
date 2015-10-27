@@ -77,6 +77,7 @@ class Encryptor(object):
         self.iv = None
         self.iv_sent = False
         self.cipher_iv = b''
+        self.iv_buf = b''
         self.decipher = None
         method = method.lower()
         self._method_info = self.get_method_info(method)
@@ -122,16 +123,21 @@ class Encryptor(object):
     def decrypt(self, buf):
         if len(buf) == 0:
             return buf
-        if self.decipher is None:
-            decipher_iv_len = self._method_info[1]
-            decipher_iv = buf[:decipher_iv_len]
+        if self.decipher is not None: #optimize
+            return self.decipher.update(buf)
+
+        decipher_iv_len = self._method_info[1]
+        if len(self.iv_buf) <= decipher_iv_len:
+            self.iv_buf += buf
+        if len(self.iv_buf) > decipher_iv_len:
+            decipher_iv = self.iv_buf[:decipher_iv_len]
             self.decipher = self.get_cipher(self.key, self.method, 0,
                                             iv=decipher_iv)
-            buf = buf[decipher_iv_len:]
-            if len(buf) == 0:
-                return buf
-        return self.decipher.update(buf)
-
+            buf = self.iv_buf[decipher_iv_len:]
+            del self.iv_buf
+            return self.decipher.update(buf)
+        else:
+            return b''
 
 def encrypt_all(password, method, op, data):
     result = []
