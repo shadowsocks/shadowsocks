@@ -422,7 +422,7 @@ class auth_simple(verify_base):
     def client_pre_encrypt(self, buf):
         ret = b''
         if not self.has_sent_header:
-            datalen = max(len(buf), common.ord(os.urandom(1)[0]) % 32 + 4)
+            datalen = min(len(buf), common.ord(os.urandom(1)[0]) % 32 + 4)
             ret += self.pack_data(self.auth_data() + buf[:datalen])
             buf = buf[datalen:]
             self.has_sent_header = True
