@@ -182,14 +182,28 @@ class http2_simple(plain.plain):
         self.method = method
         self.has_sent_header = False
         self.has_recv_header = False
+        self.raw_trans_sent = False
         self.host = None
         self.port = 0
         self.recv_buffer = b''
 
     def client_encode(self, buf):
-        if self.has_sent_header:
+        if self.raw_trans_sent:
             return buf
-        #TODO
+        self.send_buffer += buf
+        if not self.has_sent_header:
+            self.has_sent_header = True
+            http_head = b"GET / HTTP/1.1\r\n"
+            http_head += b"Host: " + (self.server_info.param or self.server_info.host) + port + b"\r\n"
+            http_head += b"Connection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\n"
+            http_head += b"HTTP2-Settings: " + base64.urlsafe_b64encode(buf) + b"\r\n"
+            return http_head + b"\r\n"
+        if self.has_recv_header:
+            ret = self.send_buffer
+            self.send_buffer = b''
+            self.raw_trans_sent = True
+            return ret
+        return b''
 
     def client_decode(self, buf):
         if self.has_recv_header:
@@ -250,15 +264,30 @@ class tls_simple(plain.plain):
         self.method = method
         self.has_sent_header = False
         self.has_recv_header = False
+        self.raw_trans_sent = False
 
     def client_encode(self, buf):
-        #TODO
-        return buf
+        if self.raw_trans_sent:
+            return buf
+        self.send_buffer += buf
+        if not self.has_sent_header:
+            self.has_sent_header = True
+            data = b"\x03\x03" + os.urandom(32) + binascii.unhexlify(b"000016c02bc02fc00ac009c013c01400330039002f0035000a0100006fff01000100000a00080006001700180019000b0002010000230000337400000010002900270568322d31360568322d31350568322d313402683208737064792f332e3108687474702f312e31000500050100000000000d001600140401050106010201040305030603020304020202")
+            data = b"\x01\x00" + struct.pack('>H', len(data)) + data
+            data = b"\x16\x03\x01" + struct.pack('>H', len(data)) + data
+            return data
+        if self.has_recv_header:
+            ret = self.send_buffer
+            self.send_buffer = b''
+            self.raw_trans_sent = True
+            return ret
+        return b''
 
     def client_decode(self, buf):
-        #TODO
-        # (buffer_to_recv, is_need_to_encode_and_send_back)
-        return (buf, False)
+        if self.has_recv_header:
+            return (buf, False)
+        self.has_recv_header = True
+        return (b'', True)
 
     def server_encode(self, buf):
         if self.has_sent_header:
