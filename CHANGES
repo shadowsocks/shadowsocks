@@ -1,3 +1,10 @@
+2.6.12 2015-10-27
+- IPv6 first
+- Fix mem leaks
+- auth_simple plugin
+- remove FORCE_NEW_PROTOCOL
+- optimize code
+
 2.6.11 2015-10-20
 - Obfs plugin
 - Obfs parameters
