@@ -207,7 +207,7 @@ class RecvQueue(object):
     def set_end(self, end_id):
         if end_id > self.end_id:
             eid = self.end_id
-            while eid < pack_id:
+            while eid < end_id:
                 self.miss_queue.add(eid)
                 eid += 1
             self.end_id = end_id
@@ -623,6 +623,7 @@ class TCPRelayHandler(object):
             for pid in missing:
                 data += struct.pack(">H", pid)
             rsp_data = self._pack_post_data(CMD_SYN_STATUS, pack_id, data)
+            addr = self.get_local_address()
             self._write_to_sock(rsp_data, self._local_sock, addr)
 
     def handle_stream_sync_status(self, addr, cmd, request_id, pack_id, max_send_id, data):

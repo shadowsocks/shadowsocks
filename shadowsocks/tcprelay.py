@@ -523,8 +523,8 @@ class TCPRelayHandler(object):
                             try:
                                 remote_sock.connect((remote_addr, remote_port))
                             except (OSError, IOError) as e:
-                                if eventloop.errno_from_exception(e) == \
-                                        errno.EINPROGRESS:
+                                if eventloop.errno_from_exception(e) in (errno.EINPROGRESS,
+                                        errno.EWOULDBLOCK):
                                     pass # always goto here
                                 else:
                                     raise e

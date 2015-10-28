@@ -83,9 +83,11 @@ def detect_ipv6_supprot():
         s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         try:
             s.connect(('ipv6.google.com', 0))
+            print('IPv6 support')
             return True
         except:
             pass
+    print('IPv6 not support')
     return False
 
 IPV6_CONNECTION_SUPPORT = detect_ipv6_supprot()
@@ -356,19 +358,34 @@ class DNSResolver(object):
                         answer[2] == QCLASS_IN:
                     ip = answer[0]
                     break
-            if not ip and self._hostname_status.get(hostname, STATUS_IPV4) \
-                    == STATUS_IPV6:
-                self._hostname_status[hostname] = STATUS_IPV4
-                self._send_req(hostname, QTYPE_A)
+            if IPV6_CONNECTION_SUPPORT:
+                if not ip and self._hostname_status.get(hostname, STATUS_IPV4) \
+                        == STATUS_IPV6:
+                    self._hostname_status[hostname] = STATUS_IPV4
+                    self._send_req(hostname, QTYPE_A)
+                else:
+                    if ip:
+                        self._cache[hostname] = ip
+                        self._call_callback(hostname, ip)
+                    elif self._hostname_status.get(hostname, None) == STATUS_IPV4:
+                        for question in response.questions:
+                            if question[1] == QTYPE_A:
+                                self._call_callback(hostname, None)
+                                break
             else:
-                if ip:
-                    self._cache[hostname] = ip
-                    self._call_callback(hostname, ip)
-                elif self._hostname_status.get(hostname, None) == STATUS_IPV4:
-                    for question in response.questions:
-                        if question[1] == QTYPE_A:
-                            self._call_callback(hostname, None)
-                            break
+                if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
+                        == STATUS_IPV4:
+                    self._hostname_status[hostname] = STATUS_IPV6
+                    self._send_req(hostname, QTYPE_AAAA)
+                else:
+                    if ip:
+                        self._cache[hostname] = ip
+                        self._call_callback(hostname, ip)
+                    elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
+                        for question in response.questions:
+                            if question[1] == QTYPE_AAAA:
+                                self._call_callback(hostname, None)
+                                break
 
     def handle_event(self, sock, fd, event):
         if sock != self._sock:
