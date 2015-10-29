@@ -465,9 +465,11 @@ class TCPRelayHandler(object):
                     try:
                         remote_sock.connect((remote_addr, remote_port))
                     except (OSError, IOError) as e:
-                        if eventloop.errno_from_exception(e) == \
-                                errno.EINPROGRESS:
-                            pass
+                        if eventloop.errno_from_exception(e) in (errno.EINPROGRESS,
+                                errno.EWOULDBLOCK):
+                            pass # always goto here
+                        else:
+                            raise e
 
                     self._loop.add(remote_sock,
                                    eventloop.POLL_ERR | eventloop.POLL_OUT,
@@ -830,7 +832,10 @@ class TCPRelayHandler(object):
         if self._remote_sock:
             logging.debug('destroying remote')
             self._loop.remove(self._remote_sock)
-            del self._fd_to_handlers[self._remote_sock.fileno()]
+            try:
+                del self._fd_to_handlers[self._remote_sock.fileno()]
+            except Exception as e:
+                pass
             self._remote_sock.close()
             self._remote_sock = None
         if self._sendingqueue.empty():
@@ -845,7 +850,11 @@ class TCPRelayHandler(object):
             addr = self.get_local_address()
             self._write_to_sock(rsp_data, self._local_sock, addr)
             self._local_sock = None
-            del self._reqid_to_handlers[self._request_id]
+            try:
+                del self._reqid_to_handlers[self._request_id]
+            except Exception as e:
+                pass
+
         self._server.remove_handler(self)
 
 def client_key(source_addr, server_af):
@@ -964,9 +973,14 @@ class UDPRelay(object):
         reqid_str = struct.pack(">H", request_id)
         return b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, data, _rand_data[:random.randint(0, len(_rand_data))], reqid_str])
 
+    def _handel_protocol_error(self, client_address, ogn_data):
+        #raise Exception('can not parse header')
+        logging.warn("Protocol ERROR, UDP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
+
     def _handle_server(self):
         server = self._server_socket
         data, r_addr = server.recvfrom(BUF_SIZE)
+        ogn_data = data
         if not data:
             logging.debug('UDP handle_server: data is empty')
         if self._stat_callback:
@@ -1057,8 +1071,14 @@ class UDPRelay(object):
                     logging.error(trace)
                     return
 
-        header_result = parse_header(data)
+        try:
+            header_result = parse_header(data)
+        except:
+            self._handel_protocol_error(r_addr, ogn_data)
+            return
+
         if header_result is None:
+            self._handel_protocol_error(r_addr, ogn_data)
             return
         connecttype, dest_addr, dest_port, header_length = header_result
 

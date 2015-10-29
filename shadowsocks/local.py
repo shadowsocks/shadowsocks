@@ -43,7 +43,7 @@ def main():
 
     config = shell.get_config(True)
 
-    if not config.get('ipv6', False):
+    if not config.get('dns_ipv6', False):
         asyncdns.IPV6_CONNECTION_SUPPORT = False
 
     daemon.daemon_exec(config)
