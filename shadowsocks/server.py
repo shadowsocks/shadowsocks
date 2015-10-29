@@ -54,6 +54,9 @@ def main():
         else:
             config['port_password'][str(server_port)] = config['password']
 
+    if not config.get('ipv6', False):
+        asyncdns.IPV6_CONNECTION_SUPPORT = False
+
     if config.get('manager_address', 0):
         logging.info('entering manager mode')
         manager.run(config)
