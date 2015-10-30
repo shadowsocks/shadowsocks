@@ -352,23 +352,24 @@ class obfs_auth_data(object):
         self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
         self.local_client_id = b''
         self.connection_id = 0
+        self.max_client = 16                         # max active client count
+        self.max_buffer = max(self.max_client, 256)  # max client id buffer size
 
     def update(self, client_id, connection_id):
         if client_id in self.client_id:
             self.client_id[client_id].update()
 
     def insert(self, client_id, connection_id):
-        max_client = 16
         if client_id not in self.client_id or not self.client_id[client_id].enable:
             active = 0
             for c_id in self.client_id:
                 if self.client_id[c_id].is_active():
                     active += 1
-            if active >= max_client:
+            if active >= self.max_client:
                 logging.warn('auth_simple: max active clients exceeded')
                 return False
 
-            if len(self.client_id) < max_client:
+            if len(self.client_id) < self.max_client:
                 if client_id not in self.client_id:
                     self.client_id[client_id] = client_queue(connection_id)
                 else:
@@ -378,7 +379,7 @@ class obfs_auth_data(object):
             random.shuffle(keys)
             for c_id in keys:
                 if not self.client_id[c_id].is_active() and self.client_id[c_id].enable:
-                    if len(self.client_id) >= 256:
+                    if len(self.client_id) >= self.max_buffer:
                         del self.client_id[c_id]
                     else:
                         self.client_id[c_id].enable = False
@@ -403,6 +404,7 @@ class auth_simple(verify_base):
         self.has_recv_header = False
         self.client_id = 0
         self.connection_id = 0
+        self.max_time_dif = 60 * 5 # time dif (second) setting
 
     def init_data(self):
         return obfs_auth_data()
@@ -524,7 +526,8 @@ class auth_simple(verify_base):
                 client_id = struct.unpack('<I', out_buf[4:8])[0]
                 connection_id = struct.unpack('<I', out_buf[8:12])[0]
                 time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
-                if time_dif < 60 * -3 or time_dif > 60 * 3 or common.int32(utc_time - self.server_info.data.startup_time) < 0:
+                if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
+                        or common.int32(utc_time - self.server_info.data.startup_time) < 0:
                     self.raw_trans = True
                     self.recv_buf = b''
                     logging.info('auth_simple: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))
