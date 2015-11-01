@@ -222,8 +222,8 @@ def test():
             'fast_open': False,
             'verbose': 2
         }
-        a_config.update(config)
-        manager = Manager(a_config)
+        config.update(a_config)
+        manager = Manager(config)
         enc.append(manager)
         manager.run()
 
