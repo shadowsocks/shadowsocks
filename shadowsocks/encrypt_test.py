@@ -7,10 +7,10 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 
-from crypto import rc4_md5
-from crypto import openssl
-from crypto import sodium
-from crypto import table
+from shadowsocks.crypto import rc4_md5
+from shadowsocks.crypto import openssl
+from shadowsocks.crypto import sodium
+from shadowsocks.crypto import table
 
 def main():
 	print("\n""rc4_md5")
