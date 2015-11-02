@@ -57,58 +57,41 @@ def match_begin(str1, str2):
 
 class obfs_verify_data(object):
     def __init__(self):
-        self.sub_obfs = None
+        pass
 
 class verify_base(plain.plain):
     def __init__(self, method):
         super(verify_base, self).__init__(method)
         self.method = method
-        self.sub_obfs = None
 
     def init_data(self):
         return obfs_verify_data()
 
     def set_server_info(self, server_info):
-        try:
-            if server_info.param:
-                sub_param = ''
-                param_list = server_info.param.split(',', 1)
-                if len(param_list) > 1:
-                    self.sub_obfs = shadowsocks.obfs.obfs(param_list[0])
-                    sub_param = param_list[1]
-                else:
-                    self.sub_obfs = shadowsocks.obfs.obfs(server_info.param)
-                if server_info.data.sub_obfs is None:
-                    server_info.data.sub_obfs = self.sub_obfs.init_data()
-                _server_info = shadowsocks.obfs.server_info(server_info.data.sub_obfs)
-                _server_info.host = server_info.host
-                _server_info.port = server_info.port
-                _server_info.tcp_mss = server_info.tcp_mss
-                _server_info.param = sub_param
-                self.sub_obfs.set_server_info(_server_info)
-        except Exception as e:
-            shadowsocks.shell.print_exception(e)
         self.server_info = server_info
 
     def client_encode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.client_encode(buf)
         return buf
 
     def client_decode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.client_decode(buf)
         return (buf, False)
 
     def server_encode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.server_encode(buf)
         return buf
 
     def server_decode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.server_decode(buf)
         return (buf, True, False)
+
+    def get_head_size(self, buf, def_value):
+        if len(buf) < 2:
+            return def_value
+        if ord(buf[0]) == 1:
+            return 7
+        if ord(buf[0]) == 4:
+            return 19
+        if ord(buf[0]) == 3:
+            return 4 + ord(buf[1])
+        return def_value
 
 class verify_simple(verify_base):
     def __init__(self, method):
@@ -336,28 +319,28 @@ class client_queue(object):
 
 class obfs_auth_data(object):
     def __init__(self):
-        self.sub_obfs = None
         self.client_id = {}
         self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
         self.local_client_id = b''
         self.connection_id = 0
+        self.max_client = 16                         # max active client count
+        self.max_buffer = max(self.max_client, 256)  # max client id buffer size
 
     def update(self, client_id, connection_id):
         if client_id in self.client_id:
             self.client_id[client_id].update()
 
     def insert(self, client_id, connection_id):
-        max_client = 16
         if client_id not in self.client_id or not self.client_id[client_id].enable:
             active = 0
             for c_id in self.client_id:
                 if self.client_id[c_id].is_active():
                     active += 1
-            if active >= max_client:
+            if active >= self.max_client:
                 logging.warn('auth_simple: max active clients exceeded')
                 return False
 
-            if len(self.client_id) < max_client:
+            if len(self.client_id) < self.max_client:
                 if client_id not in self.client_id:
                     self.client_id[client_id] = client_queue(connection_id)
                 else:
@@ -367,7 +350,7 @@ class obfs_auth_data(object):
             random.shuffle(keys)
             for c_id in keys:
                 if not self.client_id[c_id].is_active() and self.client_id[c_id].enable:
-                    if len(self.client_id) >= 256:
+                    if len(self.client_id) >= self.max_buffer:
                         del self.client_id[c_id]
                     else:
                         self.client_id[c_id].enable = False
@@ -392,6 +375,7 @@ class auth_simple(verify_base):
         self.has_recv_header = False
         self.client_id = 0
         self.connection_id = 0
+        self.max_time_dif = 60 * 5 # time dif (second) setting
 
     def init_data(self):
         return obfs_auth_data()
@@ -422,7 +406,8 @@ class auth_simple(verify_base):
     def client_pre_encrypt(self, buf):
         ret = b''
         if not self.has_sent_header:
-            datalen = min(len(buf), common.ord(os.urandom(1)[0]) % 32 + 4)
+            head_size = self.get_head_size(buf, 30)
+            datalen = min(len(buf), random.randint(0, 31) + head_size)
             ret += self.pack_data(self.auth_data() + buf[:datalen])
             buf = buf[datalen:]
             self.has_sent_header = True
@@ -512,7 +497,8 @@ class auth_simple(verify_base):
                 client_id = struct.unpack('<I', out_buf[4:8])[0]
                 connection_id = struct.unpack('<I', out_buf[8:12])[0]
                 time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
-                if time_dif < 60 * -3 or time_dif > 60 * 3 or common.int32(utc_time - self.server_info.data.startup_time) < 0:
+                if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
+                        or common.int32(utc_time - self.server_info.data.startup_time) < 0:
                     self.raw_trans = True
                     self.recv_buf = b''
                     logging.info('auth_simple: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))

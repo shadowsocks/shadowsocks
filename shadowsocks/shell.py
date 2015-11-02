@@ -218,6 +218,7 @@ def get_config(is_local):
 
     config['password'] = to_bytes(config.get('password', b''))
     config['method'] = to_str(config.get('method', 'aes-256-cfb'))
+    config['protocol'] = to_str(config.get('protocol', 'origin'))
     config['obfs'] = to_str(config.get('obfs', 'plain'))
     config['obfs_param'] = to_str(config.get('obfs_param', ''))
     config['port_password'] = config.get('port_password', None)

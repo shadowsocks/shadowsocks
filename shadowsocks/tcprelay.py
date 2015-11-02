@@ -122,6 +122,14 @@ class TCPRelayHandler(object):
         server_info.param = config['obfs_param']
         self._obfs.set_server_info(server_info)
 
+        self._protocol = obfs.obfs(config['protocol'])
+        server_info = obfs.server_info(server.protocol_data)
+        server_info.host = config['server']
+        server_info.port = server._listen_port
+        server_info.tcp_mss = 1440
+        server_info.param = ''
+        self._protocol.set_server_info(server_info)
+
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
@@ -330,7 +338,7 @@ class TCPRelayHandler(object):
 
     def _handle_stage_connecting(self, data):
         if self._is_local:
-            data = self._obfs.client_pre_encrypt(data)
+            data = self._protocol.client_pre_encrypt(data)
             data = self._encryptor.encrypt(data)
             data = self._obfs.client_encode(data)
         if data:
@@ -428,7 +436,7 @@ class TCPRelayHandler(object):
                     data = b'\x88' + struct.pack('>H', total_len) + chr(rnd_len) + (b' ' * (rnd_len - 1)) + data
                     crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
                     data += struct.pack('<I', crc)
-                data = self._obfs.client_pre_encrypt(data)
+                data = self._protocol.client_pre_encrypt(data)
                 data_to_send = self._encryptor.encrypt(data)
                 data_to_send = self._obfs.client_encode(data_to_send)
                 if data_to_send:
@@ -523,8 +531,8 @@ class TCPRelayHandler(object):
                             try:
                                 remote_sock.connect((remote_addr, remote_port))
                             except (OSError, IOError) as e:
-                                if eventloop.errno_from_exception(e) == \
-                                        errno.EINPROGRESS:
+                                if eventloop.errno_from_exception(e) in (errno.EINPROGRESS,
+                                        errno.EWOULDBLOCK):
                                     pass # always goto here
                                 else:
                                     raise e
@@ -574,7 +582,7 @@ class TCPRelayHandler(object):
                 else:
                     data = obfs_decode[0]
                 try:
-                    data = self._obfs.server_post_decrypt(data)
+                    data = self._protocol.server_post_decrypt(data)
                 except Exception as e:
                     shell.print_exception(e)
                     self.destroy()
@@ -583,7 +591,7 @@ class TCPRelayHandler(object):
         self._server.server_transfer_ul += len(data)
         if self._stage == STAGE_STREAM:
             if self._is_local:
-                data = self._obfs.client_pre_encrypt(data)
+                data = self._protocol.client_pre_encrypt(data)
                 data = self._encryptor.encrypt(data)
                 data = self._obfs.client_encode(data)
             self._write_to_sock(data, self._remote_sock)
@@ -634,10 +642,10 @@ class TCPRelayHandler(object):
                 send_back = self._obfs.client_encode(b'')
                 self._write_to_sock(send_back, self._remote_sock)
             data = self._encryptor.decrypt(obfs_decode[0])
-            data = self._obfs.client_post_decrypt(data)
+            data = self._protocol.client_post_decrypt(data)
         else:
             if self._encrypt_correct:
-                data = self._obfs.server_pre_encrypt(data)
+                data = self._protocol.server_pre_encrypt(data)
                 data = self._encryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
@@ -756,6 +764,12 @@ class TCPRelayHandler(object):
             del self._fd_to_handlers[self._local_sock.fileno()]
             self._local_sock.close()
             self._local_sock = None
+        if self._obfs:
+            self._obfs.dispose()
+            self._obfs = None
+        if self._protocol:
+            self._protocol.dispose()
+            self._protocol = None
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
         self._server.add_connection(-1)
@@ -771,6 +785,7 @@ class TCPRelay(object):
         self.server_transfer_ul = 0
         self.server_transfer_dl = 0
         self.server_connections = 0
+        self.protocol_data = obfs.obfs(config['protocol']).init_data()
         self.obfs_data = obfs.obfs(config['obfs']).init_data()
 
         self._timeout = config['timeout']

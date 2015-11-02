@@ -192,6 +192,9 @@ class http2_simple(plain.plain):
             return buf
         self.send_buffer += buf
         if not self.has_sent_header:
+            port = b''
+            if self.server_info.port != 80:
+                port = b':' + common.to_bytes(str(self.server_info.port))
             self.has_sent_header = True
             http_head = b"GET / HTTP/1.1\r\n"
             http_head += b"Host: " + (self.server_info.param or self.server_info.host) + port + b"\r\n"
