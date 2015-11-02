@@ -68,8 +68,8 @@ def main():
     port_password = config['port_password']
     del config['port_password']
     for port, password_obfs in port_password.items():
-        protocol = 'origin'
-        obfs_param = ''
+        protocol = config.get("protocol", 'origin')
+        obfs_param = config.get("obfs_param", '')
         if type(password_obfs) == list:
             password = password_obfs[0]
             obfs = password_obfs[1]
