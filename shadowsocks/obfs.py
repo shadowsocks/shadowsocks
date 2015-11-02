@@ -83,3 +83,7 @@ class obfs(object):
     def server_post_decrypt(self, buf):
         return self.obfs.server_post_decrypt(buf)
 
+    def dispose(self):
+        self.obfs.dispose()
+        del self.obfs
+

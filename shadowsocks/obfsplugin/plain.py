@@ -27,6 +27,7 @@ def create_obfs(method):
 
 obfs_map = {
         'plain': (create_obfs,),
+        'origin': (create_obfs,),
 }
 
 class plain(object):
@@ -65,4 +66,7 @@ class plain(object):
 
     def server_post_decrypt(self, buf):
         return buf
+
+    def dispose(self):
+        pass
 

@@ -7,6 +7,7 @@
     "password": "m",
     "timeout": 300,
     "method": "aes-256-cfb",
+    "protocol": "origin",
     "obfs": "http_simple_compatible",
     "obfs_param": "",
     "dns_ipv6": false,

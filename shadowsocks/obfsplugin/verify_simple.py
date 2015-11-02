@@ -57,57 +57,29 @@ def match_begin(str1, str2):
 
 class obfs_verify_data(object):
     def __init__(self):
-        self.sub_obfs = None
+        pass
 
 class verify_base(plain.plain):
     def __init__(self, method):
         super(verify_base, self).__init__(method)
         self.method = method
-        self.sub_obfs = None
 
     def init_data(self):
         return obfs_verify_data()
 
     def set_server_info(self, server_info):
-        try:
-            if server_info.param:
-                sub_param = ''
-                param_list = server_info.param.split(',', 1)
-                if len(param_list) > 1:
-                    self.sub_obfs = shadowsocks.obfs.obfs(param_list[0])
-                    sub_param = param_list[1]
-                else:
-                    self.sub_obfs = shadowsocks.obfs.obfs(server_info.param)
-                if server_info.data.sub_obfs is None:
-                    server_info.data.sub_obfs = self.sub_obfs.init_data()
-                _server_info = shadowsocks.obfs.server_info(server_info.data.sub_obfs)
-                _server_info.host = server_info.host
-                _server_info.port = server_info.port
-                _server_info.tcp_mss = server_info.tcp_mss
-                _server_info.param = sub_param
-                self.sub_obfs.set_server_info(_server_info)
-        except Exception as e:
-            shadowsocks.shell.print_exception(e)
         self.server_info = server_info
 
     def client_encode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.client_encode(buf)
         return buf
 
     def client_decode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.client_decode(buf)
         return (buf, False)
 
     def server_encode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.server_encode(buf)
         return buf
 
     def server_decode(self, buf):
-        if self.sub_obfs is not None:
-            return self.sub_obfs.server_decode(buf)
         return (buf, True, False)
 
     def get_head_size(self, buf, def_value):
@@ -347,7 +319,6 @@ class client_queue(object):
 
 class obfs_auth_data(object):
     def __init__(self):
-        self.sub_obfs = None
         self.client_id = {}
         self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
         self.local_client_id = b''
