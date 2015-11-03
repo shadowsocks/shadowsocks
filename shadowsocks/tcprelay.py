@@ -268,7 +268,7 @@ class TCPRelayHandler(object):
                 if self._is_local:
                     pass
                 else:
-                    if sock == self._local_sock and self._encrypt_correct:
+                    if sock == self._local_sock and self._encrypt_correct and (self._obfs is not None):
                         obfs_encode = self._obfs.server_encode(data)
                         data = obfs_encode
                 if data:
@@ -338,9 +338,10 @@ class TCPRelayHandler(object):
 
     def _handle_stage_connecting(self, data):
         if self._is_local:
-            data = self._protocol.client_pre_encrypt(data)
-            data = self._encryptor.encrypt(data)
-            data = self._obfs.client_encode(data)
+            if self._encryptor is not None:
+                data = self._protocol.client_pre_encrypt(data)
+                data = self._encryptor.encrypt(data)
+                data = self._obfs.client_encode(data)
         if data:
             self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
@@ -436,9 +437,10 @@ class TCPRelayHandler(object):
                     data = b'\x88' + struct.pack('>H', total_len) + chr(rnd_len) + (b' ' * (rnd_len - 1)) + data
                     crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
                     data += struct.pack('<I', crc)
-                data = self._protocol.client_pre_encrypt(data)
-                data_to_send = self._encryptor.encrypt(data)
-                data_to_send = self._obfs.client_encode(data_to_send)
+                if self._encryptor is not None:
+                    data = self._protocol.client_pre_encrypt(data)
+                    data_to_send = self._encryptor.encrypt(data)
+                    data_to_send = self._obfs.client_encode(data_to_send)
                 if data_to_send:
                     self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
@@ -573,27 +575,31 @@ class TCPRelayHandler(object):
         ogn_data = data
         self._update_activity(len(data))
         if not is_local:
-            if self._encrypt_correct:
-                obfs_decode = self._obfs.server_decode(data)
-                if obfs_decode[2]:
-                    self._write_to_sock(b'', self._local_sock)
-                if obfs_decode[1]:
-                    data = self._encryptor.decrypt(obfs_decode[0])
-                else:
-                    data = obfs_decode[0]
-                try:
-                    data = self._protocol.server_post_decrypt(data)
-                except Exception as e:
-                    shell.print_exception(e)
-                    self.destroy()
+            if self._encryptor is not None:
+                if self._encrypt_correct:
+                    obfs_decode = self._obfs.server_decode(data)
+                    if obfs_decode[2]:
+                        self._write_to_sock(b'', self._local_sock)
+                    if obfs_decode[1]:
+                        data = self._encryptor.decrypt(obfs_decode[0])
+                    else:
+                        data = obfs_decode[0]
+                    try:
+                        data = self._protocol.server_post_decrypt(data)
+                    except Exception as e:
+                        shell.print_exception(e)
+                        self.destroy()
+            else:
+                return
             if not data:
                 return
         self._server.server_transfer_ul += len(data)
         if self._stage == STAGE_STREAM:
             if self._is_local:
-                data = self._protocol.client_pre_encrypt(data)
-                data = self._encryptor.encrypt(data)
-                data = self._obfs.client_encode(data)
+                if self._encryptor is not None:
+                    data = self._protocol.client_pre_encrypt(data)
+                    data = self._encryptor.encrypt(data)
+                    data = self._obfs.client_encode(data)
             self._write_to_sock(data, self._remote_sock)
             return
         elif is_local and self._stage == STAGE_INIT:
@@ -634,19 +640,22 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
-        self._server.server_transfer_dl += len(data)
-        self._update_activity(len(data))
-        if self._is_local:
-            obfs_decode = self._obfs.client_decode(data)
-            if obfs_decode[1]:
-                send_back = self._obfs.client_encode(b'')
-                self._write_to_sock(send_back, self._remote_sock)
-            data = self._encryptor.decrypt(obfs_decode[0])
-            data = self._protocol.client_post_decrypt(data)
+        if self._encryptor is not None:
+            self._server.server_transfer_dl += len(data)
+            self._update_activity(len(data))
+            if self._is_local:
+                obfs_decode = self._obfs.client_decode(data)
+                if obfs_decode[1]:
+                    send_back = self._obfs.client_encode(b'')
+                    self._write_to_sock(send_back, self._remote_sock)
+                data = self._encryptor.decrypt(obfs_decode[0])
+                data = self._protocol.client_post_decrypt(data)
+            else:
+                if self._encrypt_correct:
+                    data = self._protocol.server_pre_encrypt(data)
+                    data = self._encryptor.encrypt(data)
         else:
-            if self._encrypt_correct:
-                data = self._protocol.server_pre_encrypt(data)
-                data = self._encryptor.encrypt(data)
+            return
         try:
             self._write_to_sock(data, self._local_sock)
         except Exception as e:
@@ -770,6 +779,7 @@ class TCPRelayHandler(object):
         if self._protocol:
             self._protocol.dispose()
             self._protocol = None
+        self._encryptor = None
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
         self._server.add_connection(-1)
