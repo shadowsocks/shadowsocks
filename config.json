@@ -5,7 +5,7 @@
     "local_address": "127.0.0.1",
     "local_port": 1080,
     "password": "m",
-    "timeout": 300,
+    "timeout": 120,
     "method": "aes-256-cfb",
     "protocol": "origin",
     "obfs": "http_simple_compatible",
