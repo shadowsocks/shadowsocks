@@ -133,10 +133,14 @@ class http_simple(plain.plain):
             hex_items = lines[0].split(b'%')
             if hex_items and len(hex_items) > 1:
                 for index in range(1, len(hex_items)):
-                    if len(hex_items[index]) != 2:
+                    if len(hex_items[index]) < 2:
+                        ret_buf += binascii.unhexlify('0' + hex_items[index])
+                        break
+                    elif len(hex_items[index]) > 2:
                         ret_buf += binascii.unhexlify(hex_items[index][:2])
                         break
-                    ret_buf += binascii.unhexlify(hex_items[index])
+                    else:
+                        ret_buf += binascii.unhexlify(hex_items[index])
                 return ret_buf
         return b''
 
