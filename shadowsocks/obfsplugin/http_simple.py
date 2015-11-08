@@ -171,9 +171,10 @@ class http_simple(plain.plain):
             return (b'', True, False)
 
         datas = buf.split(b'\r\n\r\n', 1)
-        if datas and len(datas) > 1:
+        if datas:
             ret_buf = self.get_data_from_http_header(buf)
-            ret_buf += datas[1]
+            if len(datas) > 1:
+                ret_buf += datas[1]
             if len(ret_buf) >= 15:
                 self.has_recv_header = True
                 return (ret_buf, True, False)

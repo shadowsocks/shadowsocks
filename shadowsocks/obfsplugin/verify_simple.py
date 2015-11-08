@@ -126,7 +126,7 @@ class verify_simple(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192:
+            if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -167,7 +167,7 @@ class verify_simple(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192:
+            if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -223,7 +223,7 @@ class verify_deflate(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 32768:
+            if length >= 32768 or length < 6:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -255,7 +255,7 @@ class verify_deflate(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 32768:
+            if length >= 32768 or length < 6:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -424,7 +424,7 @@ class auth_simple(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192:
+            if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
@@ -465,7 +465,7 @@ class auth_simple(verify_base):
         out_buf = b''
         while len(self.recv_buf) > 2:
             length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192:
+            if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
