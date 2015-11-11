@@ -120,9 +120,9 @@ class http_simple(plain.plain):
         if self.has_sent_header:
             return buf
 
-        header = b'HTTP/1.1 200 OK\r\nServer: openresty\r\nDate: '
+        header = b'HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Encoding: gzip\r\nContent-Type: text/html\r\nDate: '
         header += to_bytes(datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT'))
-        header += b'\r\nContent-Type: text/plain; charset=utf-8\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nKeep-Alive: timeout=20\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\n\r\n'
+        header += b'\r\nServer: nginx\r\nTransfer-Encoding: chunked\r\nVary: Accept-Encoding\r\n\r\n'
         self.has_sent_header = True
         return header + buf
 
