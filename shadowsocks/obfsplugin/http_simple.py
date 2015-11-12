@@ -90,8 +90,9 @@ class http_simple(plain.plain):
     def client_encode(self, buf):
         if self.has_sent_header:
             return buf
-        if len(buf) > 64:
-            headlen = random.randint(1, 64)
+        head_size = self.get_head_size(buf, 30)
+        if len(buf) - head_size > 64:
+            headlen = head_size + random.randint(1, 64)
         else:
             headlen = len(buf)
         headdata = buf[:headlen]
