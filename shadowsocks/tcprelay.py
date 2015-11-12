@@ -130,6 +130,8 @@ class TCPRelayHandler(object):
         server_info.param = ''
         self._protocol.set_server_info(server_info)
 
+        self._redir_list = config.get('redirect', ["0.0.0.0:0"])
+
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
@@ -312,8 +314,7 @@ class TCPRelayHandler(object):
         return True
 
     def _get_redirect_host(self, client_address, ogn_data):
-        # test
-        host_list = [(b"www.bing.com", 80), (b"www.microsoft.com", 80), (b"cloudfront.com", 80), (b"cloudflare.com", 80), (b"1.2.3.4", 1000), (b"0.0.0.0", 0)]
+        host_list = self._redir_list or ["0.0.0.0:0"]
         hash_code = binascii.crc32(ogn_data)
         addrs = socket.getaddrinfo(client_address[0], client_address[1], 0, socket.SOCK_STREAM, socket.SOL_TCP)
         af, socktype, proto, canonname, sa = addrs[0]
@@ -324,7 +325,14 @@ class TCPRelayHandler(object):
             addr = struct.unpack('>I', address_bytes)[0]
         else:
             addr = 0
-        return host_list[((hash_code & 0xffffffff) + addr + 3) % len(host_list)]
+        host_post = common.to_str(host_list[((hash_code & 0xffffffff) + addr) % len(host_list)])
+        items = host_post.rsplit(':', 1)
+        if len(items) > 1:
+            try:
+                return (items[0], int(items[1]))
+            except:
+                pass
+        return (host_post, 80)
 
     def _handel_protocol_error(self, client_address, ogn_data):
         #raise Exception('can not parse header')
@@ -332,7 +340,7 @@ class TCPRelayHandler(object):
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
-        data = b"\x03" + common.chr(len(host)) + host + struct.pack('>H', port)
+        data = b"\x03" + common.chr(len(host)) + common.to_bytes(host) + struct.pack('>H', port)
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
         return data + ogn_data
 

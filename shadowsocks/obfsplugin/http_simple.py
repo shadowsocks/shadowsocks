@@ -178,6 +178,8 @@ class http_simple(plain.plain):
             if len(ret_buf) >= 15:
                 self.has_recv_header = True
                 return (ret_buf, True, False)
+            if len(ret_buf) == 0:
+                return self.not_match_return(buf)
             return (b'', True, False)
         else:
             return (b'', True, False)
