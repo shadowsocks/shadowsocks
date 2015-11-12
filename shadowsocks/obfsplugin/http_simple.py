@@ -92,7 +92,7 @@ class http_simple(plain.plain):
             return buf
         head_size = self.get_head_size(buf, 30)
         if len(buf) - head_size > 64:
-            headlen = head_size + random.randint(1, 64)
+            headlen = head_size + random.randint(0, 64)
         else:
             headlen = len(buf)
         headdata = buf[:headlen]
