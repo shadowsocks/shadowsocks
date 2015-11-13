@@ -154,7 +154,7 @@ def parse_header(data):
     elif addrtype == ADDRTYPE_HOST:
         if len(data) > 2:
             addrlen = ord(data[1])
-            if len(data) >= 2 + addrlen:
+            if len(data) >= 4 + addrlen:
                 dest_addr = data[2:2 + addrlen]
                 dest_port = struct.unpack('>H', data[2 + addrlen:4 +
                                                      addrlen])[0]
