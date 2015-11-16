@@ -118,16 +118,22 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
-        server_info.tcp_mss = 1440
         server_info.param = config['obfs_param']
+        server_info.iv = self._encryptor.cipher_iv
+        server_info.key = self._encryptor.cipher_key
+        server_info.head_len = 30
+        server_info.tcp_mss = 1440
         self._obfs.set_server_info(server_info)
 
         self._protocol = obfs.obfs(config['protocol'])
         server_info = obfs.server_info(server.protocol_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
-        server_info.tcp_mss = 1440
         server_info.param = ''
+        server_info.iv = self._encryptor.cipher_iv
+        server_info.key = self._encryptor.cipher_key
+        server_info.head_len = 30
+        server_info.tcp_mss = 1440
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["0.0.0.0:0"])
@@ -386,6 +392,18 @@ class TCPRelayHandler(object):
                         traceback.print_exc()
                     self.destroy()
 
+    def _get_head_size(self, buf, def_value):
+        if len(buf) < 2:
+            return def_value
+        head_type = ord(buf[0]) & 0xF
+        if head_type == 1:
+            return 7
+        if head_type == 4:
+            return 19
+        if head_type == 3:
+            return 4 + ord(buf[1])
+        return def_value
+
     def _handle_stage_addr(self, ogn_data, data):
         try:
             if self._is_local:
@@ -439,6 +457,9 @@ class TCPRelayHandler(object):
                 self._write_to_sock((b'\x05\x00\x00\x01'
                                      b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
+                head_len = self._get_head_size(data, 30)
+                self._obfs.obfs.server_info.head_len = head_len
+                self._protocol.obfs.server_info.head_len = head_len
                 if CLIENT_NEW_PROTOCOL:
                     rnd_len = random.randint(1, 32)
                     total_len = 7 + rnd_len + len(data)

@@ -78,6 +78,7 @@ class Encryptor(object):
         self.iv_sent = False
         self.cipher_iv = b''
         self.iv_buf = b''
+        self.cipher_key = b''
         self.decipher = None
         method = method.lower()
         self._method_info = self.get_method_info(method)
@@ -109,6 +110,7 @@ class Encryptor(object):
         if op == 1:
             # this iv is for cipher not decipher
             self.cipher_iv = iv[:m[1]]
+        self.cipher_key = key
         return m[2](method, key, iv, op)
 
     def encrypt(self, buf):

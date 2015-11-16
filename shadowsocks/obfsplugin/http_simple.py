@@ -90,7 +90,7 @@ class http_simple(plain.plain):
     def client_encode(self, buf):
         if self.has_sent_header:
             return buf
-        head_size = self.get_head_size(buf, 30)
+        head_size = len(self.server_info.iv) + self.server_info.head_len
         if len(buf) - head_size > 64:
             headlen = head_size + random.randint(0, 64)
         else:
