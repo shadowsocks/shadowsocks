@@ -286,8 +286,8 @@ class verify_sha1(verify_base):
         self.pack_id += 1
         return data
 
-    def auth_pack_data(self, buf):
-        data = buf
+    def pack_auth_data(self, buf):
+        data = chr(ord(buf[0]) | 0x10) + buf[1:]
         data += hmac.new(self.server_info.iv + self.server_info.key, buf, hashlib.sha1).digest()[:10]
         return data
 
@@ -295,7 +295,7 @@ class verify_sha1(verify_base):
         ret = b''
         if not self.has_sent_header:
             datalen = self.get_head_size(buf, 30)
-            ret += self.auth_pack_data(buf[datalen:])
+            ret += self.pack_auth_data(buf[datalen:])
             buf = buf[datalen:]
             self.has_sent_header = True
         while len(buf) > self.unit_len:

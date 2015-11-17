@@ -192,8 +192,8 @@ def parse_header(data):
     dest_addr = None
     dest_port = None
     header_length = 0
-    connecttype = (addrtype & 0x10) and 1 or 0
-    addrtype &= ~0x10
+    connecttype = (addrtype & 0x8) and 1 or 0
+    addrtype &= ~0x8
     if addrtype == ADDRTYPE_IPV4:
         if len(data) >= 7:
             dest_addr = socket.inet_ntoa(data[1:5])
