@@ -295,7 +295,7 @@ class verify_sha1(verify_base):
         ret = b''
         if not self.has_sent_header:
             datalen = self.get_head_size(buf, 30)
-            ret += self.pack_auth_data(buf[datalen:])
+            ret += self.pack_auth_data(buf[:datalen])
             buf = buf[datalen:]
             self.has_sent_header = True
         while len(buf) > self.unit_len:
