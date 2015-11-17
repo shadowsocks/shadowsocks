@@ -23,13 +23,14 @@ import hashlib
 import logging
 
 from shadowsocks import common
-from shadowsocks.obfsplugin import plain, http_simple, verify_simple
+from shadowsocks.obfsplugin import plain, http_simple, verify, auth
 
 
 method_supported = {}
 method_supported.update(plain.obfs_map)
 method_supported.update(http_simple.obfs_map)
-method_supported.update(verify_simple.obfs_map)
+method_supported.update(verify.obfs_map)
+method_supported.update(auth.obfs_map)
 
 class server_info(object):
     def __init__(self, data):

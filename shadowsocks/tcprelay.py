@@ -30,9 +30,6 @@ import random
 from shadowsocks import encrypt, obfs, eventloop, shell, common
 from shadowsocks.common import pre_parse_header, parse_header
 
-# set it 'True' if run as a local client and connect to a server which support new protocol
-CLIENT_NEW_PROTOCOL = False #deprecated
-
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
 
@@ -120,6 +117,7 @@ class TCPRelayHandler(object):
         server_info.port = server._listen_port
         server_info.param = config['obfs_param']
         server_info.iv = self._encryptor.cipher_iv
+        server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
         server_info.tcp_mss = 1440
@@ -131,6 +129,7 @@ class TCPRelayHandler(object):
         server_info.port = server._listen_port
         server_info.param = ''
         server_info.iv = self._encryptor.cipher_iv
+        server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
         server_info.tcp_mss = 1440
@@ -460,12 +459,6 @@ class TCPRelayHandler(object):
                 head_len = self._get_head_size(data, 30)
                 self._obfs.obfs.server_info.head_len = head_len
                 self._protocol.obfs.server_info.head_len = head_len
-                if CLIENT_NEW_PROTOCOL:
-                    rnd_len = random.randint(1, 32)
-                    total_len = 7 + rnd_len + len(data)
-                    data = b'\x88' + struct.pack('>H', total_len) + chr(rnd_len) + (b' ' * (rnd_len - 1)) + data
-                    crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
-                    data += struct.pack('<I', crc)
                 if self._encryptor is not None:
                     data = self._protocol.client_pre_encrypt(data)
                     data_to_send = self._encryptor.encrypt(data)
@@ -606,6 +599,9 @@ class TCPRelayHandler(object):
                     if obfs_decode[2]:
                         self._write_to_sock(b'', self._local_sock)
                     if obfs_decode[1]:
+                        if not self._protocol.obfs.server_info.recv_iv:
+                            iv_len = len(self._protocol.obfs.server_info.iv)
+                            self._protocol.obfs.server_info.recv_iv = obfs_decode[0][:iv_len]
                         data = self._encryptor.decrypt(obfs_decode[0])
                     else:
                         data = obfs_decode[0]
@@ -673,6 +669,9 @@ class TCPRelayHandler(object):
                 if obfs_decode[1]:
                     send_back = self._obfs.client_encode(b'')
                     self._write_to_sock(send_back, self._remote_sock)
+                if not self._protocol.obfs.server_info.recv_iv:
+                    iv_len = len(self._protocol.obfs.server_info.iv)
+                    self._protocol.obfs.server_info.recv_iv = obfs_decode[0][:iv_len]
                 data = self._encryptor.decrypt(obfs_decode[0])
                 data = self._protocol.client_post_decrypt(data)
             else:
