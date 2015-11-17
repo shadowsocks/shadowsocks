@@ -75,7 +75,7 @@ class plain(object):
     def get_head_size(self, buf, def_value):
         if len(buf) < 2:
             return def_value
-        head_type = ord(buf[0]) & 0xF
+        head_type = ord(buf[0]) & 0x7
         if head_type == 1:
             return 7
         if head_type == 4:

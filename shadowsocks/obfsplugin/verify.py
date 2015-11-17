@@ -288,7 +288,7 @@ class verify_sha1(verify_base):
 
     def pack_auth_data(self, buf):
         data = chr(ord(buf[0]) | 0x10) + buf[1:]
-        data += hmac.new(self.server_info.iv + self.server_info.key, buf, hashlib.sha1).digest()[:10]
+        data += hmac.new(self.server_info.iv + self.server_info.key, data, hashlib.sha1).digest()[:10]
         return data
 
     def client_pre_encrypt(self, buf):
