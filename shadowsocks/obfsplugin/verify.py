@@ -332,7 +332,7 @@ class verify_sha1(verify_base):
             if sha1data != self.recv_buf[head_size:head_size + 10]:
                 logging.error('server_post_decrype data uncorrect auth HMAC-SHA1')
                 return b'E'
-            out_buf = to_bytes(chr(ord(self.recv_buf[0]) & 0xF)) + self.recv_buf[1:head_size]
+            out_buf = to_bytes(chr(ord(self.recv_buf[0]) & 0xEF)) + self.recv_buf[1:head_size]
             self.recv_buf = self.recv_buf[head_size + 10:]
             self.has_recv_header = True
         while len(self.recv_buf) > 2:
@@ -345,7 +345,7 @@ class verify_sha1(verify_base):
             if sha1data != self.recv_buf[2:12]:
                 raise Exception('server_post_decrype data uncorrect chunk HMAC-SHA1')
 
-            self.recv_id += 1
+            self.recv_id = (self.recv_id + 1) & 0xFFFFFFFF
             out_buf += data
             self.recv_buf = self.recv_buf[length:]
 
