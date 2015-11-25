@@ -276,7 +276,8 @@ class TCPRelayHandler(object):
                     pass
                 else:
                     if sock == self._remote_sock:
-                        self._server.server_transfer_ul += len(data)
+                        if self._encrypt_correct:
+                            self._server.server_transfer_ul += len(data)
                     elif self._encrypt_correct and (self._obfs is not None):
                         obfs_encode = self._obfs.server_encode(data)
                         data = obfs_encode
