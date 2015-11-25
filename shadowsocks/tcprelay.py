@@ -275,7 +275,9 @@ class TCPRelayHandler(object):
                 if self._is_local:
                     pass
                 else:
-                    if sock == self._local_sock and self._encrypt_correct and (self._obfs is not None):
+                    if sock == self._remote_sock:
+                        self._server.server_transfer_ul += len(data)
+                    elif self._encrypt_correct and (self._obfs is not None):
                         obfs_encode = self._obfs.server_encode(data)
                         data = obfs_encode
                 if data:
@@ -614,7 +616,6 @@ class TCPRelayHandler(object):
                 return
             if not data:
                 return
-        self._server.server_transfer_ul += len(data)
         if self._stage == STAGE_STREAM:
             if self._is_local:
                 if self._encryptor is not None:
