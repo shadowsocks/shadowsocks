@@ -80,8 +80,8 @@ QCLASS_IN = 1
 
 def detect_ipv6_supprot():
     if 'has_ipv6' in dir(socket):
-        s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         try:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             s.connect(('ipv6.google.com', 0))
             print('IPv6 support')
             return True
@@ -447,6 +447,15 @@ class DNSResolver(object):
             if not is_valid_hostname(hostname):
                 callback(None, Exception('invalid hostname: %s' % hostname))
                 return
+            if False:
+                addrs = socket.getaddrinfo(hostname, 0, 0,
+                                       socket.SOCK_DGRAM, socket.SOL_UDP)
+                if addrs:
+                    af, socktype, proto, canonname, sa = addrs[0]
+                    logging.debug('DNS resolve %s %s' % (hostname, sa[0]) )
+                    self._cache[hostname] = sa[0]
+                    callback((hostname, sa[0]), None)
+                    return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
                 if IPV6_CONNECTION_SUPPORT:
