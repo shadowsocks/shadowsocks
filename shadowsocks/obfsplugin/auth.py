@@ -127,12 +127,15 @@ class obfs_auth_data(object):
         self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
         self.local_client_id = b''
         self.connection_id = 0
-        self.max_client = 16                         # max active client count
-        self.max_buffer = max(self.max_client, 256)  # max client id buffer size
+        self.set_max_client(16) # max active client count
 
     def update(self, client_id, connection_id):
         if client_id in self.client_id:
             self.client_id[client_id].update()
+
+    def set_max_client(self, max_client):
+        self.max_client = max_client
+        self.max_buffer = max(self.max_client * 2, 256)
 
     def insert(self, client_id, connection_id):
         if client_id not in self.client_id or not self.client_id[client_id].enable:
@@ -183,6 +186,13 @@ class auth_simple(verify_base):
 
     def init_data(self):
         return obfs_auth_data()
+
+    def set_server_info(self, server_info):
+        self.server_info = server_info
+        try:
+            max_client = int(server_info.protocol_param)
+        except:
+            pass
 
     def pack_data(self, buf):
         if len(buf) == 0:

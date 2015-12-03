@@ -115,7 +115,8 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
-        server_info.param = config['obfs_param']
+        server_info.protocol_param = ''
+        server_info.obfs_param = config['obfs_param']
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
@@ -127,7 +128,8 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.protocol_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
-        server_info.param = ''
+        server_info.protocol_param = config['protocol_param']
+        server_info.obfs_param = ''
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
@@ -343,11 +345,12 @@ class TCPRelayHandler(object):
         return (host_post, 80)
 
     def _handel_protocol_error(self, client_address, ogn_data):
-        #raise Exception('can not parse header')
         logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
+        if port == 0:
+            raise Exception('can not parse header')
         data = b"\x03" + common.chr(len(host)) + common.to_bytes(host) + struct.pack('>H', port)
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
         return data + ogn_data

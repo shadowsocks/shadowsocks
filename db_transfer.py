@@ -37,14 +37,16 @@ class DbTransfer(object):
 					continue
 				elif last_transfer[id][0] <= curr_transfer[id][0] and \
 				last_transfer[id][1] <= curr_transfer[id][1]:
-					dt_transfer[id] = [curr_transfer[id][0] - last_transfer[id][0],
-										curr_transfer[id][1] - last_transfer[id][1]]
+					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * Config.MYSQL_TRANSFER_MUL),
+										int((curr_transfer[id][1] - last_transfer[id][1]) * Config.MYSQL_TRANSFER_MUL)]
 				else:
-					dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
+					dt_transfer[id] = [int(curr_transfer[id][0] * Config.MYSQL_TRANSFER_MUL),
+										int(curr_transfer[id][1] * Config.MYSQL_TRANSFER_MUL)]
 			else:
 				if curr_transfer[id][0] == 0 and curr_transfer[id][1] == 0:
 					continue
-				dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
+				dt_transfer[id] = [int(curr_transfer[id][0] * Config.MYSQL_TRANSFER_MUL),
+									int(curr_transfer[id][1] * Config.MYSQL_TRANSFER_MUL)]
 
 		self.last_get_transfer = curr_transfer
 		query_head = 'UPDATE user'

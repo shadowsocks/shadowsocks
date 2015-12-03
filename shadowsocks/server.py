@@ -69,6 +69,8 @@ def main():
     del config['port_password']
     for port, password_obfs in port_password.items():
         protocol = config.get("protocol", 'origin')
+        protocol_param = config.get("protocol_param", '')
+        obfs = config.get("obfs", 'plain')
         obfs_param = config.get("obfs_param", '')
         if type(password_obfs) == list:
             password = password_obfs[0]
@@ -80,7 +82,6 @@ def main():
             obfs_param = password_obfs.get('obfs_param', '')
         else:
             password = password_obfs
-            obfs = config["obfs"]
         a_config = config.copy()
         ipv6_ok = False
         logging.info("server start with protocol[%s] password [%s] method [%s] obfs [%s] obfs_param [%s]" %
@@ -92,6 +93,7 @@ def main():
                 a_config['server_port'] = int(port)
                 a_config['password'] = password
                 a_config['protocol'] = protocol
+                a_config['protocol_param'] = protocol_param
                 a_config['obfs'] = obfs
                 a_config['obfs_param'] = obfs_param
                 a_config['server'] = a_config['server_ipv6']
@@ -109,6 +111,7 @@ def main():
             a_config['server_port'] = int(port)
             a_config['password'] = password
             a_config['protocol'] = protocol
+            a_config['protocol_param'] = protocol_param
             a_config['obfs'] = obfs
             a_config['obfs_param'] = obfs_param
             logging.info("starting server at %s:%d" %

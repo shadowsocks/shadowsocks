@@ -101,7 +101,7 @@ class http_simple(plain.plain):
         if self.server_info.port != 80:
             port = b':' + common.to_bytes(str(self.server_info.port))
         http_head = b"GET /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
-        http_head += b"Host: " + (self.server_info.param or self.server_info.host) + port + b"\r\n"
+        http_head += b"Host: " + (self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
         http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
         http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\n\r\n"
         self.has_sent_header = True
@@ -171,8 +171,8 @@ class http_simple(plain.plain):
         else:
             return (b'', True, False)
 
-        datas = buf.split(b'\r\n\r\n', 1)
-        if datas:
+        if b'\r\n\r\n' in buf:
+            datas = buf.split(b'\r\n\r\n', 1)
             ret_buf = self.get_data_from_http_header(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
@@ -205,7 +205,7 @@ class http2_simple(plain.plain):
                 port = b':' + common.to_bytes(str(self.server_info.port))
             self.has_sent_header = True
             http_head = b"GET / HTTP/1.1\r\n"
-            http_head += b"Host: " + (self.server_info.param or self.server_info.host) + port + b"\r\n"
+            http_head += b"Host: " + (self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
             http_head += b"Connection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\n"
             http_head += b"HTTP2-Settings: " + base64.urlsafe_b64encode(buf) + b"\r\n"
             return http_head + b"\r\n"

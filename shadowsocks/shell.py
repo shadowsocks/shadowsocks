@@ -130,11 +130,11 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hd:s:b:p:k:l:m:o:c:t:vq'
+        shortopts = 'hd:s:b:p:k:l:m:P:o:G:g:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
                     'version']
     else:
-        shortopts = 'hd:s:p:k:m:o:c:t:vq'
+        shortopts = 'hd:s:p:k:m:P:o:G:g:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:
@@ -168,8 +168,14 @@ def get_config(is_local):
                 config['server'] = to_str(value)
             elif key == '-m':
                 config['method'] = to_str(value)
+            elif key == '-P':
+                config['protocol'] = to_str(value)
             elif key == '-o':
                 config['obfs'] = to_str(value)
+            elif key == '-G':
+                config['protocol_param'] = to_str(value)
+            elif key == '-g':
+                config['obfs_param'] = to_str(value)
             elif key == '-b':
                 config['local_address'] = to_str(value)
             elif key == '-v':
@@ -219,6 +225,7 @@ def get_config(is_local):
     config['password'] = to_bytes(config.get('password', b''))
     config['method'] = to_str(config.get('method', 'aes-256-cfb'))
     config['protocol'] = to_str(config.get('protocol', 'origin'))
+    config['protocol_param'] = to_str(config.get('protocol_param', ''))
     config['obfs'] = to_str(config.get('obfs', 'plain'))
     config['obfs_param'] = to_str(config.get('obfs_param', ''))
     config['port_password'] = config.get('port_password', None)
