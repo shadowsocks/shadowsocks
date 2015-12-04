@@ -28,7 +28,6 @@ if __name__ == '__main__':
     import sys
     import inspect
     file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
-    os.chdir(file_path)
     sys.path.insert(0, os.path.join(file_path, '../'))
 
 from shadowsocks import common, lru_cache, eventloop, shell

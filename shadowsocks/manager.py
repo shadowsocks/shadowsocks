@@ -207,7 +207,9 @@ def test():
     eventloop.TIMEOUT_PRECISION = 1
 
     def run_server():
-        config = {
+        config = shell.get_config(True)
+        config = config.copy()
+        a_config = {
             'server': '127.0.0.1',
             'local_port': 1081,
             'port_password': {
@@ -220,6 +222,7 @@ def test():
             'fast_open': False,
             'verbose': 2
         }
+        config.update(a_config)
         manager = Manager(config)
         enc.append(manager)
         manager.run()
