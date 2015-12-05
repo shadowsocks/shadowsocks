@@ -69,7 +69,8 @@ import errno
 import random
 
 from shadowsocks import encrypt, eventloop, lru_cache, common, shell
-from shadowsocks.common import parse_header, pack_addr
+from shadowsocks.common import parse_header, pack_addr, \
+    ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
 
 BUF_SIZE = 65536
@@ -97,6 +98,10 @@ class UDPRelay(object):
         self._password = common.to_bytes(config['password'])
         self._method = config['method']
         self._timeout = config['timeout']
+        if 'one_time_auth' in config and config['one_time_auth']:
+            self._one_time_auth_enable = True
+        else:
+            self._one_time_auth_enable = False
         self._is_local = is_local
         self._cache = lru_cache.LRUCache(timeout=config['timeout'],
                                          close_callback=self._close_client)
@@ -243,7 +248,19 @@ class UDPRelay(object):
             header_result = parse_header(data)
             if header_result is None:
                 return
-            # addrtype, dest_addr, dest_port, header_length = header_result
+            addrtype, dest_addr, dest_port, header_length = header_result
+            # spec https://shadowsocks.org/en/spec/one-time-auth.html
+            if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
+                if len(data) < header_length + ONETIMEAUTH_BYTES:
+                    logging.warn('one time auth header is too short')
+                    return None
+                if onetimeauth_verify(data[-ONETIMEAUTH_BYTES:],
+                                      data[header_length: -ONETIMEAUTH_BYTES],
+                                      self._encryptor.decipher_iv + self._encryptor.key) is False:
+                    logging.warn('one time auth fail')
+                    return None
+                self._one_time_authed = True
+                header_length += ONETIMEAUTH_BYTES
             response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
