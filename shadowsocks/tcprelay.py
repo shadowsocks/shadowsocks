@@ -274,15 +274,13 @@ class TCPRelayHandler(object):
             return True
         else:
             try:
-                if self._is_local:
-                    pass
-                else:
+                if self._encrypt_correct:
                     if sock == self._remote_sock:
-                        if self._encrypt_correct:
-                            self._server.server_transfer_ul += len(data)
-                    elif self._encrypt_correct and (self._obfs is not None):
-                        obfs_encode = self._obfs.server_encode(data)
-                        data = obfs_encode
+                        self._server.server_transfer_ul += len(data)
+                        self._update_activity(len(data))
+                    elif not self._is_local and self._obfs is not None:
+                            obfs_encode = self._obfs.server_encode(data)
+                            data = obfs_encode
                 if data:
                     l = len(data)
                     s = sock.send(data)
@@ -597,7 +595,6 @@ class TCPRelayHandler(object):
             self.destroy()
             return
         ogn_data = data
-        self._update_activity(len(data))
         if not is_local:
             if self._encryptor is not None:
                 if self._encrypt_correct:
@@ -667,8 +664,6 @@ class TCPRelayHandler(object):
             self.destroy()
             return
         if self._encryptor is not None:
-            self._server.server_transfer_dl += len(data)
-            self._update_activity(len(data))
             if self._is_local:
                 obfs_decode = self._obfs.client_decode(data)
                 if obfs_decode[1]:
@@ -683,6 +678,8 @@ class TCPRelayHandler(object):
                 if self._encrypt_correct:
                     data = self._protocol.server_pre_encrypt(data)
                     data = self._encryptor.encrypt(data)
+            self._update_activity(len(data))
+            self._server.server_transfer_dl += len(data)
         else:
             return
         try:

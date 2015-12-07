@@ -8,6 +8,7 @@
     "timeout": 120,
     "method": "aes-256-cfb",
     "protocol": "auth_sha1_compatible",
+    "protocol_param": "",
     "obfs": "http_simple_compatible",
     "obfs_param": "",
     "dns_ipv6": false,
