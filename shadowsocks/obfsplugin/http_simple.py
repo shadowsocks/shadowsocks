@@ -194,6 +194,7 @@ class http2_simple(plain.plain):
         self.host = None
         self.port = 0
         self.recv_buffer = b''
+        self.send_buffer = b''
 
     def client_encode(self, buf):
         if self.raw_trans_sent:
@@ -276,6 +277,7 @@ class tls_simple(plain.plain):
         self.has_sent_header = False
         self.has_recv_header = False
         self.raw_trans_sent = False
+        self.send_buffer = b''
 
     def client_encode(self, buf):
         if self.raw_trans_sent:
