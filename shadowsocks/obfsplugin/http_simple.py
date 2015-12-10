@@ -307,8 +307,16 @@ class tls_simple(plain.plain):
             return buf
         self.has_sent_header = True
         # TODO
-        #server_hello = b''
-        return b'\x16\x03\x01'
+        data = b"\x03\x03" + os.urandom(32)
+        data = b"\x02\x00" + struct.pack('>H', len(data)) + data
+        data = b"\x16\x03\x01" + struct.pack('>H', len(data)) + data
+        return data
+
+    def decode_error_return(self, buf):
+        self.has_sent_header = True
+        if self.method == 'tls_simple':
+            return (b'E', False, False)
+        return (buf, True, False)
 
     def server_decode(self, buf):
         if self.has_recv_header:
@@ -316,10 +324,23 @@ class tls_simple(plain.plain):
 
         self.has_recv_header = True
         if not match_begin(buf, b'\x16\x03\x01'):
-            self.has_sent_header = True
-            if self.method == 'tls_simple':
-                return (b'E', False, False)
-            return (buf, True, False)
+            return self.decode_error_return(buf);
+        buf = buf[3:]
+        if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
+            return self.decode_error_return(buf);
+        buf = buf[2:]
+        if not match_begin(buf, b'\x01\x00'): #client hello
+            return self.decode_error_return(buf);
+        buf = buf[2:]
+        if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
+            return self.decode_error_return(buf);
+        buf = buf[2:]
+        if not match_begin(buf, b'\x03\x03'):
+            return self.decode_error_return(buf);
+        buf = buf[2:]
+        verifyid = buf[:32]
+        buf = buf[32:]
+        sessionid = buf[:4]
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
 
