@@ -179,7 +179,7 @@ class tls_auth(plain.plain):
         return (b'', True)
 
     def server_encode(self, buf):
-        if self.has_sent_header:
+        if self.raw_trans_sent or self.has_sent_header:
             return buf
         self.has_sent_header = True
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"0016c02bc02fc00ac009c013c01400330039002f0035000a0100006fff01000100000a00080006001700180019000b0002010000230000337400000010002900270568322d31360568322d31350568322d313402683208737064792f332e3108687474702f312e31000500050100000000000d001600140401050106010201040305030603020304020202")
@@ -191,8 +191,9 @@ class tls_auth(plain.plain):
         return data
 
     def decode_error_return(self, buf):
+        self.raw_trans_sent = True
         self.raw_trans_recv = True
-        if self.method == 'tls_simple':
+        if self.method == 'tls1.0_session_auth':
             return (b'E', False, False)
         return (buf, True, False)
 
