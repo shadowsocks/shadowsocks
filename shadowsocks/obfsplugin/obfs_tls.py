@@ -117,15 +117,6 @@ class tls_simple(plain.plain):
         buf = buf[2:]
         if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
             return self.decode_error_return(buf)
-        buf = buf[2:]
-        if not match_begin(buf, self.tls_version):
-            return self.decode_error_return(buf)
-        buf = buf[2:]
-        verifyid = buf[:32]
-        buf = buf[32:]
-        sessionid_len = ord(buf[1])
-        sessionid = buf[1:sessionid_len + 1]
-        buf = buf[sessionid_len+1:]
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
 
