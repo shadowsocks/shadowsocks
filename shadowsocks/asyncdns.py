@@ -81,7 +81,7 @@ def detect_ipv6_supprot():
     if 'has_ipv6' in dir(socket):
         try:
             s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            s.connect(('ipv6.google.com', 0))
+            s.connect(('::1', 0))
             print('IPv6 support')
             return True
         except:
