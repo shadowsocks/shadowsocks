@@ -268,9 +268,11 @@ class tls_auth(plain.plain):
         if sha1 != verifyid[22:]:
             logging.debug("tls_auth wrong sha1")
             return self.decode_error_return(ogn_buf)
-        if verifyid[4:22] in self.server_info.data.client_data:
+        if self.server_info.data.client_data.get(verifyid[:22]):
             logging.error("replay attack detect, id = %s" % (binascii.hexlify(verifyid)))
             return self.decode_error_return(ogn_buf)
+        self.server_info.data.client_data.sweep()
+        self.server_info.data.client_data[verifyid[:22]] = sessionid
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
 

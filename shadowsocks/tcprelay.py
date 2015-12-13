@@ -603,6 +603,7 @@ class TCPRelayHandler(object):
                     except Exception as e:
                         shell.print_exception(e)
                         self.destroy()
+                        return
                     if obfs_decode[2]:
                         self._write_to_sock(b'', self._local_sock)
                     if obfs_decode[1]:
@@ -674,6 +675,7 @@ class TCPRelayHandler(object):
                 except Exception as e:
                     shell.print_exception(e)
                     self.destroy()
+                    return
                 if obfs_decode[1]:
                     send_back = self._obfs.client_encode(b'')
                     self._write_to_sock(send_back, self._remote_sock)
@@ -686,6 +688,7 @@ class TCPRelayHandler(object):
                 except Exception as e:
                     shell.print_exception(e)
                     self.destroy()
+                    return
             else:
                 if self._encrypt_correct:
                     data = self._protocol.server_pre_encrypt(data)

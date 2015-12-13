@@ -247,20 +247,14 @@ class auth_simple(verify_base):
             if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    return None
-                else:
-                    raise Exception('client_post_decrypt data error')
+                raise Exception('client_post_decrypt data error')
             if length > len(self.recv_buf):
                 break
 
             if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
                 self.raw_trans = True
                 self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    return None
-                else:
-                    raise Exception('client_post_decrypt data uncorrect CRC32')
+                raise Exception('client_post_decrypt data uncorrect CRC32')
 
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]
