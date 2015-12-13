@@ -37,9 +37,6 @@ def create_http_obfs(method):
 def create_http2_obfs(method):
     return http2_simple(method)
 
-def create_tls_obfs(method):
-    return tls_simple(method)
-
 def create_random_head_obfs(method):
     return random_head(method)
 
@@ -48,8 +45,6 @@ obfs_map = {
         'http_simple_compatible': (create_http_obfs,),
         'http2_simple': (create_http2_obfs,),
         'http2_simple_compatible': (create_http2_obfs,),
-        'tls_simple': (create_tls_obfs,),
-        'tls_simple_compatible': (create_tls_obfs,),
         'random_head': (create_random_head_obfs,),
         'random_head_compatible': (create_random_head_obfs,),
 }
@@ -270,79 +265,6 @@ class http2_simple(plain.plain):
         else:
             return (b'', True, False)
         return self.not_match_return(buf)
-
-class tls_simple(plain.plain):
-    def __init__(self, method):
-        self.method = method
-        self.has_sent_header = False
-        self.has_recv_header = False
-        self.raw_trans_sent = False
-        self.send_buffer = b''
-
-    def client_encode(self, buf):
-        if self.raw_trans_sent:
-            return buf
-        self.send_buffer += buf
-        if not self.has_sent_header:
-            self.has_sent_header = True
-            data = b"\x03\x03" + os.urandom(32) + binascii.unhexlify(b"000016c02bc02fc00ac009c013c01400330039002f0035000a0100006fff01000100000a00080006001700180019000b0002010000230000337400000010002900270568322d31360568322d31350568322d313402683208737064792f332e3108687474702f312e31000500050100000000000d001600140401050106010201040305030603020304020202")
-            data = b"\x01\x00" + struct.pack('>H', len(data)) + data
-            data = b"\x16\x03\x01" + struct.pack('>H', len(data)) + data
-            return data
-        if self.has_recv_header:
-            ret = self.send_buffer
-            self.send_buffer = b''
-            self.raw_trans_sent = True
-            return ret
-        return b''
-
-    def client_decode(self, buf):
-        if self.has_recv_header:
-            return (buf, False)
-        self.has_recv_header = True
-        return (b'', True)
-
-    def server_encode(self, buf):
-        if self.has_sent_header:
-            return buf
-        self.has_sent_header = True
-        # TODO
-        data = b"\x03\x03" + os.urandom(32)
-        data = b"\x02\x00" + struct.pack('>H', len(data)) + data
-        data = b"\x16\x03\x01" + struct.pack('>H', len(data)) + data
-        return data
-
-    def decode_error_return(self, buf):
-        self.has_sent_header = True
-        if self.method == 'tls_simple':
-            return (b'E', False, False)
-        return (buf, True, False)
-
-    def server_decode(self, buf):
-        if self.has_recv_header:
-            return (buf, True, False)
-
-        self.has_recv_header = True
-        if not match_begin(buf, b'\x16\x03\x01'):
-            return self.decode_error_return(buf);
-        buf = buf[3:]
-        if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
-            return self.decode_error_return(buf);
-        buf = buf[2:]
-        if not match_begin(buf, b'\x01\x00'): #client hello
-            return self.decode_error_return(buf);
-        buf = buf[2:]
-        if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
-            return self.decode_error_return(buf);
-        buf = buf[2:]
-        if not match_begin(buf, b'\x03\x03'):
-            return self.decode_error_return(buf);
-        buf = buf[2:]
-        verifyid = buf[:32]
-        buf = buf[32:]
-        sessionid = buf[:4]
-        # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
-        return (b'', False, True)
 
 class random_head(plain.plain):
     def __init__(self, method):

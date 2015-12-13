@@ -598,7 +598,11 @@ class TCPRelayHandler(object):
         if not is_local:
             if self._encryptor is not None:
                 if self._encrypt_correct:
-                    obfs_decode = self._obfs.server_decode(data)
+                    try:
+                        obfs_decode = self._obfs.server_decode(data)
+                    except Exception as e:
+                        shell.print_exception(e)
+                        self.destroy()
                     if obfs_decode[2]:
                         self._write_to_sock(b'', self._local_sock)
                     if obfs_decode[1]:
@@ -665,7 +669,11 @@ class TCPRelayHandler(object):
             return
         if self._encryptor is not None:
             if self._is_local:
-                obfs_decode = self._obfs.client_decode(data)
+                try:
+                    obfs_decode = self._obfs.client_decode(data)
+                except Exception as e:
+                    shell.print_exception(e)
+                    self.destroy()
                 if obfs_decode[1]:
                     send_back = self._obfs.client_encode(b'')
                     self._write_to_sock(send_back, self._remote_sock)
@@ -673,7 +681,11 @@ class TCPRelayHandler(object):
                     iv_len = len(self._protocol.obfs.server_info.iv)
                     self._protocol.obfs.server_info.recv_iv = obfs_decode[0][:iv_len]
                 data = self._encryptor.decrypt(obfs_decode[0])
-                data = self._protocol.client_post_decrypt(data)
+                try:
+                    data = self._protocol.client_post_decrypt(data)
+                except Exception as e:
+                    shell.print_exception(e)
+                    self.destroy()
             else:
                 if self._encrypt_correct:
                     data = self._protocol.server_pre_encrypt(data)

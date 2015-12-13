@@ -250,7 +250,7 @@ class auth_simple(verify_base):
                 if self.decrypt_packet_num == 0:
                     return None
                 else:
-                    raise Exception('server_post_decrype data error')
+                    raise Exception('client_post_decrypt data error')
             if length > len(self.recv_buf):
                 break
 
@@ -260,7 +260,7 @@ class auth_simple(verify_base):
                 if self.decrypt_packet_num == 0:
                     return None
                 else:
-                    raise Exception('server_post_decrype data uncorrect CRC32')
+                    raise Exception('client_post_decrypt data uncorrect CRC32')
 
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]
@@ -379,7 +379,7 @@ class auth_sha1(verify_base):
             return b''
         rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 128)
         data = common.chr(len(rnd_data) + 1) + rnd_data + buf
-        data = struct.pack('>H', len(data) + 10) + data
+        data = struct.pack('>H', len(data) + 16) + data
         crc = binascii.crc32(self.server_info.key)
         data = struct.pack('<I', crc) + data
         data += hmac.new(self.server_info.iv + self.server_info.key, data, hashlib.sha1).digest()[:10]
@@ -425,17 +425,17 @@ class auth_sha1(verify_base):
                 if self.decrypt_packet_num == 0:
                     return None
                 else:
-                    raise Exception('server_post_decrype data error')
+                    raise Exception('client_post_decrypt data error')
             if length > len(self.recv_buf):
                 break
 
-            if zlib.adler32(self.recv_buf[:length - 4]) != struct.unpack('<I', self.recv_buf[length - 4:length])[0]:
+            if struct.pack('<I', zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) != self.recv_buf[length - 4:length]:
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
                     return None
                 else:
-                    raise Exception('server_post_decrype data uncorrect checksum')
+                    raise Exception('client_post_decrypt data uncorrect checksum')
 
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]
@@ -475,7 +475,7 @@ class auth_sha1(verify_base):
                 return b''
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:length - 10], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[length - 10:length]:
-                logging.error('server_post_decrype data uncorrect auth HMAC-SHA1')
+                logging.error('auth_sha1 data uncorrect auth HMAC-SHA1')
                 return b'E'
             pos = common.ord(self.recv_buf[6]) + 6
             out_buf = self.recv_buf[pos:length - 10]
@@ -520,7 +520,7 @@ class auth_sha1(verify_base):
             if length > len(self.recv_buf):
                 break
 
-            if zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF != struct.unpack('<I', self.recv_buf[length - 4:length])[0]:
+            if struct.pack('<I', zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) != self.recv_buf[length - 4:length]:
                 logging.info('auth_sha1: checksum error, data %s' % (binascii.hexlify(self.recv_buf[:length]),))
                 self.raw_trans = True
                 self.recv_buf = b''
