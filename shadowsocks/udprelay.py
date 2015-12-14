@@ -528,7 +528,6 @@ class TCPRelayHandler(object):
         if not data:
             self.destroy()
             return
-        self._server.server_transfer_dl += len(data)
         try:
             recv_data = data
             beg_pos = 0
@@ -547,6 +546,7 @@ class TCPRelayHandler(object):
                 post_data = self._pack_post_data(CMD_POST, pack_id, data)
                 addr = self.get_local_address()
                 self._write_to_sock(post_data, self._local_sock, addr)
+                self._server.server_transfer_dl += len(post_data)
                 if pack_id <= DOUBLE_SEND_BEG_IDS:
                     post_data = self._pack_post_data(CMD_POST, pack_id, data)
                     self._write_to_sock(post_data, self._local_sock, addr)
