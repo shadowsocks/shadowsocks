@@ -206,20 +206,20 @@ class tls_auth(plain.plain):
             verify_len = 44 - 10
             if len(buf) < 44:
                 logging.error('server_decode data error')
-                return decode_error_return(b'')
+                return self.decode_error_return(b'')
             if not match_begin(buf, b"\x14" + self.tls_version + "\x00\x01\x01"): #ChangeCipherSpec
                 logging.error('server_decode data error')
-                return decode_error_return(b'')
+                return self.decode_error_return(b'')
             buf = buf[6:]
-            if not match_begin(buf, b"\x16" + self.tls_version + "\x00\x01\x20"): #Finished
+            if not match_begin(buf, b"\x16" + self.tls_version + "\x00\x20"): #Finished
                 logging.error('server_decode data error')
-                return decode_error_return(b'')
+                return self.decode_error_return(b'')
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
                 logging.error('server_decode data error')
-                return decode_error_return(b'')
+                return self.decode_error_return(b'')
             if len(buf) < 38:
                 logging.error('server_decode data error')
-                return decode_error_return(b'')
+                return self.decode_error_return(b'')
             buf = buf[38:]
             self.raw_trans_recv = True
             return (buf, True, False)
