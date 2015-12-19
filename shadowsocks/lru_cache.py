@@ -22,11 +22,22 @@ import collections
 import logging
 import time
 
+if __name__ == '__main__':
+    import os, sys, inspect
+    file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
+    sys.path.insert(0, os.path.join(file_path, '../'))
+
+try:
+    from collections import OrderedDict
+    print("loaded collections.OrderedDict")
+except:
+    from shadowsocks.ordereddict import OrderedDict
+
 # this LRUCache is optimized for concurrency, not QPS
 # n: concurrency, keys stored in the cache
 # m: visits not timed out, proportional to QPS * timeout
-# get & set is O(log(n)), not O(n). thus we can support very large n
-# sweep is O((n - m)*log(n)) or O(1024*log(n)) at most,
+# get & set is O(1), not O(n). thus we can support very large n
+# sweep is O((n - m)) or O(1024) at most,
 # no metter how large the cache or timeout value is
 
 SWEEP_MAX_ITEMS = 1024
@@ -38,39 +49,30 @@ class LRUCache(collections.MutableMapping):
         self.timeout = timeout
         self.close_callback = close_callback
         self._store = {}
-        self._time_to_keys = collections.OrderedDict()
-        self._keys_to_last_time = {}
-        self._visit_id = 0
+        self._keys_to_last_time = OrderedDict()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
-        # O(log(n))
+        # O(1)
         t = time.time()
-        last_t, vid = self._keys_to_last_time[key]
-        self._keys_to_last_time[key] = (t, vid)
-        if last_t != t:
-            del self._time_to_keys[(last_t, vid)]
-            self._time_to_keys[(t, vid)] = key
+        last_t = self._keys_to_last_time[key]
+        del self._keys_to_last_time[key]
+        self._keys_to_last_time[key] = t
         return self._store[key]
 
     def __setitem__(self, key, value):
-        # O(log(n))
+        # O(1)
         t = time.time()
         if key in self._keys_to_last_time:
-            last_t, vid = self._keys_to_last_time[key]
-            del self._time_to_keys[(last_t, vid)]
-        vid = self._visit_id
-        self._visit_id += 1
-        self._keys_to_last_time[key] = (t, vid)
+            del self._keys_to_last_time[key]
+        self._keys_to_last_time[key] = t
         self._store[key] = value
-        self._time_to_keys[(t, vid)] = key
 
     def __delitem__(self, key):
-        # O(log(n))
-        last_t, vid = self._keys_to_last_time[key]
+        # O(1)
+        last_t = self._keys_to_last_time[key]
         del self._store[key]
         del self._keys_to_last_time[key]
-        del self._time_to_keys[(last_t, vid)]
 
     def __iter__(self):
         return iter(self._store)
@@ -83,18 +85,17 @@ class LRUCache(collections.MutableMapping):
         now = time.time()
         c = 0
         while c < SWEEP_MAX_ITEMS:
-            if len(self._time_to_keys) == 0:
+            if len(self._keys_to_last_time) == 0:
                 break
-            last_t, vid = iter(self._time_to_keys).next()
+            key = iter(self._keys_to_last_time).next()
+            last_t = self._keys_to_last_time[key]
             if now - last_t <= self.timeout:
                 break
-            key = self._time_to_keys[(last_t, vid)]
             value = self._store[key]
             if self.close_callback is not None:
                 self.close_callback(value)
             del self._store[key]
             del self._keys_to_last_time[key]
-            del self._time_to_keys[(last_t, vid)]
             c += 1
         if c:
             logging.debug('%d keys swept' % c)
