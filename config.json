@@ -9,7 +9,7 @@
     "method": "aes-256-cfb",
     "protocol": "auth_sha1_compatible",
     "protocol_param": "",
-    "obfs": "http_simple_compatible",
+    "obfs": "tls1.0_session_auth_compatible",
     "obfs_param": "",
     "redirect": "",
     "dns_ipv6": false,

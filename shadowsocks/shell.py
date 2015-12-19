@@ -62,8 +62,14 @@ def print_shadowsocks():
         pass
     print('Shadowsocks %s' % version)
 
-
 def find_config():
+    config_path = 'user-config.json'
+    if os.path.exists(config_path):
+        return config_path
+    config_path = os.path.join(os.path.dirname(__file__), '../', 'user-config.json')
+    if os.path.exists(config_path):
+        return config_path
+
     config_path = 'config.json'
     if os.path.exists(config_path):
         return config_path
