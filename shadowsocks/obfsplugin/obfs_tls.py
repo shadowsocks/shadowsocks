@@ -176,12 +176,10 @@ class tls_auth(plain.plain):
         if self.has_recv_header:
             return (buf, False)
         if len(buf) < 11 + 32 + 1 + 32:
-            logging.error('client_decode data error')
-            return (b'', True)
+            raise Exception('client_decode data error')
         verify = buf[11:33]
         if hmac.new(self.server_info.key + self.server_info.data.client_id, verify, hashlib.sha1).digest()[:10] != buf[33:43]:
-            logging.error('client_decode data error')
-            return (b'', True)
+            raise Exception('client_decode data error')
         self.has_recv_header = True
         return (b'', True)
 
@@ -212,21 +210,16 @@ class tls_auth(plain.plain):
             verify = buf
             verify_len = 43 - 10
             if len(buf) < 43:
-                logging.error('server_decode data error')
-                return self.decode_error_return(b'')
+                raise Exception('server_decode data error')
             if not match_begin(buf, b"\x14" + self.tls_version + "\x00\x01\x01"): #ChangeCipherSpec
-                logging.error('server_decode data error')
-                return self.decode_error_return(b'')
+                raise Exception('server_decode data error')
             buf = buf[6:]
             if not match_begin(buf, b"\x16" + self.tls_version + "\x00\x20"): #Finished
-                logging.error('server_decode data error')
-                return self.decode_error_return(b'')
+                raise Exception('server_decode data error')
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
-                logging.error('server_decode data error')
-                return self.decode_error_return(b'')
+                raise Exception('server_decode data error')
             if len(buf) < 37:
-                logging.error('server_decode data error')
-                return self.decode_error_return(b'')
+                raise Exception('server_decode data error')
             buf = buf[37:]
             self.raw_trans_recv = True
             return (buf, True, False)
