@@ -374,7 +374,7 @@ class auth_sha1(verify_base):
         rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 128)
         data = common.chr(len(rnd_data) + 1) + rnd_data + buf
         data = struct.pack('>H', len(data) + 16) + data
-        crc = binascii.crc32(self.server_info.key)
+        crc = binascii.crc32(self.server_info.key) & 0xFFFFFFFF
         data = struct.pack('<I', crc) + data
         data += hmac.new(self.server_info.iv + self.server_info.key, data, hashlib.sha1).digest()[:10]
         return data
@@ -416,20 +416,14 @@ class auth_sha1(verify_base):
             if length >= 8192 or length < 7:
                 self.raw_trans = True
                 self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    return None
-                else:
-                    raise Exception('client_post_decrypt data error')
+                raise Exception('client_post_decrypt data error')
             if length > len(self.recv_buf):
                 break
 
             if struct.pack('<I', zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) != self.recv_buf[length - 4:length]:
                 self.raw_trans = True
                 self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    return None
-                else:
-                    raise Exception('client_post_decrypt data uncorrect checksum')
+                raise Exception('client_post_decrypt data uncorrect checksum')
 
             pos = common.ord(self.recv_buf[2]) + 2
             out_buf += self.recv_buf[pos:length - 4]

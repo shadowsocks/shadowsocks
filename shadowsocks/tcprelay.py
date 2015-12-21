@@ -333,7 +333,10 @@ class TCPRelayHandler(object):
             addr = struct.unpack('>I', address_bytes)[0]
         else:
             addr = 0
-        host_post = common.to_str(host_list[((hash_code & 0xffffffff) + addr) % len(host_list)])
+        if type(host_list) == list:
+            host_post = common.to_str(host_list[((hash_code & 0xffffffff) + addr) % len(host_list)])
+        else:
+            host_post = host_list
         items = host_post.rsplit(':', 1)
         if len(items) > 1:
             try:
