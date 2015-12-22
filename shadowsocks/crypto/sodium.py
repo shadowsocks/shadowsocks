@@ -56,7 +56,7 @@ def load_libsodium():
         libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
         libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p, c_char_p,
                                                         c_ulonglong,
-                                                        c_char_p, c_ulonglong,
+                                                        c_char_p, c_ulong,
                                                         c_char_p)
     except:
         pass
