@@ -29,7 +29,7 @@ loaded = False
 
 buf_size = 2048
 
-# for salsa20 and chacha20
+# for salsa20 and chacha20 and chacha20-ietf
 BLOCK_SIZE = 64
 
 
@@ -52,11 +52,14 @@ def load_libsodium():
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
 
-    libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
-    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p, c_char_p,
+    try:
+        libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
+        libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p, c_char_p,
                                                         c_ulonglong,
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
+    except:
+        pass
 
     buf = create_string_buffer(buf_size)
     loaded = True
