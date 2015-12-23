@@ -74,9 +74,12 @@ def main():
         if type(password_obfs) == list:
             password = password_obfs[0]
             obfs = password_obfs[1]
+            if len(password_obfs) >= 2:
+                protocol = password_obfs[2]
         elif type(password_obfs) == dict:
             password = password_obfs.get('password', 'm')
             protocol = password_obfs.get('protocol', 'origin')
+            protocol_param = password_obfs.get('protocol_param', '')
             obfs = password_obfs.get('obfs', 'plain')
             obfs_param = password_obfs.get('obfs_param', '')
         else:
