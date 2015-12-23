@@ -159,6 +159,40 @@ def encrypt_all(password, method, op, data):
     result.append(cipher.update(data))
     return b''.join(result)
 
+def encrypt_key(password, method):
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    if key_len > 0:
+        key, _ = EVP_BytesToKey(password, key_len, iv_len)
+    else:
+        key = password
+    return key
+
+def encrypt_iv_len(method):
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    return iv_len
+
+def encrypt_new_iv(method):
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    return random_string(iv_len)
+
+def encrypt_all_iv(key, method, op, data, ref_iv):
+    result = []
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    if op:
+        iv = ref_iv[0]
+        result.append(iv)
+    else:
+        iv = data[:iv_len]
+        data = data[iv_len:]
+        ref_iv[0] = iv
+    cipher = m(method, key, iv, op)
+    result.append(cipher.update(data))
+    return b''.join(result)
+
 
 CIPHERS_TO_TEST = [
     'aes-128-cfb',

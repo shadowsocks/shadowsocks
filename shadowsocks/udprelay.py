@@ -71,7 +71,7 @@ import random
 import binascii
 import traceback
 
-from shadowsocks import encrypt, eventloop, lru_cache, common, shell
+from shadowsocks import encrypt, obfs, eventloop, lru_cache, common, shell
 from shadowsocks.common import pre_parse_header, parse_header, pack_addr
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
@@ -890,6 +890,20 @@ class UDPRelay(object):
         self.server_transfer_ul = 0
         self.server_transfer_dl = 0
 
+        self.protocol_data = obfs.obfs(config['protocol']).init_data()
+        self._protocol = obfs.obfs(config['protocol'])
+        server_info = obfs.server_info(self.protocol_data)
+        server_info.host = self._listen_addr
+        server_info.port = self._listen_port
+        server_info.protocol_param = config['protocol_param']
+        server_info.obfs_param = ''
+        server_info.iv = b''
+        server_info.recv_iv = b''
+        server_info.key = encrypt.encrypt_key(self._password, self._method)
+        server_info.head_len = 30
+        server_info.tcp_mss = 1440
+        self._protocol.set_server_info(server_info)
+
         self._sockets = set()
         self._fd_to_handlers = {}
         self._reqid_to_hd = {}
@@ -991,11 +1005,14 @@ class UDPRelay(object):
             else:
                 data = data[3:]
         else:
-            data = encrypt.encrypt_all(self._password, self._method, 0, data)
+            ref_iv = [0]
+            data = encrypt.encrypt_all_iv(self._protocol.obfs.server_info.key, self._method, 0, data, ref_iv)
             # decrypt data
             if not data:
                 logging.debug('UDP handle_server: data is empty after decrypt')
                 return
+            self._protocol.obfs.server_info.recv_iv = ref_iv[0]
+            data = self._protocol.server_udp_post_decrypt(data)
 
         #logging.info("UDP data %s" % (binascii.hexlify(data),))
         if not self._is_local:
@@ -1121,7 +1138,11 @@ class UDPRelay(object):
                             r_addr[0], r_addr[1]))
 
         if self._is_local:
-            data = encrypt.encrypt_all(self._password, self._method, 1, data)
+            ref_iv = [encrypt.encrypt_new_iv(self._method)]
+            self._protocol.obfs.server_info.iv = ref_iv[0]
+            data = self._protocol.client_udp_pre_encrypt(data)
+            logging.info("%s" % (binascii.hexlify(data),))
+            data = encrypt.encrypt_all_iv(self._protocol.obfs.server_info.key, self._method, 1, data, ref_iv)
             if not data:
                 return
         else:
@@ -1151,15 +1172,21 @@ class UDPRelay(object):
                 # drop
                 return
             data = pack_addr(r_addr[0]) + struct.pack('>H', r_addr[1]) + data
-            response = encrypt.encrypt_all(self._password, self._method, 1,
-                                           data)
+            ref_iv = [encrypt.encrypt_new_iv(self._method)]
+            self._protocol.obfs.server_info.iv = ref_iv[0]
+            data = self._protocol.server_udp_pre_encrypt(data)
+            response = encrypt.encrypt_all_iv(self._protocol.obfs.server_info.key, self._method, 1,
+                                           data, ref_iv)
             if not response:
                 return
         else:
-            data = encrypt.encrypt_all(self._password, self._method, 0,
-                                       data)
+            ref_iv = [0]
+            data = encrypt.encrypt_all_iv(self._protocol.obfs.server_info.key, self._method, 0,
+                                       data, ref_iv)
             if not data:
                 return
+            self._protocol.obfs.server_info.recv_iv = ref_iv[0]
+            data = self._protocol.client_udp_post_decrypt(data)
             header_result = parse_header(data)
             if header_result is None:
                 return

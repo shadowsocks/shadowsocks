@@ -342,3 +342,19 @@ class verify_sha1(verify_base):
 
         return out_buf
 
+    def client_udp_pre_encrypt(self, buf):
+        ret = self.pack_auth_data(buf)
+        return chr(ord(buf[0]) | 0x10) + buf[1:]
+
+    def server_udp_post_decrypt(self, buf):
+        if buf and ((ord(buf[0]) & 0x10) == 0x10):
+            if len(buf) <= 11:
+                return b'E'
+            sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, buf[:-10], hashlib.sha1).digest()[:10]
+            if sha1data != buf[-10:]:
+                logging.error('server_udp_post_decrypt data uncorrect auth HMAC-SHA1')
+                return b'E'
+            return to_bytes(chr(ord(buf[0]) & 0xEF)) + buf[1:-10]
+        else:
+            return buf
+

@@ -85,6 +85,18 @@ class obfs(object):
     def server_post_decrypt(self, buf):
         return self.obfs.server_post_decrypt(buf)
 
+    def client_udp_pre_encrypt(self, buf):
+        return self.obfs.client_udp_pre_encrypt(buf)
+
+    def client_udp_post_decrypt(self, buf):
+        return self.obfs.client_udp_post_decrypt(buf)
+
+    def server_udp_pre_encrypt(self, buf):
+        return self.obfs.server_udp_pre_encrypt(buf)
+
+    def server_udp_post_decrypt(self, buf):
+        return self.obfs.server_udp_post_decrypt(buf)
+
     def dispose(self):
         self.obfs.dispose()
         del self.obfs

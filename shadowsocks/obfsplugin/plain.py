@@ -69,6 +69,18 @@ class plain(object):
     def server_post_decrypt(self, buf):
         return buf
 
+    def client_udp_pre_encrypt(self, buf):
+        return buf
+
+    def client_udp_post_decrypt(self, buf):
+        return buf
+
+    def server_udp_pre_encrypt(self, buf):
+        return buf
+
+    def server_udp_post_decrypt(self, buf):
+        return buf
+
     def dispose(self):
         pass
 
