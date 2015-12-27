@@ -40,10 +40,7 @@ def main():
     daemon.daemon_exec(config)
 
     if config['port_password']:
-        if config['password']:
-            logging.warn('warning: port_password should not be used with '
-                         'server_port and password. server_port and password '
-                         'will be ignored')
+        pass
     else:
         config['port_password'] = {}
         server_port = config['server_port']
@@ -65,6 +62,7 @@ def main():
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()
     port_password = config['port_password']
+    config_password = config.get('password', 'm')
     del config['port_password']
     for port, password_obfs in port_password.items():
         protocol = config.get("protocol", 'origin')
@@ -77,11 +75,11 @@ def main():
             if len(password_obfs) > 2:
                 protocol = password_obfs[2]
         elif type(password_obfs) == dict:
-            password = password_obfs.get('password', 'm')
-            protocol = password_obfs.get('protocol', 'origin')
-            protocol_param = password_obfs.get('protocol_param', '')
-            obfs = password_obfs.get('obfs', 'plain')
-            obfs_param = password_obfs.get('obfs_param', '')
+            password = password_obfs.get('password', config_password)
+            protocol = password_obfs.get('protocol', protocol)
+            protocol_param = password_obfs.get('protocol_param', protocol_param)
+            obfs = password_obfs.get('obfs', obfs)
+            obfs_param = password_obfs.get('obfs_param', obfs_param)
         else:
             password = password_obfs
         a_config = config.copy()
