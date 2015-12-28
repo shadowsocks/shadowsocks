@@ -79,7 +79,7 @@ class http_simple(plain.plain):
     def encode_head(self, buf):
         ret = b''
         for ch in buf:
-            ret += '%' + binascii.hexlify(chr(ch))
+            ret += b'%' + binascii.hexlify(chr(ch))
         return ret
 
     def client_encode(self, buf):
