@@ -94,9 +94,9 @@ class http_simple(plain.plain):
         buf = buf[headlen:]
         port = b''
         if self.server_info.port != 80:
-            port = b':' + common.to_bytes(str(self.server_info.port))
+            port = b':' + to_bytes(str(self.server_info.port))
         http_head = b"GET /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
-        http_head += b"Host: " + (self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
+        http_head += b"Host: " + to_bytes(self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
         http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
         http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\n\r\n"
         self.has_sent_header = True
