@@ -29,7 +29,7 @@ import random
 
 from shadowsocks import common
 from shadowsocks.obfsplugin import plain
-from shadowsocks.common import to_bytes, to_str, ord
+from shadowsocks.common import to_bytes, to_str, ord, chr
 
 def create_http_obfs(method):
     return http_simple(method)
@@ -79,7 +79,7 @@ class http_simple(plain.plain):
     def encode_head(self, buf):
         ret = b''
         for ch in buf:
-            ret += '%' + binascii.hexlify(ch)
+            ret += '%' + binascii.hexlify(chr(ch))
         return ret
 
     def client_encode(self, buf):
