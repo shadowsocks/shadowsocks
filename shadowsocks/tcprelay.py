@@ -401,13 +401,13 @@ class TCPRelayHandler(object):
     def _get_head_size(self, buf, def_value):
         if len(buf) < 2:
             return def_value
-        head_type = ord(buf[0]) & 0xF
+        head_type = common.ord(buf[0]) & 0xF
         if head_type == 1:
             return 7
         if head_type == 4:
             return 19
         if head_type == 3:
-            return 4 + ord(buf[1])
+            return 4 + common.ord(buf[1])
         return def_value
 
     def _handle_stage_addr(self, ogn_data, data):
