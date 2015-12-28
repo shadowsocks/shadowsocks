@@ -39,15 +39,23 @@ class MainThread(threading.Thread):
 	def run(self):
 		db_transfer.DbTransfer.thread_db()
 
+	def stop(self):
+		db_transfer.DbTransfer.thread_db_stop()
+
 def main():
 	shell.check_python()
-	if True:
+	if False:
 		db_transfer.DbTransfer.thread_db()
 	else:
 		thread = MainThread()
 		thread.start()
-		while True:
-			time.sleep(99999)
+		try:
+			while True:
+				time.sleep(99999)
+		except (KeyboardInterrupt, IOError, OSError) as e:
+			import traceback
+			traceback.print_exc()
+			thread.stop()
 
 if __name__ == '__main__':
 	main()

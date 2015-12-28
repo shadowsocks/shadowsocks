@@ -72,6 +72,9 @@ class ServerPool(object):
 			ServerPool.instance = ServerPool()
 		return ServerPool.instance
 
+	def stop(self):
+		self.loop.stop()
+
 	@staticmethod
 	def _loop(loop, dns_resolver, mgr):
 		try:

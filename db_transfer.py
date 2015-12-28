@@ -15,7 +15,9 @@ class DbTransfer(object):
 	instance = None
 
 	def __init__(self):
+		import threading
 		self.last_get_transfer = {}
+		self.event = threading.Event()
 
 	@staticmethod
 	def get_instance():
@@ -149,22 +151,40 @@ class DbTransfer(object):
 				ServerPool.get_instance().cb_del_server(row['port'])
 
 	@staticmethod
+	def del_servers():
+		for port in ServerPool.get_instance().tcp_servers_pool.keys():
+			if ServerPool.get_instance().server_is_run(port) > 0:
+					ServerPool.get_instance().cb_del_server(port)
+		for port in ServerPool.get_instance().tcp_ipv6_servers_pool.keys():
+			if ServerPool.get_instance().server_is_run(port) > 0:
+					ServerPool.get_instance().cb_del_server(port)
+
+	@staticmethod
 	def thread_db():
 		import socket
 		import time
 		timeout = 60
 		socket.setdefaulttimeout(timeout)
 		last_rows = []
-		while True:
-			try:
-				DbTransfer.get_instance().push_db_all_user()
-				rows = DbTransfer.get_instance().pull_db_all_user()
-				DbTransfer.del_server_out_of_bound_safe(last_rows, rows)
-				last_rows = rows
-			except Exception as e:
-				trace = traceback.format_exc()
-				logging.error(trace)
-				#logging.warn('db thread except:%s' % e)
-			finally:
-				time.sleep(15)
+		try:
+			while True:
+				try:
+					DbTransfer.get_instance().push_db_all_user()
+					rows = DbTransfer.get_instance().pull_db_all_user()
+					DbTransfer.del_server_out_of_bound_safe(last_rows, rows)
+					last_rows = rows
+				except Exception as e:
+					trace = traceback.format_exc()
+					logging.error(trace)
+					#logging.warn('db thread except:%s' % e)
+				if DbTransfer.get_instance().event.wait(15):
+					break
+		except KeyboardInterrupt as e:
+			pass
+		DbTransfer.del_servers()
+		ServerPool.get_instance().stop()
+
+	@staticmethod
+	def thread_db_stop():
+		DbTransfer.get_instance().event.set()
 
