@@ -77,10 +77,8 @@ class http_simple(plain.plain):
             b"Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3"]
 
     def encode_head(self, buf):
-        ret = b''
-        for ch in buf:
-            ret += b'%' + to_bytes(binascii.hexlify(chr(ch)))
-        return ret
+        hexstr = binascii.hexlify(buf)
+        return b''.join([b"%" + pair for pair in [hexstr[i:i+2] for i in range(0, len(hexstr), 2)]])
 
     def client_encode(self, buf):
         if self.has_sent_header:
