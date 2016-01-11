@@ -165,7 +165,9 @@ class UDPRelay(object):
             data = encrypt.encrypt_all(self._password, self._method, 0, data)
             # decrypt data
             if not data:
-                logging.debug('UDP handle_server: data is empty after decrypt')
+                logging.debug(
+                    'UDP handle_server: data is empty after decrypt'
+                )
                 return
         header_result = parse_header(data)
         if header_result is None:
@@ -181,9 +183,10 @@ class UDPRelay(object):
                 if len(data) < header_length + ONETIMEAUTH_BYTES:
                     logging.warn('UDP one time auth header is too short')
                     return
-                if onetimeauth_verify(data[-ONETIMEAUTH_BYTES:],
-                                      data[header_length: -ONETIMEAUTH_BYTES],
-                                      self._encryptor.decipher_iv + self._encryptor.key) is False:
+                _hash = data[-ONETIMEAUTH_BYTES:]
+                _data =  data[header_length: -ONETIMEAUTH_BYTES]
+                _key = self._encryptor.decipher_iv + self._encryptor.key
+                if onetimeauth_verify(_hash, _data, _key) is False:
                     logging.warn('UDP one time auth fail')
                     return
                 self._one_time_authed = True
@@ -274,7 +277,8 @@ class UDPRelay(object):
 
     def _one_time_auth_chunk_data_gen(self, data):
         data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
-        return data + onetimeauth_gen(data, self._encryptor.cipher_iv + self._encryptor.key)
+        key = self._encryptor.cipher_iv + self._encryptor.key
+        return data + onetimeauth_gen(data, key)
 
     def add_to_loop(self, loop):
         if self._eventloop:
