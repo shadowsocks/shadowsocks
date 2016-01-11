@@ -228,6 +228,7 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
+    config['one_time_auth'] = config.get('one_time_auth', False)
     if is_local:
         if config.get('server', None) is None:
             logging.error('server addr not specified')
