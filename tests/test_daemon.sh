@@ -18,7 +18,7 @@ function run_test {
 for module in local server
 do
 
-command="coverage run -p -a shadowsocks/$module.py"
+command="coverage run -a shadowsocks/$module.py"
 
 mkdir -p tmp
 

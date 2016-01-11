@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PYTHON="coverage run -p -a"
+PYTHON="coverage run -a"
 
 mkdir -p tmp
 
