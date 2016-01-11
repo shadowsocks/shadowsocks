@@ -184,7 +184,7 @@ class UDPRelay(object):
                     logging.warn('UDP one time auth header is too short')
                     return
                 _hash = data[-ONETIMEAUTH_BYTES:]
-                _data =  data[header_length: -ONETIMEAUTH_BYTES]
+                _data = data[header_length: -ONETIMEAUTH_BYTES]
                 _key = self._encryptor.decipher_iv + self._encryptor.key
                 if onetimeauth_verify(_hash, _data, _key) is False:
                     logging.warn('UDP one time auth fail')
