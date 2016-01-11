@@ -69,7 +69,7 @@ import errno
 import random
 
 from shadowsocks import encrypt, eventloop, lru_cache, common, shell
-from shadowsocks.common import parse_header, pack_addr, \
+from shadowsocks.common import parse_header, pack_addr, onetimeauth_verify, onetimeauth_gen, \
     ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
 
@@ -180,12 +180,12 @@ class UDPRelay(object):
             if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
                 if len(data) < header_length + ONETIMEAUTH_BYTES:
                     logging.warn('UDP one time auth header is too short')
-                    return None
+                    return
                 if onetimeauth_verify(data[-ONETIMEAUTH_BYTES:],
                                       data[header_length: -ONETIMEAUTH_BYTES],
                                       self._encryptor.decipher_iv + self._encryptor.key) is False:
                     logging.warn('UDP one time auth fail')
-                    return None
+                    return
                 self._one_time_authed = True
                 header_length += ONETIMEAUTH_BYTES
         addrs = self._dns_cache.get(server_addr, None)
