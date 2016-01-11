@@ -27,8 +27,9 @@ import traceback
 import random
 
 from shadowsocks import encrypt, eventloop, shell, common
-from shadowsocks.common import parse_header, onetimeauth_verify, onetimeauth_gen, \
-    ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
+from shadowsocks.common import parse_header, onetimeauth_verify, \
+    onetimeauth_gen, ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, \
+    ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
