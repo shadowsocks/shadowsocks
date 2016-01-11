@@ -130,11 +130,11 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
+        shortopts = 'hd:s:b:p:k:l:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
                     'version']
     else:
-        shortopts = 'hd:s:p:k:m:c:t:vq'
+        shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:

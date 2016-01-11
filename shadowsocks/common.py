@@ -37,6 +37,8 @@ def sha1_hmac(secret, data):
 def onetimeauth_verify(_hash, data, key):
     return _hash == sha1_hmac(key, data)[:ONETIMEAUTH_BYTES]
 
+def onetimeauth_gen(data, key):
+    return sha1_hmac(key, data)[:ONETIMEAUTH_BYTES]
 
 def compat_ord(s):
     if type(s) == int:

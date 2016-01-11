@@ -119,7 +119,7 @@ class UDPRelay(object):
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
         if len(addrs) == 0:
-            raise Exception("can't get addrinfo for %s:%d" %
+            raise Exception("UDP can't get addrinfo for %s:%d" %
                             (self._listen_addr, self._listen_port))
         af, socktype, proto, canonname, sa = addrs[0]
         server_socket = socket.socket(af, socktype, proto)
@@ -157,7 +157,7 @@ class UDPRelay(object):
         if self._is_local:
             frag = common.ord(data[2])
             if frag != 0:
-                logging.warn('drop a message since frag is not 0')
+                logging.warn('UDP drop a message since frag is not 0')
                 return
             else:
                 data = data[3:]
@@ -176,7 +176,18 @@ class UDPRelay(object):
             server_addr, server_port = self._get_a_server()
         else:
             server_addr, server_port = dest_addr, dest_port
-
+            # spec https://shadowsocks.org/en/spec/one-time-auth.html
+            if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
+                if len(data) < header_length + ONETIMEAUTH_BYTES:
+                    logging.warn('UDP one time auth header is too short')
+                    return None
+                if onetimeauth_verify(data[-ONETIMEAUTH_BYTES:],
+                                      data[header_length: -ONETIMEAUTH_BYTES],
+                                      self._encryptor.decipher_iv + self._encryptor.key) is False:
+                    logging.warn('UDP one time auth fail')
+                    return None
+                self._one_time_authed = True
+                header_length += ONETIMEAUTH_BYTES
         addrs = self._dns_cache.get(server_addr, None)
         if addrs is None:
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
@@ -207,6 +218,9 @@ class UDPRelay(object):
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
+            # spec https://shadowsocks.org/en/spec/one-time-auth.html
+            if self._one_time_auth_enable:
+                data = _one_time_auth_chunk_data_gen(data)
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
@@ -249,18 +263,6 @@ class UDPRelay(object):
             if header_result is None:
                 return
             addrtype, dest_addr, dest_port, header_length = header_result
-            # spec https://shadowsocks.org/en/spec/one-time-auth.html
-            if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
-                if len(data) < header_length + ONETIMEAUTH_BYTES:
-                    logging.warn('one time auth header is too short')
-                    return None
-                if onetimeauth_verify(data[-ONETIMEAUTH_BYTES:],
-                                      data[header_length: -ONETIMEAUTH_BYTES],
-                                      self._encryptor.decipher_iv + self._encryptor.key) is False:
-                    logging.warn('one time auth fail')
-                    return None
-                self._one_time_authed = True
-                header_length += ONETIMEAUTH_BYTES
             response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
@@ -269,6 +271,10 @@ class UDPRelay(object):
             # this packet is from somewhere else we know
             # simply drop that packet
             pass
+
+    def _one_time_auth_chunk_data_gen(self, data):
+        data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+        return data + onetimeauth_gen(data, self._encryptor.cipher_iv + self._encryptor.key)
 
     def add_to_loop(self, loop):
         if self._eventloop:

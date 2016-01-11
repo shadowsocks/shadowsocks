@@ -27,7 +27,7 @@ import traceback
 import random
 
 from shadowsocks import encrypt, eventloop, shell, common
-from shadowsocks.common import parse_header, onetimeauth_verify, \
+from shadowsocks.common import parse_header, onetimeauth_verify, onetimeauth_gen, \
     ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
@@ -233,12 +233,14 @@ class TCPRelayHandler(object):
 
     def _handle_stage_connecting(self, data):
         if self._is_local:
+            if self._one_time_auth_enable:
+                data = self._one_time_auth_chunk_data_gen(data)
             data = self._encryptor.encrypt(data)
-        if self._one_time_auth_enable:
-            self._one_time_auth_chunk_data(data,
-                                           self._data_to_write_to_remote.append)
-        else:
             self._data_to_write_to_remote.append(data)
+        else:
+            if self._one_time_auth_enable:
+                self._one_time_auth_chunk_data(data,
+                                               self._data_to_write_to_remote.append)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             # for sslocal and fastopen, we basically wait for data and use
@@ -306,17 +308,18 @@ class TCPRelayHandler(object):
             logging.info('connecting %s:%d from %s:%d' %
                          (common.to_str(remote_addr), remote_port,
                           self._client_address[0], self._client_address[1]))
-            # spec https://shadowsocks.org/en/spec/one-time-auth.html
-            if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
-                if len(data) < header_length + ONETIMEAUTH_BYTES:
-                    logging.warn('one time auth header is too short')
-                    return None
-                if onetimeauth_verify(data[header_length: header_length+ONETIMEAUTH_BYTES],
-                                      data[:header_length],
-                                      self._encryptor.decipher_iv + self._encryptor.key) is False:
-                    logging.warn('one time auth fail')
-                    self.destroy()
-                header_length += ONETIMEAUTH_BYTES
+            if self._is_local is False:
+                # spec https://shadowsocks.org/en/spec/one-time-auth.html
+                if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
+                    if len(data) < header_length + ONETIMEAUTH_BYTES:
+                        logging.warn('one time auth header is too short')
+                        return None
+                    if onetimeauth_verify(data[header_length: header_length+ONETIMEAUTH_BYTES],
+                                          data[:header_length],
+                                          self._encryptor.decipher_iv + self._encryptor.key) is False:
+                        logging.warn('one time auth fail')
+                        self.destroy()
+                    header_length += ONETIMEAUTH_BYTES
             self._remote_address = (common.to_str(remote_addr), remote_port)
             # pause reading
             self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
@@ -326,6 +329,11 @@ class TCPRelayHandler(object):
                 self._write_to_sock((b'\x05\x00\x00\x01'
                                      b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
+                # spec https://shadowsocks.org/en/spec/one-time-auth.html
+                # ATYP & 0x10 == 1, then OTA is enabled.
+                if self._one_time_auth_enable:
+                    data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+                    data += onetimeauth_gen(data, self._encryptor.cipher_iv + self._encryptor.key)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
@@ -436,23 +444,30 @@ class TCPRelayHandler(object):
                                       self._one_time_auth_buff_data,
                                       self._encryptor.decipher_iv + struct.pack('>I', self._one_time_auth_chunk_idx)) \
                         is False:
-                    #
                     logging.warn('one time auth fail, drop chunk !')
                 else:
                     data_cb(self._one_time_auth_buff_data)
+                    self._one_time_auth_chunk_idx += 1
                 self._one_time_auth_buff_head = ''
                 self._one_time_auth_buff_data = ''
-                self._one_time_auth_chunk_idx += 1
                 self._one_time_auth_len = 0
         return
 
+    def _one_time_auth_chunk_data_gen(self, data):
+        data_len = struct.pack(">H", len(data))
+        sha110 = onetimeauth_gen(data, self._encryptor.cipher_iv + struct.pack('>I', self._one_time_auth_chunk_idx))
+        self._one_time_auth_chunk_idx += 1
+        return data_len + sha110 + data
+
     def _handle_stage_stream(self, data):
         if self._is_local:
+            if self._one_time_auth_enable:
+                data = self._one_time_auth_chunk_data_gen(data)
             data = self._encryptor.encrypt(data)
-        if self._one_time_auth_enable:
-            self._one_time_auth_chunk_data(data, self._write_to_sock_remote)
-        else:
             self._write_to_sock(data, self._remote_sock)
+        else:
+            if self._one_time_auth_enable:
+                self._one_time_auth_chunk_data(data, self._write_to_sock_remote)
         return
 
     def _on_local_read(self):
