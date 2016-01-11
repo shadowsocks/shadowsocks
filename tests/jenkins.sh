@@ -42,6 +42,7 @@ run_test python tests/test.py --with-coverage -c tests/chacha20.json
 run_test python tests/test.py --with-coverage -c tests/table.json
 run_test python tests/test.py --with-coverage -c tests/server-multi-ports.json
 run_test python tests/test.py --with-coverage -s tests/aes.json -c tests/client-multi-server-ip.json
+run_test python tests/test.py --with-coverage -s tests/server-dnsserver.json -c tests/client-multi-server-ip.json
 run_test python tests/test.py --with-coverage -s tests/server-multi-passwd.json -c tests/server-multi-passwd-client-side.json
 run_test python tests/test.py --with-coverage -c tests/workers.json
 run_test python tests/test.py --with-coverage -s tests/ipv6.json -c tests/ipv6-client-side.json

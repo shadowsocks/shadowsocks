@@ -248,7 +248,7 @@ STATUS_IPV6 = 1
 
 class DNSResolver(object):
 
-    def __init__(self):
+    def __init__(self, server_list=None):
         self._loop = None
         self._hosts = {}
         self._hostname_status = {}
@@ -256,8 +256,11 @@ class DNSResolver(object):
         self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
         self._sock = None
-        self._servers = None
-        self._parse_resolv()
+        if server_list is None:
+            self._servers = None
+            self._parse_resolv()
+        else:
+            self._servers = server_list
         self._parse_hosts()
         # TODO monitor hosts change and reload hosts
         # TODO parse /etc/gai.conf and follow its rules
