@@ -93,7 +93,7 @@ def check_config(config, is_local):
     if 'local_port' in config:
         config['local_port'] = int(config['local_port'])
 
-    if config.get('server_port', None) and type(config['server_port']) != list:
+    if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
 
     if config.get('local_address', '') in [b'0.0.0.0']:
@@ -243,7 +243,7 @@ def get_config(is_local):
         except Exception as e:
             logging.error(e)
             sys.exit(2)
-    config['server_port'] = config.get('server_port', None)
+    config['server_port'] = config.get('server_port', 8388)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
