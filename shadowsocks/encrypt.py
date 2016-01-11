@@ -69,17 +69,18 @@ def EVP_BytesToKey(password, key_len, iv_len):
 
 
 class Encryptor(object):
-    def __init__(self, key, method):
-        self.key = key
+    def __init__(self, password, method):
+        self.password = password
+        self.key = None
         self.method = method
-        self.iv = None
         self.iv_sent = False
         self.cipher_iv = b''
         self.decipher = None
+        self.decipher_iv = None
         method = method.lower()
         self._method_info = self.get_method_info(method)
         if self._method_info:
-            self.cipher = self.get_cipher(key, method, 1,
+            self.cipher = self.get_cipher(password, method, 1,
                                           random_string(self._method_info[1]))
         else:
             logging.error('method %s not supported' % method)
@@ -101,7 +102,7 @@ class Encryptor(object):
         else:
             # key_length == 0 indicates we should use the key directly
             key, iv = password, b''
-
+        self.key = key
         iv = iv[:m[1]]
         if op == 1:
             # this iv is for cipher not decipher
@@ -123,7 +124,8 @@ class Encryptor(object):
         if self.decipher is None:
             decipher_iv_len = self._method_info[1]
             decipher_iv = buf[:decipher_iv_len]
-            self.decipher = self.get_cipher(self.key, self.method, 0,
+            self.decipher_iv = decipher_iv
+            self.decipher = self.get_cipher(self.password, self.method, 0,
                                             iv=decipher_iv)
             buf = buf[decipher_iv_len:]
             if len(buf) == 0:
@@ -135,6 +137,7 @@ def encrypt_all(password, method, op, data):
     result = []
     method = method.lower()
     (key_len, iv_len, m) = method_supported[method]
+    key = None
     if key_len > 0:
         key, _ = EVP_BytesToKey(password, key_len, iv_len)
     else:

@@ -21,7 +21,24 @@ from __future__ import absolute_import, division, print_function, \
 import socket
 import struct
 import logging
+import hashlib
+import hmac
 
+
+ONETIMEAUTH_BYTES = 10
+ONETIMEAUTH_CHUNK_BYTES = 12
+ONETIMEAUTH_CHUNK_DATA_LEN = 2
+
+
+def sha1_hmac(secret, data):
+    return hmac.new(secret, data, hashlib.sha1).digest()
+
+
+def onetimeauth_verify(_hash, data, key):
+    return _hash == sha1_hmac(key, data)[:ONETIMEAUTH_BYTES]
+
+def onetimeauth_gen(data, key):
+    return sha1_hmac(key, data)[:ONETIMEAUTH_BYTES]
 
 def compat_ord(s):
     if type(s) == int:
@@ -118,9 +135,11 @@ def patch_socket():
 patch_socket()
 
 
-ADDRTYPE_IPV4 = 1
-ADDRTYPE_IPV6 = 4
-ADDRTYPE_HOST = 3
+ADDRTYPE_IPV4 = 0x01
+ADDRTYPE_IPV6 = 0x04
+ADDRTYPE_HOST = 0x03
+ADDRTYPE_AUTH = 0x10
+ADDRTYPE_MASK = 0xF
 
 
 def pack_addr(address):
@@ -144,14 +163,14 @@ def parse_header(data):
     dest_addr = None
     dest_port = None
     header_length = 0
-    if addrtype == ADDRTYPE_IPV4:
+    if addrtype & ADDRTYPE_MASK == ADDRTYPE_IPV4:
         if len(data) >= 7:
             dest_addr = socket.inet_ntoa(data[1:5])
             dest_port = struct.unpack('>H', data[5:7])[0]
             header_length = 7
         else:
             logging.warn('header is too short')
-    elif addrtype == ADDRTYPE_HOST:
+    elif addrtype & ADDRTYPE_MASK == ADDRTYPE_HOST:
         if len(data) > 2:
             addrlen = ord(data[1])
             if len(data) >= 4 + addrlen:
@@ -163,7 +182,7 @@ def parse_header(data):
                 logging.warn('header is too short')
         else:
             logging.warn('header is too short')
-    elif addrtype == ADDRTYPE_IPV6:
+    elif addrtype & ADDRTYPE_MASK == ADDRTYPE_IPV6:
         if len(data) >= 19:
             dest_addr = socket.inet_ntop(socket.AF_INET6, data[1:17])
             dest_port = struct.unpack('>H', data[17:19])[0]
