@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
     sock_in1 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM,
                              socket.SOL_UDP)
-    sock_in1.bind(('::1', 9001))
-    sock_out.sendto(b'data', ('::1', 9001))
+    sock_in1.bind(('::1', 9004))
+    sock_out.sendto(b'data', ('::1', 9004))
     result3 = sock_in1.recvfrom(8)
 
     # make sure they're from different source ports
