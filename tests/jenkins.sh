@@ -51,7 +51,7 @@ run_test python tests/test.py --with-coverage -b "-m aes-256-cfb -k testrc4 -s 1
 run_test python tests/test.py --with-coverage --should-fail --url="http://127.0.0.1/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 --forbidden-ip=127.0.0.1,::1,8.8.8.8" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"
 
 # test if DNS works
-run_test python tests/test.py --with-coverage -c tests/aes.json --url="https://www.google.com/"
+run_test python tests/test.py --with-coverage -c tests/aes.json --url="https://clients1.google.com/generate_204"
 
 # test localhost is in the forbidden list by default
 run_test python tests/test.py --with-coverage --should-fail --tcp-only --url="http://127.0.0.1/" -b "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388" -a "-m aes-256-cfb -k testrc4 -s 127.0.0.1 -p 8388 -l 1081 -t 30 -b 127.0.0.1"

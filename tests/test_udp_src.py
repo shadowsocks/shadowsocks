@@ -48,13 +48,13 @@ if __name__ == '__main__':
     sock_in2 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM,
                              socket.SOL_UDP)
 
-    sock_in1.bind(('::1', 9001))
-    sock_in2.bind(('::1', 9002))
+    sock_in1.bind(('::1', 9005))
+    sock_in2.bind(('::1', 9006))
 
-    sock_out.sendto(b'data', ('::1', 9001))
+    sock_out.sendto(b'data', ('::1', 9005))
     result1 = sock_in1.recvfrom(8)
 
-    sock_out.sendto(b'data', ('::1', 9002))
+    sock_out.sendto(b'data', ('::1', 9006))
     result2 = sock_in2.recvfrom(8)
 
     sock_out.close()
