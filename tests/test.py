@@ -44,7 +44,7 @@ parser.add_argument('--dns', type=str, default='8.8.8.8')
 config = parser.parse_args()
 
 if config.with_coverage:
-    python = ['coverage', 'run', '-p', '-a']
+    python = ['coverage', 'run', '-a']
 
 client_args = python + ['shadowsocks/local.py', '-v']
 server_args = python + ['shadowsocks/server.py', '-v']
