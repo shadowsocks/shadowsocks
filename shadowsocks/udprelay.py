@@ -69,8 +69,8 @@ import errno
 import random
 
 from shadowsocks import encrypt, eventloop, lru_cache, common, shell
-from shadowsocks.common import parse_header, pack_addr, onetimeauth_verify, onetimeauth_gen, \
-    ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
+from shadowsocks.common import parse_header, pack_addr, onetimeauth_verify, \
+    onetimeauth_gen, ONETIMEAUTH_BYTES, ADDRTYPE_AUTH
 
 
 BUF_SIZE = 65536
@@ -220,7 +220,7 @@ class UDPRelay(object):
         if self._is_local:
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._one_time_auth_enable:
-                data = _one_time_auth_chunk_data_gen(data)
+                data = self._one_time_auth_chunk_data_gen(data)
             data = encrypt.encrypt_all(self._password, self._method, 1, data)
             if not data:
                 return
