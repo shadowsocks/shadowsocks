@@ -242,6 +242,8 @@ class TCPRelayHandler(object):
             if self._ota_enable:
                 self._ota_chunk_data(data,
                                      self._data_to_write_to_remote.append)
+            else:
+                self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             # for sslocal and fastopen, we basically wait for data and use
@@ -475,6 +477,8 @@ class TCPRelayHandler(object):
         else:
             if self._ota_enable:
                 self._ota_chunk_data(data, self._write_to_sock_remote)
+            else:
+                self._write_to_sock(data, self._remote_sock)
         return
 
     def _on_local_read(self):
