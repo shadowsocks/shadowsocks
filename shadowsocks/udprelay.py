@@ -164,7 +164,9 @@ class UDPRelay(object):
             else:
                 data = data[3:]
         else:
-            data, key, iv = encrypt.dencrypt_all(self._password, self._method, data)
+            data, key, iv = encrypt.dencrypt_all(self._password,
+                                                 self._method,
+                                                 data)
             # decrypt data
             if not data:
                 logging.debug(
@@ -221,11 +223,11 @@ class UDPRelay(object):
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
-            key, iv, m = gen_key_iv(self._password, self._method)
+            key, iv, m = encrypt.gen_key_iv(self._password, self._method)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._one_time_auth_enable:
                 data = self._ota_chunk_data_gen(key, iv, data)
-            data = encrypt.encrypt_all_m(key, iv, m, method, data)
+            data = encrypt.encrypt_all_m(key, iv, m, self._method, data)
             if not data:
                 return
         else:
