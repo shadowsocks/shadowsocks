@@ -279,7 +279,7 @@ class UDPRelay(object):
             pass
 
     def _ota_chunk_data_gen(self, key, iv, data):
-        data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+        data = common.chr(common.ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
         key = iv + key
         return data + onetimeauth_gen(data, key)
 

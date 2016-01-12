@@ -113,8 +113,8 @@ class TCPRelayHandler(object):
             self._ota_enable = True
         else:
             self._ota_enable = False
-        self._ota_buff_head = ''
-        self._ota_buff_data = ''
+        self._ota_buff_head = b''
+        self._ota_buff_data = b''
         self._ota_len = 0
         self._ota_chunk_idx = 0
         self._fastopen_connected = False
@@ -338,7 +338,7 @@ class TCPRelayHandler(object):
                 # spec https://shadowsocks.org/en/spec/one-time-auth.html
                 # ATYP & 0x10 == 1, then OTA is enabled.
                 if self._ota_enable:
-                    data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+                    data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
                     key = self._encryptor.cipher_iv + self._encryptor.key
                     data += onetimeauth_gen(data, key)
                 data_to_send = self._encryptor.encrypt(data)
@@ -455,8 +455,8 @@ class TCPRelayHandler(object):
                 else:
                     data_cb(self._ota_buff_data)
                     self._ota_chunk_idx += 1
-                self._ota_buff_head = ''
-                self._ota_buff_data = ''
+                self._ota_buff_head = b''
+                self._ota_buff_data = b''
                 self._ota_len = 0
         return
 
