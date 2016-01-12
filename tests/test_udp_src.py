@@ -36,6 +36,7 @@ if __name__ == '__main__':
     # make sure they're from the same source port
     assert result1 == result2
 
+    """
     # Test 2: same source port IPv6
     # try again from the same port but IPv6
     sock_out = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM,
@@ -48,13 +49,13 @@ if __name__ == '__main__':
     sock_in2 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM,
                              socket.SOL_UDP)
 
-    sock_in1.bind(('::1', 9005))
-    sock_in2.bind(('::1', 9006))
+    sock_in1.bind(('::1', 9001))
+    sock_in2.bind(('::1', 9002))
 
-    sock_out.sendto(b'data', ('::1', 9005))
+    sock_out.sendto(b'data', ('::1', 9001))
     result1 = sock_in1.recvfrom(8)
 
-    sock_out.sendto(b'data', ('::1', 9006))
+    sock_out.sendto(b'data', ('::1', 9002))
     result2 = sock_in2.recvfrom(8)
 
     sock_out.close()
@@ -72,8 +73,8 @@ if __name__ == '__main__':
 
     sock_in1 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM,
                              socket.SOL_UDP)
-    sock_in1.bind(('::1', 9004))
-    sock_out.sendto(b'data', ('::1', 9004))
+    sock_in1.bind(('::1', 9001))
+    sock_out.sendto(b'data', ('::1', 9001))
     result3 = sock_in1.recvfrom(8)
 
     # make sure they're from different source ports
@@ -81,3 +82,4 @@ if __name__ == '__main__':
 
     sock_out.close()
     sock_in1.close()
+    """
