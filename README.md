@@ -1,6 +1,8 @@
 shadowsocks
 ===========
 
+|PyPI version| |Build Status| |Coverage Status|
+
 A fast tunnel proxy that helps you bypass firewalls.
 
 Features:
