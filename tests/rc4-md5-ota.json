@@ -7,6 +7,5 @@
     "method":"rc4-md5",
     "local_address":"127.0.0.1",
     "fast_open":false,
-    "one_time_auth":true,
-    "verbose":1
+    "one_time_auth":true
 }
