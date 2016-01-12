@@ -113,8 +113,8 @@ class TCPRelayHandler(object):
             self._ota_enable = True
         else:
             self._ota_enable = False
-        self._ota_buff_head = ''
-        self._ota_buff_data = ''
+        self._ota_buff_head = b''
+        self._ota_buff_data = b''
         self._ota_len = 0
         self._ota_chunk_idx = 0
         self._fastopen_connected = False
@@ -242,6 +242,8 @@ class TCPRelayHandler(object):
             if self._ota_enable:
                 self._ota_chunk_data(data,
                                      self._data_to_write_to_remote.append)
+            else:
+                self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             # for sslocal and fastopen, we basically wait for data and use
@@ -336,7 +338,7 @@ class TCPRelayHandler(object):
                 # spec https://shadowsocks.org/en/spec/one-time-auth.html
                 # ATYP & 0x10 == 1, then OTA is enabled.
                 if self._ota_enable:
-                    data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+                    data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
                     key = self._encryptor.cipher_iv + self._encryptor.key
                     data += onetimeauth_gen(data, key)
                 data_to_send = self._encryptor.encrypt(data)
@@ -453,8 +455,8 @@ class TCPRelayHandler(object):
                 else:
                     data_cb(self._ota_buff_data)
                     self._ota_chunk_idx += 1
-                self._ota_buff_head = ''
-                self._ota_buff_data = ''
+                self._ota_buff_head = b''
+                self._ota_buff_data = b''
                 self._ota_len = 0
         return
 
@@ -475,6 +477,8 @@ class TCPRelayHandler(object):
         else:
             if self._ota_enable:
                 self._ota_chunk_data(data, self._write_to_sock_remote)
+            else:
+                self._write_to_sock(data, self._remote_sock)
         return
 
     def _on_local_read(self):

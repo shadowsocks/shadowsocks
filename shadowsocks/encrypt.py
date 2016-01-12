@@ -133,6 +133,42 @@ class Encryptor(object):
         return self.decipher.update(buf)
 
 
+def gen_key_iv(password, method):
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    key = None
+    if key_len > 0:
+        key, _ = EVP_BytesToKey(password, key_len, iv_len)
+    else:
+        key = password
+    iv = random_string(iv_len)
+    return key, iv, m
+
+
+def encrypt_all_m(key, iv, m, method, data):
+    result = []
+    result.append(iv)
+    cipher = m(method, key, iv, 1)
+    result.append(cipher.update(data))
+    return b''.join(result)
+
+
+def dencrypt_all(password, method, data):
+    result = []
+    method = method.lower()
+    (key_len, iv_len, m) = method_supported[method]
+    key = None
+    if key_len > 0:
+        key, _ = EVP_BytesToKey(password, key_len, iv_len)
+    else:
+        key = password
+    iv = data[:iv_len]
+    data = data[iv_len:]
+    cipher = m(method, key, iv, 0)
+    result.append(cipher.update(data))
+    return b''.join(result), key, iv
+
+
 def encrypt_all(password, method, op, data):
     result = []
     method = method.lower()
@@ -185,6 +221,18 @@ def test_encrypt_all():
         assert plain == plain2
 
 
+def test_encrypt_all_m():
+    from os import urandom
+    plain = urandom(10240)
+    for method in CIPHERS_TO_TEST:
+        logging.warn(method)
+        key, iv, m = gen_key_iv(b'key', method)
+        cipher = encrypt_all_m(key, iv, m, method, plain)
+        plain2, key, iv = dencrypt_all(b'key', method, cipher)
+        assert plain == plain2
+
+
 if __name__ == '__main__':
     test_encrypt_all()
     test_encryptor()
+    test_encrypt_all_m()

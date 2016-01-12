@@ -2,7 +2,7 @@
 
 . tests/assert.sh
 
-PYTHON="coverage run -a -p"
+PYTHON="coverage run -a"
 LOCAL="$PYTHON shadowsocks/local.py"
 SERVER="$PYTHON shadowsocks/server.py"
 

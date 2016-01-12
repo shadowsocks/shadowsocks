@@ -150,6 +150,8 @@ class UDPRelay(object):
     def _handle_server(self):
         server = self._server_socket
         data, r_addr = server.recvfrom(BUF_SIZE)
+        key = None
+        iv = None
         if not data:
             logging.debug('UDP handle_server: data is empty')
         if self._stat_callback:
@@ -162,7 +164,9 @@ class UDPRelay(object):
             else:
                 data = data[3:]
         else:
-            data = encrypt.encrypt_all(self._password, self._method, 0, data)
+            data, key, iv = encrypt.dencrypt_all(self._password,
+                                                 self._method,
+                                                 data)
             # decrypt data
             if not data:
                 logging.debug(
@@ -184,13 +188,11 @@ class UDPRelay(object):
                     logging.warn('UDP one time auth header is too short')
                     return
                 _hash = data[-ONETIMEAUTH_BYTES:]
-                _data = data[header_length: -ONETIMEAUTH_BYTES]
-                _key = self._encryptor.decipher_iv + self._encryptor.key
-                if onetimeauth_verify(_hash, _data, _key) is False:
+                data = data[: -ONETIMEAUTH_BYTES]
+                _key = iv + key
+                if onetimeauth_verify(_hash, data, _key) is False:
                     logging.warn('UDP one time auth fail')
                     return
-                self._one_time_authed = True
-                header_length += ONETIMEAUTH_BYTES
         addrs = self._dns_cache.get(server_addr, None)
         if addrs is None:
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
@@ -221,10 +223,11 @@ class UDPRelay(object):
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
+            key, iv, m = encrypt.gen_key_iv(self._password, self._method)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._one_time_auth_enable:
-                data = self._one_time_auth_chunk_data_gen(data)
-            data = encrypt.encrypt_all(self._password, self._method, 1, data)
+                data = self._ota_chunk_data_gen(key, iv, data)
+            data = encrypt.encrypt_all_m(key, iv, m, self._method, data)
             if not data:
                 return
         else:
@@ -275,9 +278,9 @@ class UDPRelay(object):
             # simply drop that packet
             pass
 
-    def _one_time_auth_chunk_data_gen(self, data):
-        data = chr(ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
-        key = self._encryptor.cipher_iv + self._encryptor.key
+    def _ota_chunk_data_gen(self, key, iv, data):
+        data = common.chr(common.ord(data[0]) | ADDRTYPE_AUTH) + data[1:]
+        key = iv + key
         return data + onetimeauth_gen(data, key)
 
     def add_to_loop(self, loop):
