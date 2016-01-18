@@ -78,7 +78,10 @@ class http_simple(plain.plain):
 
     def encode_head(self, buf):
         hexstr = binascii.hexlify(buf)
-        return b''.join([b"%" + pair for pair in [hexstr[i:i+2] for i in range(0, len(hexstr), 2)]])
+        chs = []
+        for i in range(0, len(hexstr), 2):
+            chs.append(b"%" + hexstr[i:i+2])
+        return b''.join(chs)
 
     def client_encode(self, buf):
         if self.has_sent_header:
