@@ -80,6 +80,10 @@ class LRUCache(collections.MutableMapping):
     def __len__(self):
         return len(self._store)
 
+    def first(self):
+        if len(self._keys_to_last_time) > 0:
+            return iter(self._keys_to_last_time).next()
+
     def sweep(self):
         # O(n - m)
         now = time.time()
