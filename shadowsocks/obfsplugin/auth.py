@@ -581,6 +581,7 @@ class auth_sha1_v2(verify_base):
         self.has_recv_header = False
         self.client_id = 0
         self.connection_id = 0
+        self.salt = b"auth_sha1_v2"
 
     def init_data(self):
         return obfs_auth_v2_data()
@@ -618,7 +619,7 @@ class auth_sha1_v2(verify_base):
             return b''
         data = self.rnd_data(len(buf)) + buf
         data = struct.pack('>H', len(data) + 16) + data
-        crc = binascii.crc32(self.server_info.key) & 0xFFFFFFFF
+        crc = binascii.crc32(self.salt + self.server_info.key) & 0xFFFFFFFF
         data = struct.pack('<I', crc) + data
         data += hmac.new(self.server_info.iv + self.server_info.key, data, hashlib.sha1).digest()[:10]
         return data
@@ -697,7 +698,7 @@ class auth_sha1_v2(verify_base):
         if not self.has_recv_header:
             if len(self.recv_buf) < 4:
                 return b''
-            crc = struct.pack('<I', binascii.crc32(self.server_info.key) & 0xFFFFFFFF)
+            crc = struct.pack('<I', binascii.crc32(self.salt + self.server_info.key) & 0xFFFFFFFF)
             if crc != self.recv_buf[:4]:
                 if self.method == 'auth_sha1_v2':
                     return b'E'
