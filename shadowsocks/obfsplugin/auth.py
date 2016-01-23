@@ -595,7 +595,7 @@ class auth_sha1_v2(verify_base):
         self.server_info.data.set_max_client(max_client)
 
     def rnd_data(self, buf_size):
-        if buf_size > 1500:
+        if buf_size > 1300:
             return b'\x01'
 
         if buf_size > 400:
