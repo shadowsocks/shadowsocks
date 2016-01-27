@@ -56,7 +56,12 @@ def main():
 
     tcp_servers = []
     udp_servers = []
-    dns_resolver = asyncdns.DNSResolver()
+
+    if 'dns_server' in config:  # allow override settings in resolv.conf
+        dns_resolver = asyncdns.DNSResolver(config['dns_server'])
+    else:
+        dns_resolver = asyncdns.DNSResolver()
+
     port_password = config['port_password']
     del config['port_password']
     for port, password in port_password.items():

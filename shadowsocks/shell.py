@@ -84,7 +84,8 @@ def check_config(config, is_local):
         sys.exit(2)
 
     if not is_local and not config.get('password', None) \
-            and not config.get('port_password', None):
+            and not config.get('port_password', None) \
+            and not config.get('manager_address'):
         logging.error('password or port_password not specified')
         print_help(is_local)
         sys.exit(2)
@@ -130,11 +131,11 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
+        shortopts = 'hd:s:b:p:k:l:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
                     'version']
     else:
-        shortopts = 'hd:s:p:k:m:c:t:vq'
+        shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:
@@ -174,6 +175,8 @@ def get_config(is_local):
                 v_count += 1
                 # '-vv' turns on more verbose mode
                 config['verbose'] = v_count
+            elif key == '-a':
+                config['one_time_auth'] = True
             elif key == '-t':
                 config['timeout'] = int(value)
             elif key == '--fast-open':
@@ -225,6 +228,7 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
+    config['one_time_auth'] = config.get('one_time_auth', False)
     if is_local:
         if config.get('server', None) is None:
             logging.error('server addr not specified')
@@ -315,6 +319,7 @@ Proxy options:
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
   -t TIMEOUT             timeout in seconds, default: 300
+  -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
