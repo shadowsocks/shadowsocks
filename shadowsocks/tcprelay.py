@@ -27,7 +27,9 @@ import traceback
 import random
 
 from shadowsocks import encrypt, eventloop, shell, common
-from shadowsocks.common import parse_header
+from shadowsocks.common import parse_header, onetimeauth_verify, \
+    onetimeauth_gen, ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, \
+    ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
@@ -107,6 +109,14 @@ class TCPRelayHandler(object):
         self._stage = STAGE_INIT
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
+        if 'one_time_auth' in config and config['one_time_auth']:
+            self._ota_enable = True
+        else:
+            self._ota_enable = False
+        self._ota_buff_head = b''
+        self._ota_buff_data = b''
+        self._ota_len = 0
+        self._ota_chunk_idx = 0
         self._fastopen_connected = False
         self._data_to_write_to_local = []
         self._data_to_write_to_remote = []
@@ -224,8 +234,16 @@ class TCPRelayHandler(object):
 
     def _handle_stage_connecting(self, data):
         if self._is_local:
+            if self._ota_enable:
+                data = self._ota_chunk_data_gen(data)
             data = self._encryptor.encrypt(data)
-        self._data_to_write_to_remote.append(data)
+            self._data_to_write_to_remote.append(data)
+        else:
+            if self._ota_enable:
+                self._ota_chunk_data(data,
+                                     self._data_to_write_to_remote.append)
+            else:
+                self._data_to_write_to_remote.append(data)
         if self._is_local and not self._fastopen_connected and \
                 self._config['fast_open']:
             # for sslocal and fastopen, we basically wait for data and use
@@ -239,7 +257,8 @@ class TCPRelayHandler(object):
                 self._loop.add(remote_sock, eventloop.POLL_ERR, self._server)
                 data = b''.join(self._data_to_write_to_remote)
                 l = len(data)
-                s = remote_sock.sendto(data, MSG_FASTOPEN, self._chosen_server)
+                s = remote_sock.sendto(data, MSG_FASTOPEN,
+                                       self._chosen_server)
                 if s < l:
                     data = data[s:]
                     self._data_to_write_to_remote = [data]
@@ -293,6 +312,20 @@ class TCPRelayHandler(object):
             logging.info('connecting %s:%d from %s:%d' %
                          (common.to_str(remote_addr), remote_port,
                           self._client_address[0], self._client_address[1]))
+            if self._is_local is False:
+                # spec https://shadowsocks.org/en/spec/one-time-auth.html
+                if self._ota_enable or addrtype & ADDRTYPE_AUTH:
+                    if len(data) < header_length + ONETIMEAUTH_BYTES:
+                        logging.warn('one time auth header is too short')
+                        return None
+                    offset = header_length + ONETIMEAUTH_BYTES
+                    _hash = data[header_length: offset]
+                    _data = data[:header_length]
+                    key = self._encryptor.decipher_iv + self._encryptor.key
+                    if onetimeauth_verify(_hash, _data, key) is False:
+                        logging.warn('one time auth fail')
+                        self.destroy()
+                    header_length += ONETIMEAUTH_BYTES
             self._remote_address = (common.to_str(remote_addr), remote_port)
             # pause reading
             self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
@@ -302,13 +335,23 @@ class TCPRelayHandler(object):
                 self._write_to_sock((b'\x05\x00\x00\x01'
                                      b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
+                # spec https://shadowsocks.org/en/spec/one-time-auth.html
+                # ATYP & 0x10 == 1, then OTA is enabled.
+                if self._ota_enable:
+                    data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
+                    key = self._encryptor.cipher_iv + self._encryptor.key
+                    data += onetimeauth_gen(data, key)
                 data_to_send = self._encryptor.encrypt(data)
                 self._data_to_write_to_remote.append(data_to_send)
                 # notice here may go into _handle_dns_resolved directly
                 self._dns_resolver.resolve(self._chosen_server[0],
                                            self._handle_dns_resolved)
             else:
-                if len(data) > header_length:
+                if self._ota_enable:
+                    data = data[header_length:]
+                    self._ota_chunk_data(data,
+                                         self._data_to_write_to_remote.append)
+                elif len(data) > header_length:
                     self._data_to_write_to_remote.append(data[header_length:])
                 # notice here may go into _handle_dns_resolved directly
                 self._dns_resolver.resolve(remote_addr,
@@ -341,48 +384,102 @@ class TCPRelayHandler(object):
             self._log_error(error)
             self.destroy()
             return
-        if result:
+        if result and result[1]:
             ip = result[1]
-            if ip:
+            try:
+                self._stage = STAGE_CONNECTING
+                remote_addr = ip
+                if self._is_local:
+                    remote_port = self._chosen_server[1]
+                else:
+                    remote_port = self._remote_address[1]
 
-                try:
+                if self._is_local and self._config['fast_open']:
+                    # for fastopen:
+                    # wait for more data arrive and send them in one SYN
                     self._stage = STAGE_CONNECTING
-                    remote_addr = ip
-                    if self._is_local:
-                        remote_port = self._chosen_server[1]
-                    else:
-                        remote_port = self._remote_address[1]
-
-                    if self._is_local and self._config['fast_open']:
-                        # for fastopen:
-                        # wait for more data to arrive and send them in one SYN
-                        self._stage = STAGE_CONNECTING
-                        # we don't have to wait for remote since it's not
-                        # created
-                        self._update_stream(STREAM_UP, WAIT_STATUS_READING)
-                        # TODO when there is already data in this packet
-                    else:
-                        # else do connect
-                        remote_sock = self._create_remote_socket(remote_addr,
-                                                                 remote_port)
-                        try:
-                            remote_sock.connect((remote_addr, remote_port))
-                        except (OSError, IOError) as e:
-                            if eventloop.errno_from_exception(e) == \
-                                    errno.EINPROGRESS:
-                                pass
-                        self._loop.add(remote_sock,
-                                       eventloop.POLL_ERR | eventloop.POLL_OUT,
-                                       self._server)
-                        self._stage = STAGE_CONNECTING
-                        self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
-                        self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
-                    return
-                except Exception as e:
-                    shell.print_exception(e)
-                    if self._config['verbose']:
-                        traceback.print_exc()
+                    # we don't have to wait for remote since it's not
+                    # created
+                    self._update_stream(STREAM_UP, WAIT_STATUS_READING)
+                    # TODO when there is already data in this packet
+                else:
+                    # else do connect
+                    remote_sock = self._create_remote_socket(remote_addr,
+                                                             remote_port)
+                    try:
+                        remote_sock.connect((remote_addr, remote_port))
+                    except (OSError, IOError) as e:
+                        if eventloop.errno_from_exception(e) == \
+                                errno.EINPROGRESS:
+                            pass
+                    self._loop.add(remote_sock,
+                                   eventloop.POLL_ERR | eventloop.POLL_OUT,
+                                   self._server)
+                    self._stage = STAGE_CONNECTING
+                    self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                    self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+                return
+            except Exception as e:
+                shell.print_exception(e)
+                if self._config['verbose']:
+                    traceback.print_exc()
         self.destroy()
+
+    def _write_to_sock_remote(self, data):
+        self._write_to_sock(data, self._remote_sock)
+
+    def _ota_chunk_data(self, data, data_cb):
+        # spec https://shadowsocks.org/en/spec/one-time-auth.html
+        while len(data) > 0:
+            if self._ota_len == 0:
+                # get DATA.LEN + HMAC-SHA1
+                length = ONETIMEAUTH_CHUNK_BYTES - len(self._ota_buff_head)
+                self._ota_buff_head += data[:length]
+                data = data[length:]
+                if len(self._ota_buff_head) < ONETIMEAUTH_CHUNK_BYTES:
+                    # wait more data
+                    return
+                data_len = self._ota_buff_head[:ONETIMEAUTH_CHUNK_DATA_LEN]
+                self._ota_len = struct.unpack('>H', data_len)[0]
+            length = min(self._ota_len, len(data))
+            self._ota_buff_data += data[:length]
+            data = data[length:]
+            if len(self._ota_buff_data) == self._ota_len:
+                # get a chunk data
+                _hash = self._ota_buff_head[ONETIMEAUTH_CHUNK_DATA_LEN:]
+                _data = self._ota_buff_data
+                index = struct.pack('>I', self._ota_chunk_idx)
+                key = self._encryptor.decipher_iv + index
+                if onetimeauth_verify(_hash, _data, key) is False:
+                    logging.warn('one time auth fail, drop chunk !')
+                else:
+                    data_cb(self._ota_buff_data)
+                    self._ota_chunk_idx += 1
+                self._ota_buff_head = b''
+                self._ota_buff_data = b''
+                self._ota_len = 0
+        return
+
+    def _ota_chunk_data_gen(self, data):
+        data_len = struct.pack(">H", len(data))
+        index = struct.pack('>I', self._ota_chunk_idx)
+        key = self._encryptor.cipher_iv + index
+        sha110 = onetimeauth_gen(data, key)
+        self._ota_chunk_idx += 1
+        return data_len + sha110 + data
+
+    def _handle_stage_stream(self, data):
+        if self._is_local:
+            if self._ota_enable:
+                data = self._ota_chunk_data_gen(data)
+            data = self._encryptor.encrypt(data)
+            self._write_to_sock(data, self._remote_sock)
+        else:
+            if self._ota_enable:
+                self._ota_chunk_data(data, self._write_to_sock_remote)
+            else:
+                self._write_to_sock(data, self._remote_sock)
+        return
 
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
@@ -406,9 +503,7 @@ class TCPRelayHandler(object):
             if not data:
                 return
         if self._stage == STAGE_STREAM:
-            if self._is_local:
-                data = self._encryptor.encrypt(data)
-            self._write_to_sock(data, self._remote_sock)
+            self._handle_stage_stream(data)
             return
         elif is_local and self._stage == STAGE_INIT:
             # TODO check auth method
