@@ -57,6 +57,8 @@ class DbTransfer(object):
 		query_sub_in = None
 		last_time = time.time()
 		for id in dt_transfer.keys():
+			if dt_transfer[id][0] == 0 and dt_transfer[id][1] == 0:
+				continue
 			query_sub_when += ' WHEN %s THEN u+%s' % (id, dt_transfer[id][0])
 			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, dt_transfer[id][1])
 			if query_sub_in is not None:
