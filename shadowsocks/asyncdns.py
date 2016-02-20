@@ -242,13 +242,13 @@ class DNSResponse(object):
         return '%s: %s' % (self.hostname, str(self.answers))
 
 
-STATUS_IPV4 = 0
-STATUS_IPV6 = 1
+STATUS_FIRST = 0
+STATUS_SECOND = 1
 
 
 class DNSResolver(object):
 
-    def __init__(self, server_list=None):
+    def __init__(self, server_list=None, prefer_ipv6=False):
         self._loop = None
         self._hosts = {}
         self._hostname_status = {}
@@ -261,6 +261,10 @@ class DNSResolver(object):
             self._parse_resolv()
         else:
             self._servers = server_list
+        if prefer_ipv6:
+            self._QTYPES = [QTYPE_AAAA, QTYPE_A]
+        else:
+            self._QTYPES = [QTYPE_A, QTYPE_AAAA]
         self._parse_hosts()
         # TODO monitor hosts change and reload hosts
         # TODO parse /etc/gai.conf and follow its rules
@@ -341,17 +345,18 @@ class DNSResolver(object):
                         answer[2] == QCLASS_IN:
                     ip = answer[0]
                     break
-            if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
-                    == STATUS_IPV4:
-                self._hostname_status[hostname] = STATUS_IPV6
-                self._send_req(hostname, QTYPE_AAAA)
+            if not ip and self._hostname_status.get(hostname, STATUS_SECOND) \
+                    == STATUS_FIRST:
+                self._hostname_status[hostname] = STATUS_SECOND
+                self._send_req(hostname, self._QTYPES[1])
             else:
                 if ip:
                     self._cache[hostname] = ip
                     self._call_callback(hostname, ip)
-                elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
+                elif self._hostname_status.get(hostname, None) \
+                        == STATUS_SECOND:
                     for question in response.questions:
-                        if question[1] == QTYPE_AAAA:
+                        if question[1] == self._QTYPES[1]:
                             self._call_callback(hostname, None)
                             break
 
@@ -417,14 +422,14 @@ class DNSResolver(object):
                 return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
-                self._hostname_status[hostname] = STATUS_IPV4
-                self._send_req(hostname, QTYPE_A)
+                self._hostname_status[hostname] = STATUS_FIRST
+                self._send_req(hostname, self._QTYPES[0])
                 self._hostname_to_cb[hostname] = [callback]
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
                 # TODO send again only if waited too long
-                self._send_req(hostname, QTYPE_A)
+                self._send_req(hostname, self._QTYPES[0])
 
     def close(self):
         if self._sock:

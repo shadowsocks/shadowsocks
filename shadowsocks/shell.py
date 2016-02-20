@@ -137,7 +137,8 @@ def get_config(is_local):
     else:
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=', 'manager-address=', 'version']
+                    'forbidden-ip=', 'user=', 'manager-address=', 'version',
+                    'prefer-ipv6']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -207,6 +208,8 @@ def get_config(is_local):
             elif key == '-q':
                 v_count -= 1
                 config['verbose'] = v_count
+            elif key == '--prefer-ipv6':
+                config['prefer_ipv6'] = True
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
         print_help(is_local)
@@ -229,6 +232,7 @@ def get_config(is_local):
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
     config['one_time_auth'] = config.get('one_time_auth', False)
+    config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     if is_local:
         if config.get('server', None) is None:
             logging.error('server addr not specified')
@@ -324,6 +328,7 @@ Proxy options:
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
   --manager-address ADDR optional server manager UDP address, see wiki
+  --prefer-ipv6          resolve ipv6 address first
 
 General options:
   -h, --help             show this help message and exit
