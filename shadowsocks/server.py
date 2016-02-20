@@ -58,9 +58,10 @@ def main():
     udp_servers = []
 
     if 'dns_server' in config:  # allow override settings in resolv.conf
-        dns_resolver = asyncdns.DNSResolver(config['dns_server'])
+        dns_resolver = asyncdns.DNSResolver(config['dns_server'],
+                                            config['prefer_ipv6'])
     else:
-        dns_resolver = asyncdns.DNSResolver()
+        dns_resolver = asyncdns.DNSResolver(prefer_ipv6=config['prefer_ipv6'])
 
     port_password = config['port_password']
     del config['port_password']
