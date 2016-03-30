@@ -89,7 +89,7 @@ WAIT_STATUS_WRITING = 2
 WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
 BUF_SIZE = 32 * 1024
-
+UDP_MAX_BUF_SIZE = 65536
 
 class TCPRelayHandler(object):
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
@@ -654,9 +654,9 @@ class TCPRelayHandler(object):
         try:
             if self._remote_udp:
                 if is_remote_sock:
-                    data, addr = self._remote_sock.recvfrom(BUF_SIZE)
+                    data, addr = self._remote_sock.recvfrom(UDP_MAX_BUF_SIZE)
                 else:
-                    data, addr = self._remote_sock_v6.recvfrom(BUF_SIZE)
+                    data, addr = self._remote_sock_v6.recvfrom(UDP_MAX_BUF_SIZE)
                 port = struct.pack('>H', addr[1])
                 try:
                     ip = socket.inet_aton(addr[0])
