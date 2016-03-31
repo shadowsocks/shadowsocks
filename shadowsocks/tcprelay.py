@@ -497,18 +497,14 @@ class TCPRelayHandler(object):
         if len(data) < 3:
             logging.warning('method selection header too short')
             raise BadSocksHeader
-
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
-
         if socks_version != 5:
             logging.warning('unsupported SOCKS protocol version ' + str(socks_version))
             raise BadSocksHeader
-
         if nmethods < 1 or len(data) != nmethods + 2:
             logging.warning('NMETHODS and number of METHODS mismatch')
             raise BadSocksHeader
-
         noauth_exist = False
         for method in data[2:]:
             if common.ord(method) == METHOD_NOAUTH:
