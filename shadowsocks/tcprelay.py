@@ -531,7 +531,6 @@ class TCPRelayHandler(object):
 
         self._write_to_sock(b'\x05\00', self._local_sock)
         self._stage = STAGE_ADDR
-        return
 
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
