@@ -1,0 +1,14 @@
+[Unit]
+Description=Shadowsocks daemon %i
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/ssserver -c /etc/shadowsocks/%i.json
+Restart=on-failure
+KillMode=process
+KillSignal=SIGQUIT
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
+
