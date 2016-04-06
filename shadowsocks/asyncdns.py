@@ -35,7 +35,7 @@ from shadowsocks import common, lru_cache, eventloop, shell
 
 CACHE_SWEEP_INTERVAL = 30
 
-VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d_-]{1,63}(?<!-)$", re.IGNORECASE)
 
 common.patch_socket()
 
