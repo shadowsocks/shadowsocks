@@ -39,6 +39,7 @@ class server_info(object):
 
 class obfs(object):
     def __init__(self, method):
+        method = common.to_str(method)
         self.method = method
         self._method_info = self.get_method_info(method)
         if self._method_info:
