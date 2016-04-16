@@ -1,6 +1,7 @@
 #!/bin/bash
 
-if [ ! -d dante-1.4.0 ]; then
+if [ ! -d dante-1.4.0 ] || [ ! -d dante-1.4.0/configure ]; then
+    rm dante-1.4.0 -rf
     #wget http://www.inet.no/dante/files/dante-1.4.0.tar.gz || exit 1
     wget https://codeload.github.com/notpeter/dante/tar.gz/dante-1.4.0 -O dante-1.4.0.tar.gz || exit 1
     tar xf dante-1.4.0.tar.gz || exit 1
