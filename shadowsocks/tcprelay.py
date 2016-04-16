@@ -36,6 +36,9 @@ TIMEOUTS_CLEAN_SIZE = 512
 
 MSG_FASTOPEN = 0x20000000
 
+# SOCKS METHOD definition
+METHOD_NOAUTH = 0
+
 # SOCKS command definition
 CMD_CONNECT = 1
 CMD_BIND = 2
@@ -52,7 +55,7 @@ CMD_UDP_ASSOCIATE = 3
 # for each handler, it could be at one of several stages:
 
 # as sslocal:
-# stage 0 SOCKS hello received from local, send hello to local
+# stage 0 auth METHOD received from local, reply with selection message
 # stage 1 addr received from local, query DNS for remote
 # stage 2 UDP assoc
 # stage 3 DNS resolved, connect to remote
@@ -91,6 +94,14 @@ WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
 BUF_SIZE = 32 * 1024
 
+
+# helper exceptions for TCPRelayHandler
+
+class BadSocksHeader(Exception):
+    pass
+
+class NoAcceptableMethods(Exception):
+    pass
 
 class TCPRelayHandler(object):
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
@@ -481,6 +492,42 @@ class TCPRelayHandler(object):
                 self._write_to_sock(data, self._remote_sock)
         return
 
+    def _check_auth_method(self, data):
+        # VER, NMETHODS, and at least 1 METHODS
+        if len(data) < 3:
+            logging.warning('method selection header too short')
+            raise BadSocksHeader
+        socks_version = common.ord(data[0])
+        nmethods = common.ord(data[1])
+        if socks_version != 5:
+            logging.warning('unsupported SOCKS protocol version ' + str(socks_version))
+            raise BadSocksHeader
+        if nmethods < 1 or len(data) != nmethods + 2:
+            logging.warning('NMETHODS and number of METHODS mismatch')
+            raise BadSocksHeader
+        noauth_exist = False
+        for method in data[2:]:
+            if common.ord(method) == METHOD_NOAUTH:
+                noauth_exist = True
+                break
+        if not noauth_exist:
+            logging.warning('none of METHOD\'s requested by client is supported')
+            raise NoAcceptableMethods
+
+    def _handle_stage_init(self, data):
+        try:
+            self._check_auth_method(data)
+        except BadSocksHeader:
+            self.destroy()
+            return
+        except NoAcceptableMethods:
+            self._write_to_sock(b'\x05\xff', self._local_sock)
+            self.destroy()
+            return
+
+        self._write_to_sock(b'\x05\00', self._local_sock)
+        self._stage = STAGE_ADDR
+
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
         # each stage
@@ -506,10 +553,7 @@ class TCPRelayHandler(object):
             self._handle_stage_stream(data)
             return
         elif is_local and self._stage == STAGE_INIT:
-            # TODO check auth method
-            self._write_to_sock(b'\x05\00', self._local_sock)
-            self._stage = STAGE_ADDR
-            return
+            self._handle_stage_init(data)
         elif self._stage == STAGE_CONNECTING:
             self._handle_stage_connecting(data)
         elif (is_local and self._stage == STAGE_ADDR) or \
