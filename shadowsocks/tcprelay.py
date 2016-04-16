@@ -100,8 +100,10 @@ BUF_SIZE = 32 * 1024
 class BadSocksHeader(Exception):
     pass
 
+
 class NoAcceptableMethods(Exception):
     pass
+
 
 class TCPRelayHandler(object):
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
@@ -500,7 +502,8 @@ class TCPRelayHandler(object):
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
         if socks_version != 5:
-            logging.warning('unsupported SOCKS protocol version ' + str(socks_version))
+            logging.warning('unsupported SOCKS protocol version ' + 
+                            str(socks_version))
             raise BadSocksHeader
         if nmethods < 1 or len(data) != nmethods + 2:
             logging.warning('NMETHODS and number of METHODS mismatch')
@@ -511,7 +514,8 @@ class TCPRelayHandler(object):
                 noauth_exist = True
                 break
         if not noauth_exist:
-            logging.warning('none of METHOD\'s requested by client is supported')
+            logging.warning('none of SOCKS METHOD\'s '
+                            'requested by client is supported')
             raise NoAcceptableMethods
 
     def _handle_stage_init(self, data):
