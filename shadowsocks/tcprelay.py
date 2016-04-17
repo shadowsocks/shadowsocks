@@ -282,9 +282,6 @@ class TCPRelayHandler(object):
                     if sock == self._remote_sock:
                         self._server.server_transfer_ul += len(data)
                         self._update_activity(len(data))
-                    elif not self._is_local and self._obfs is not None:
-                            obfs_encode = self._obfs.server_encode(data)
-                            data = obfs_encode
                 if data:
                     l = len(data)
                     s = sock.send(data)
@@ -612,7 +609,8 @@ class TCPRelayHandler(object):
                         self.destroy()
                         return
                     if obfs_decode[2]:
-                        self._write_to_sock(b'', self._local_sock)
+                        data = self._obfs.server_encode(b'')
+                        self._write_to_sock(data, self._local_sock)
                     if obfs_decode[1]:
                         if not self._protocol.obfs.server_info.recv_iv:
                             iv_len = len(self._protocol.obfs.server_info.iv)
@@ -704,6 +702,7 @@ class TCPRelayHandler(object):
                 if self._encrypt_correct:
                     data = self._protocol.server_pre_encrypt(data)
                     data = self._encryptor.encrypt(data)
+                    data = self._obfs.server_encode(data)
             self._update_activity(len(data))
             self._server.server_transfer_dl += len(data)
         else:

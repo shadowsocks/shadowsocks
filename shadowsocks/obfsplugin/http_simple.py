@@ -119,7 +119,7 @@ class http_simple(plain.plain):
 
         header = b'HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Encoding: gzip\r\nContent-Type: text/html\r\nDate: '
         header += to_bytes(datetime.datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT'))
-        header += b'\r\nServer: nginx\r\nTransfer-Encoding: chunked\r\nVary: Accept-Encoding\r\n\r\n'
+        header += b'\r\nServer: nginx\r\nVary: Accept-Encoding\r\n\r\n'
         self.has_sent_header = True
         return header + buf
 
