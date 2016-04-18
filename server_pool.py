@@ -215,14 +215,22 @@ class ServerPool(object):
 		if port in self.tcp_servers_pool:
 			ret[0] = self.tcp_servers_pool[port].server_transfer_ul
 			ret[1] = self.tcp_servers_pool[port].server_transfer_dl
+		if port in self.udp_servers_pool:
+			ret[0] += self.udp_servers_pool[port].server_transfer_ul
+			ret[1] += self.udp_servers_pool[port].server_transfer_dl
 		if port in self.tcp_ipv6_servers_pool:
 			ret[0] += self.tcp_ipv6_servers_pool[port].server_transfer_ul
 			ret[1] += self.tcp_ipv6_servers_pool[port].server_transfer_dl
+		if port in self.udp_ipv6_servers_pool:
+			ret[0] += self.udp_ipv6_servers_pool[port].server_transfer_ul
+			ret[1] += self.udp_ipv6_servers_pool[port].server_transfer_dl
 		return ret
 
 	def get_servers_transfer(self):
 		servers = self.tcp_servers_pool.copy()
 		servers.update(self.tcp_ipv6_servers_pool)
+		servers.update(self.udp_servers_pool)
+		servers.update(self.udp_ipv6_servers_pool)
 		ret = {}
 		for port in servers.keys():
 			ret[port] = self.get_server_transfer(port)

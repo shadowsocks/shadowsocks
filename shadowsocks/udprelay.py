@@ -529,6 +529,7 @@ class TCPRelayHandler(object):
             self.destroy()
             return
         try:
+            self._server.server_transfer_dl += len(data)
             recv_data = data
             beg_pos = 0
             max_len = len(recv_data)
@@ -546,7 +547,6 @@ class TCPRelayHandler(object):
                 post_data = self._pack_post_data(CMD_POST, pack_id, data)
                 addr = self.get_local_address()
                 self._write_to_sock(post_data, self._local_sock, addr)
-                self._server.server_transfer_dl += len(post_data)
                 if pack_id <= DOUBLE_SEND_BEG_IDS:
                     post_data = self._pack_post_data(CMD_POST, pack_id, data)
                     self._write_to_sock(post_data, self._local_sock, addr)
@@ -1026,6 +1026,7 @@ class UDPRelay(object):
                 #(cmd, request_id, data)
                 #logging.info("UDP data %d %d %s" % (data[0], data[1], binascii.hexlify(data[2])))
                 try:
+                    self.server_transfer_ul += len(data[2])
                     if data[0] == 0:
                         if len(data[2]) >= 4:
                             for i in range(64):
@@ -1152,6 +1153,7 @@ class UDPRelay(object):
         try:
             #logging.info('UDP handle_server sendto %s:%d %d bytes' % (common.to_str(server_addr), server_port, len(data)))
             client.sendto(data, (server_addr, server_port))
+            self.server_transfer_ul += len(data)
         except IOError as e:
             err = eventloop.errno_from_exception(e)
             if err in (errno.EINPROGRESS, errno.EAGAIN):
@@ -1196,6 +1198,7 @@ class UDPRelay(object):
             response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
+            self.server_transfer_dl += len(response)
             self.write_to_server_socket(response, client_addr)
         else:
             # this packet is from somewhere else we know
@@ -1203,15 +1206,9 @@ class UDPRelay(object):
             pass
 
     def write_to_server_socket(self, data, addr):
-        #self._server_socket.sendto(data, addr)
-        #'''
         uncomplete = False
         retry = 0
         try:
-            #"""
-            #if self._data_to_write_to_server_socket:
-            #    self._data_to_write_to_server_socket.append([(data, addr), 0])
-            #else:
             self._server_socket.sendto(data, addr)
             data = None
             while self._data_to_write_to_server_socket:
@@ -1220,7 +1217,6 @@ class UDPRelay(object):
                 del self._data_to_write_to_server_socket[0]
                 data, addr = data_buf[0]
                 self._server_socket.sendto(data, addr)
-            #"""
         except (OSError, IOError) as e:
             error_no = eventloop.errno_from_exception(e)
             uncomplete = True
