@@ -86,6 +86,10 @@ class ServerPool(object):
 			import traceback
 			traceback.print_exc()
 			os.exit(0)
+		except Exception as e:
+			logging.error(e)
+			import traceback
+			traceback.print_exc()
 
 	def server_is_run(self, port):
 		port = int(port)
