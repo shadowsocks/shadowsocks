@@ -50,7 +50,6 @@ class DbTransfer(object):
 				dt_transfer[id] = [int(curr_transfer[id][0] * Config.MYSQL_TRANSFER_MUL),
 									int(curr_transfer[id][1] * Config.MYSQL_TRANSFER_MUL)]
 
-		self.last_get_transfer = curr_transfer
 		query_head = 'UPDATE user'
 		query_sub_when = ''
 		query_sub_when2 = ''
@@ -79,6 +78,7 @@ class DbTransfer(object):
 		cur.close()
 		conn.commit()
 		conn.close()
+		self.last_get_transfer = curr_transfer
 
 	@staticmethod
 	def pull_db_all_user():
@@ -170,6 +170,7 @@ class DbTransfer(object):
 		last_rows = []
 		try:
 			while True:
+				reload(Config)
 				try:
 					DbTransfer.get_instance().push_db_all_user()
 					rows = DbTransfer.get_instance().pull_db_all_user()
@@ -179,7 +180,7 @@ class DbTransfer(object):
 					trace = traceback.format_exc()
 					logging.error(trace)
 					#logging.warn('db thread except:%s' % e)
-				if DbTransfer.get_instance().event.wait(15):
+				if DbTransfer.get_instance().event.wait(Config.MYSQL_UPDATE_TIME):
 					break
 		except KeyboardInterrupt as e:
 			pass

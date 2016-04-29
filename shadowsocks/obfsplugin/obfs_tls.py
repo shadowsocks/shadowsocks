@@ -251,7 +251,7 @@ class tls_auth(plain.plain):
         buf = buf[32:]
         sessionid_len = ord(buf[0])
         if sessionid_len < 32:
-            logging.error("tls_auth wrong sessionid_len")
+            logging.info("tls_auth wrong sessionid_len")
             return self.decode_error_return(ogn_buf)
         sessionid = buf[1:sessionid_len + 1]
         buf = buf[sessionid_len+1:]
@@ -261,13 +261,13 @@ class tls_auth(plain.plain):
         time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
         if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
                 or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
-            logging.debug("tls_auth wrong time")
+            logging.info("tls_auth wrong time")
             return self.decode_error_return(ogn_buf)
         if sha1 != verifyid[22:]:
-            logging.debug("tls_auth wrong sha1")
+            logging.info("tls_auth wrong sha1")
             return self.decode_error_return(ogn_buf)
         if self.server_info.data.client_data.get(verifyid[:22]):
-            logging.error("replay attack detect, id = %s" % (binascii.hexlify(verifyid)))
+            logging.info("replay attack detect, id = %s" % (binascii.hexlify(verifyid)))
             return self.decode_error_return(ogn_buf)
         self.server_info.data.client_data.sweep()
         self.server_info.data.client_data[verifyid[:22]] = sessionid
@@ -344,7 +344,7 @@ class tls_ticket_auth(plain.plain):
             self.recv_buffer += buf
             while len(self.recv_buffer) > 5:
                 if ord(self.recv_buffer[0]) != 0x17:
-                    logging.error("data = %s" % (binascii.hexlify(self.recv_buffer)))
+                    logging.info("data = %s" % (binascii.hexlify(self.recv_buffer)))
                     raise Exception('server_decode appdata error')
                 size = struct.unpack('>H', self.recv_buffer[3:5])[0]
                 if len(self.recv_buffer) < size + 5:
@@ -396,7 +396,7 @@ class tls_ticket_auth(plain.plain):
             self.recv_buffer += buf
             while len(self.recv_buffer) > 5:
                 if ord(self.recv_buffer[0]) != 0x17:
-                    logging.error("data = %s" % (binascii.hexlify(self.recv_buffer)))
+                    logging.info("data = %s" % (binascii.hexlify(self.recv_buffer)))
                     raise Exception('server_decode appdata error')
                 size = struct.unpack('>H', self.recv_buffer[3:5])[0]
                 if len(self.recv_buffer) < size + 5:
@@ -423,28 +423,34 @@ class tls_ticket_auth(plain.plain):
             self.handshake_status = 8
             return self.server_decode(b'')
 
+        #raise Exception("handshake data = %s" % (binascii.hexlify(buf)))
         self.handshake_status = 2
         ogn_buf = buf
         if not match_begin(buf, b'\x16\x03\x01'):
+            logging.info("tls_auth wrong tls head")
             return self.decode_error_return(ogn_buf)
         buf = buf[3:]
         if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
+            logging.info("tls_auth wrong tls head size")
             return self.decode_error_return(ogn_buf)
         buf = buf[2:]
         if not match_begin(buf, b'\x01\x00'): #client hello
+            logging.info("tls_auth not client hello message")
             return self.decode_error_return(ogn_buf)
         buf = buf[2:]
         if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
+            logging.info("tls_auth wrong message size")
             return self.decode_error_return(ogn_buf)
         buf = buf[2:]
         if not match_begin(buf, self.tls_version):
+            logging.info("tls_auth wrong tls version")
             return self.decode_error_return(ogn_buf)
         buf = buf[2:]
         verifyid = buf[:32]
         buf = buf[32:]
         sessionid_len = ord(buf[0])
         if sessionid_len < 32:
-            logging.error("tls_auth wrong sessionid_len")
+            logging.info("tls_auth wrong sessionid_len")
             return self.decode_error_return(ogn_buf)
         sessionid = buf[1:sessionid_len + 1]
         buf = buf[sessionid_len+1:]
@@ -454,13 +460,13 @@ class tls_ticket_auth(plain.plain):
         time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
         if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
                 or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
-            logging.debug("tls_auth wrong time")
+            logging.info("tls_auth wrong time")
             return self.decode_error_return(ogn_buf)
         if sha1 != verifyid[22:]:
-            logging.debug("tls_auth wrong sha1")
+            logging.info("tls_auth wrong sha1")
             return self.decode_error_return(ogn_buf)
         if self.server_info.data.client_data.get(verifyid[:22]):
-            logging.error("replay attack detect, id = %s" % (binascii.hexlify(verifyid)))
+            logging.info("replay attack detect, id = %s" % (binascii.hexlify(verifyid)))
             return self.decode_error_return(ogn_buf)
         self.server_info.data.client_data.sweep()
         self.server_info.data.client_data[verifyid[:22]] = sessionid

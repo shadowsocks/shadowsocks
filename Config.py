@@ -5,6 +5,7 @@ MYSQL_USER = 'ss'
 MYSQL_PASS = 'ss'
 MYSQL_DB = 'shadowsocks'
 MYSQL_TRANSFER_MUL = 1.0
+MYSQL_UPDATE_TIME = 15
 
 MANAGE_PASS = 'ss233333333'
 #if you want manage in other server you should set this value to global ip
