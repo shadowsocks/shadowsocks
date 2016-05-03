@@ -427,7 +427,6 @@ class tls_ticket_auth(plain.plain):
         self.handshake_status = 2
         ogn_buf = buf
         if not match_begin(buf, b'\x16\x03\x01'):
-            logging.info("tls_auth wrong tls head")
             return self.decode_error_return(ogn_buf)
         buf = buf[3:]
         if struct.unpack('>H', buf[:2])[0] != len(buf) - 2:
