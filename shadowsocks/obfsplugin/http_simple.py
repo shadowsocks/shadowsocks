@@ -34,17 +34,12 @@ from shadowsocks.common import to_bytes, to_str, ord, chr
 def create_http_obfs(method):
     return http_simple(method)
 
-def create_http2_obfs(method):
-    return http2_simple(method)
-
 def create_random_head_obfs(method):
     return random_head(method)
 
 obfs_map = {
         'http_simple': (create_http_obfs,),
         'http_simple_compatible': (create_http_obfs,),
-        'http2_simple': (create_http2_obfs,),
-        'http2_simple_compatible': (create_http2_obfs,),
         'random_head': (create_random_head_obfs,),
         'random_head_compatible': (create_random_head_obfs,),
 }
@@ -180,92 +175,6 @@ class http_simple(plain.plain):
             return (b'', True, False)
         else:
             return (b'', True, False)
-
-class http2_simple(plain.plain):
-    def __init__(self, method):
-        self.method = method
-        self.has_sent_header = False
-        self.has_recv_header = False
-        self.raw_trans_sent = False
-        self.host = None
-        self.port = 0
-        self.recv_buffer = b''
-        self.send_buffer = b''
-
-    def client_encode(self, buf):
-        if self.raw_trans_sent:
-            return buf
-        self.send_buffer += buf
-        if not self.has_sent_header:
-            port = b''
-            if self.server_info.port != 80:
-                port = b':' + common.to_bytes(str(self.server_info.port))
-            self.has_sent_header = True
-            http_head = b"GET / HTTP/1.1\r\n"
-            http_head += b"Host: " + (self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
-            http_head += b"Connection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\n"
-            http_head += b"HTTP2-Settings: " + base64.urlsafe_b64encode(buf) + b"\r\n"
-            return http_head + b"\r\n"
-        if self.has_recv_header:
-            ret = self.send_buffer
-            self.send_buffer = b''
-            self.raw_trans_sent = True
-            return ret
-        return b''
-
-    def client_decode(self, buf):
-        if self.has_recv_header:
-            return (buf, False)
-        pos = buf.find(b'\r\n\r\n')
-        if pos >= 0:
-            self.has_recv_header = True
-            return (buf[pos + 4:], False)
-        else:
-            return (b'', False)
-
-    def server_encode(self, buf):
-        if self.has_sent_header:
-            return buf
-
-        header = b'HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n'
-        self.has_sent_header = True
-        return header + buf
-
-    def not_match_return(self, buf):
-        self.has_sent_header = True
-        self.has_recv_header = True
-        if self.method == 'http2_simple':
-            return (b'E', False, False)
-        return (buf, True, False)
-
-    def server_decode(self, buf):
-        if self.has_recv_header:
-            return (buf, True, False)
-
-        self.recv_buffer += buf
-        buf = self.recv_buffer
-        if len(buf) > 10:
-            if match_begin(buf, b'GET /'):
-                pass
-            else: #not http header, run on original protocol
-                self.recv_buffer = None
-                return self.not_match_return(buf)
-        else:
-            return (b'', True, False)
-
-        datas = buf.split(b'\r\n\r\n', 1)
-        if datas and len(datas) > 1 and len(datas[0]) >= 4:
-            lines = buf.split(b'\r\n')
-            if lines and len(lines) >= 4:
-                if match_begin(lines[4], b'HTTP2-Settings: '):
-                    ret_buf = base64.urlsafe_b64decode(lines[4][16:])
-                    ret_buf += datas[1]
-                    self.has_recv_header = True
-                    return (ret_buf, True, False)
-            return (b'', True, False)
-        else:
-            return (b'', True, False)
-        return self.not_match_return(buf)
 
 class random_head(plain.plain):
     def __init__(self, method):
