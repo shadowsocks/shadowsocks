@@ -1344,9 +1344,8 @@ class UDPRelay(object):
         logging.debug('UDP close')
         self._closed = True
         if not next_tick:
+            self._cache.clear()
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
-            for client in list(self._cache.values()):
-                client.close()

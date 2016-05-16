@@ -107,6 +107,25 @@ class LRUCache(collections.MutableMapping):
             logging.debug('%d keys swept' % c)
         return c < SWEEP_MAX_ITEMS
 
+    def clear(self):
+        now = time.time()
+        c = 0
+        while c < SWEEP_MAX_ITEMS:
+            if len(self._keys_to_last_time) == 0:
+                break
+            for key in self._keys_to_last_time:
+                break
+            last_t = self._keys_to_last_time[key]
+            value = self._store[key]
+            if self.close_callback is not None:
+                self.close_callback(value)
+            del self._store[key]
+            del self._keys_to_last_time[key]
+            c += 1
+        if c:
+            logging.debug('%d keys swept' % c)
+        return c < SWEEP_MAX_ITEMS
+
 def test():
     c = LRUCache(timeout=0.3)
 
