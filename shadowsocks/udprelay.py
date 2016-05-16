@@ -693,7 +693,7 @@ class TCPRelayHandler(object):
                     self._stage = STAGE_DNS
                     self._dns_resolver.resolve(remote_addr,
                                                self._handle_dns_resolved)
-                    logging.info('TCP connect %s:%d from %s:%d' % (remote_addr, remote_port, addr[0], addr[1]))
+                    logging.info('TCPonUDP connect %s:%d from %s:%d' % (remote_addr, remote_port, addr[0], addr[1]))
                 else:
                     # ileagal request
                     rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
@@ -882,8 +882,7 @@ class UDPRelay(object):
         self._is_local = is_local
         self._cache = lru_cache.LRUCache(timeout=config['timeout'],
                                          close_callback=self._close_client)
-        self._client_fd_to_server_addr = \
-            lru_cache.LRUCache(timeout=config['timeout'])
+        self._client_fd_to_server_addr = {}
         self._dns_cache = lru_cache.LRUCache(timeout=300)
         self._eventloop = None
         self._closed = False
@@ -945,6 +944,7 @@ class UDPRelay(object):
         if hasattr(client, 'close'):
             self._sockets.remove(client.fileno())
             self._eventloop.remove(client)
+            del self._client_fd_to_server_addr[client.fileno()]
             client.close()
         else:
             # just an address
@@ -1330,15 +1330,14 @@ class UDPRelay(object):
             if self._server_socket:
                 self._server_socket.close()
                 self._server_socket = None
-                for sock in self._sockets:
-                    sock.close()
+                #for sock in self._sockets:
+                #    sock.close()
                 logging.info('closed UDP port %d', self._listen_port)
         before_sweep_size = len(self._sockets)
         self._cache.sweep()
         self._dns_cache.sweep()
         if before_sweep_size != len(self._sockets):
             logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
-        self._client_fd_to_server_addr.sweep()
         self._sweep_timeout()
 
     def close(self, next_tick=False):
