@@ -880,7 +880,7 @@ class UDPRelay(object):
         self._method = config['method']
         self._timeout = config['timeout']
         self._is_local = is_local
-        self._cache = lru_cache.LRUCache(timeout=config['timeout'],
+        self._cache = lru_cache.LRUCache(timeout=config['udp_timeout'],
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = {}
         self._dns_cache = lru_cache.LRUCache(timeout=300)
@@ -1023,69 +1023,8 @@ class UDPRelay(object):
                 return
 
             if type(data) is tuple:
-                #(cmd, request_id, data)
-                #logging.info("UDP data %d %d %s" % (data[0], data[1], binascii.hexlify(data[2])))
-                try:
-                    self.server_transfer_ul += len(data[2])
-                    if data[0] == 0:
-                        if len(data[2]) >= 4:
-                            for i in range(64):
-                                req_id = random.randint(1, 65535)
-                                if req_id not in self._reqid_to_hd:
-                                    break
-                            if req_id in self._reqid_to_hd:
-                                for i in range(64):
-                                    req_id = random.randint(1, 65535)
-                                    if type(self._reqid_to_hd[req_id]) is tuple:
-                                        break
-                            # return req id
-                            self._reqid_to_hd[req_id] = (data[2][0:4], None)
-                            rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, req_id, RSP_STATE_CONNECTED)
-                            data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
-                            self.write_to_server_socket(data_to_send, r_addr)
-                    elif data[0] == CMD_CONNECT_REMOTE:
-                        if len(data[2]) > 4 and data[1] in self._reqid_to_hd:
-                            # create
-                            if type(self._reqid_to_hd[data[1]]) is tuple:
-                                if data[2][0:4] == self._reqid_to_hd[data[1]][0]:
-                                    handle = TCPRelayHandler(self, self._reqid_to_hd, self._fd_to_handlers,
-                                        self._eventloop, self._server_socket,
-                                        self._reqid_to_hd[data[1]][0], self._reqid_to_hd[data[1]][1],
-                                        self._config, self._dns_resolver, self._is_local)
-                                    self._reqid_to_hd[data[1]] = handle
-                                    handle.handle_client(r_addr, CMD_CONNECT, data[1], data[2])
-                                    handle.handle_client(r_addr, *data)
-                                    self.update_activity(handle)
-                                else:
-                                    # disconnect
-                                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
-                                    data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
-                                    self.write_to_server_socket(data_to_send, r_addr)
-                            else:
-                                self.update_activity(self._reqid_to_hd[data[1]])
-                                self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
-                        else:
-                            # disconnect
-                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
-                            data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
-                            self.write_to_server_socket(data_to_send, r_addr)
-                    elif data[0] > CMD_CONNECT_REMOTE and data[0] <= CMD_DISCONNECT:
-                        if data[1] in self._reqid_to_hd:
-                            if type(self._reqid_to_hd[data[1]]) is tuple:
-                                pass
-                            else:
-                                self.update_activity(self._reqid_to_hd[data[1]])
-                                self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
-                        else:
-                            # disconnect
-                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
-                            data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
-                            self.write_to_server_socket(data_to_send, r_addr)
-                    return
-                except Exception as e:
-                    trace = traceback.format_exc()
-                    logging.error(trace)
-                    return
+                return
+                return self._handle_tcp_over_udp(data, r_addr)
 
         try:
             header_result = parse_header(data)
@@ -1105,6 +1044,7 @@ class UDPRelay(object):
 
         addrs = self._dns_cache.get(server_addr, None)
         if addrs is None:
+            # TODO async getaddrinfo
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if not addrs:
@@ -1117,7 +1057,6 @@ class UDPRelay(object):
         key = client_key(r_addr, af)
         client = self._cache.get(key, None)
         if not client:
-            # TODO async getaddrinfo
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
                     logging.debug('IP %s is in forbidden list, drop' %
@@ -1162,6 +1101,71 @@ class UDPRelay(object):
                 pass
             else:
                 shell.print_exception(e)
+
+    def _handle_tcp_over_udp(self, data, r_addr):
+        #(cmd, request_id, data)
+        #logging.info("UDP data %d %d %s" % (data[0], data[1], binascii.hexlify(data[2])))
+        try:
+            self.server_transfer_ul += len(data[2])
+            if data[0] == 0:
+                if len(data[2]) >= 4:
+                    for i in range(64):
+                        req_id = random.randint(1, 65535)
+                        if req_id not in self._reqid_to_hd:
+                            break
+                    if req_id in self._reqid_to_hd:
+                        for i in range(64):
+                            req_id = random.randint(1, 65535)
+                            if type(self._reqid_to_hd[req_id]) is tuple:
+                                break
+                    # return req id
+                    self._reqid_to_hd[req_id] = (data[2][0:4], None)
+                    rsp_data = self._pack_rsp_data(CMD_RSP_CONNECT, req_id, RSP_STATE_CONNECTED)
+                    data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
+                    self.write_to_server_socket(data_to_send, r_addr)
+            elif data[0] == CMD_CONNECT_REMOTE:
+                if len(data[2]) > 4 and data[1] in self._reqid_to_hd:
+                    # create
+                    if type(self._reqid_to_hd[data[1]]) is tuple:
+                        if data[2][0:4] == self._reqid_to_hd[data[1]][0]:
+                            handle = TCPRelayHandler(self, self._reqid_to_hd, self._fd_to_handlers,
+                                self._eventloop, self._server_socket,
+                                self._reqid_to_hd[data[1]][0], self._reqid_to_hd[data[1]][1],
+                                self._config, self._dns_resolver, self._is_local)
+                            self._reqid_to_hd[data[1]] = handle
+                            handle.handle_client(r_addr, CMD_CONNECT, data[1], data[2])
+                            handle.handle_client(r_addr, *data)
+                            self.update_activity(handle)
+                        else:
+                            # disconnect
+                            rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
+                            data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
+                            self.write_to_server_socket(data_to_send, r_addr)
+                    else:
+                        self.update_activity(self._reqid_to_hd[data[1]])
+                        self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
+                else:
+                    # disconnect
+                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
+                    data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
+                    self.write_to_server_socket(data_to_send, r_addr)
+            elif data[0] > CMD_CONNECT_REMOTE and data[0] <= CMD_DISCONNECT:
+                if data[1] in self._reqid_to_hd:
+                    if type(self._reqid_to_hd[data[1]]) is tuple:
+                        pass
+                    else:
+                        self.update_activity(self._reqid_to_hd[data[1]])
+                        self._reqid_to_hd[data[1]].handle_client(r_addr, *data)
+                else:
+                    # disconnect
+                    rsp_data = self._pack_rsp_data(CMD_DISCONNECT, data[1], RSP_STATE_EMPTY)
+                    data_to_send = encrypt.encrypt_all(self._password, self._method, 1, rsp_data)
+                    self.write_to_server_socket(data_to_send, r_addr)
+            return
+        except Exception as e:
+            trace = traceback.format_exc()
+            logging.error(trace)
+            return
 
     def _handle_client(self, sock):
         data, r_addr = sock.recvfrom(BUF_SIZE)
