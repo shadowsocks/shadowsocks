@@ -40,6 +40,7 @@ _chr = chr
 ord = compat_ord
 chr = compat_chr
 
+connect_log = logging.debug
 
 def to_bytes(s):
     if bytes != str:

@@ -693,7 +693,7 @@ class TCPRelayHandler(object):
                     self._stage = STAGE_DNS
                     self._dns_resolver.resolve(remote_addr,
                                                self._handle_dns_resolved)
-                    logging.info('TCPonUDP connect %s:%d from %s:%d' % (remote_addr, remote_port, addr[0], addr[1]))
+                    common.connect_log('TCPonUDP connect %s:%d from %s:%d' % (remote_addr, remote_port, addr[0], addr[1]))
                 else:
                     # ileagal request
                     rsp_data = self._pack_rsp_data(CMD_DISCONNECT, RSP_STATE_EMPTY)
@@ -865,6 +865,8 @@ def client_key(source_addr, server_af):
 class UDPRelay(object):
     def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
+        if config.get('connect_verbose_info', 0) > 0:
+            common.connect_log = logging.info
         if is_local:
             self._listen_addr = config['local_address']
             self._listen_port = config['local_port']
@@ -942,12 +944,19 @@ class UDPRelay(object):
 
     def _close_client(self, client):
         if hasattr(client, 'close'):
+            if not self._is_local:
+                if client.fileno() in self._client_fd_to_server_addr:
+                    logging.debug('close_client: %s' %
+                                 (self._client_fd_to_server_addr[client.fileno()],))
+                else:
+                    client.info('close_client')
             self._sockets.remove(client.fileno())
             self._eventloop.remove(client)
             del self._client_fd_to_server_addr[client.fileno()]
             client.close()
         else:
             # just an address
+            client.info('close_client pass %s' % client)
             pass
 
     def _pre_parse_udp_header(self, data):
@@ -1073,7 +1082,7 @@ class UDPRelay(object):
 
             logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
 
-            logging.info('UDP data to %s:%d from %s:%d' %
+            common.connect_log('UDP data to %s:%d from %s:%d' %
                         (common.to_str(server_addr), server_port,
                             r_addr[0], r_addr[1]))
 
@@ -1083,7 +1092,7 @@ class UDPRelay(object):
             ref_iv = [encrypt.encrypt_new_iv(self._method)]
             self._protocol.obfs.server_info.iv = ref_iv[0]
             data = self._protocol.client_udp_pre_encrypt(data)
-            logging.info("%s" % (binascii.hexlify(data),))
+            #logging.debug("%s" % (binascii.hexlify(data),))
             data = encrypt.encrypt_all_iv(self._protocol.obfs.server_info.key, self._method, 1, data, ref_iv)
             if not data:
                 return
@@ -1285,10 +1294,10 @@ class UDPRelay(object):
                         break
                     else:
                         if handler.remote_address:
-                            logging.warn('timed out: %s:%d' %
+                            logging.debug('timed out: %s:%d' %
                                          handler.remote_address)
                         else:
-                            logging.warn('timed out')
+                            logging.debug('timed out')
                         handler.destroy()
                         handler.destroy_local()
                         self._timeouts[pos] = None  # free memory
