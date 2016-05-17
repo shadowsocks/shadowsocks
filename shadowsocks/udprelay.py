@@ -882,6 +882,7 @@ class UDPRelay(object):
         self._method = config['method']
         self._timeout = config['timeout']
         self._is_local = is_local
+        self._udp_cache_size = config['udp_cache']
         self._cache = lru_cache.LRUCache(timeout=config['udp_timeout'],
                                          close_callback=self._close_client)
         self._client_fd_to_server_addr = {}
@@ -1086,7 +1087,7 @@ class UDPRelay(object):
                         (common.to_str(server_addr), server_port,
                             r_addr[0], r_addr[1]))
 
-        self._cache.clear(256)
+        self._cache.clear(self._udp_cache_size)
 
         if self._is_local:
             ref_iv = [encrypt.encrypt_new_iv(self._method)]

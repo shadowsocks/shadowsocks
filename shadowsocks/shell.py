@@ -237,6 +237,7 @@ def get_config(is_local):
     config['port_password'] = config.get('port_password', None)
     config['timeout'] = int(config.get('timeout', 300))
     config['udp_timeout'] = int(config.get('udp_timeout', config['timeout']))
+    config['udp_cache'] = int(config.get('udp_cache', 64))
     config['fast_open'] = config.get('fast_open', False)
     config['workers'] = config.get('workers', 1)
     config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
