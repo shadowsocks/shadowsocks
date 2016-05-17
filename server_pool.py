@@ -55,7 +55,7 @@ class ServerPool(object):
 		if not self.config.get('dns_ipv6', False):
 			asyncdns.IPV6_CONNECTION_SUPPORT = False
 
-		self.mgr = asyncmgr.ServerMgr()
+		self.mgr = None #asyncmgr.ServerMgr()
 
 		self.tcp_servers_pool = {}
 		self.tcp_ipv6_servers_pool = {}
@@ -78,7 +78,8 @@ class ServerPool(object):
 	@staticmethod
 	def _loop(loop, dns_resolver, mgr):
 		try:
-			mgr.add_to_loop(loop)
+			if mgr is not None:
+				mgr.add_to_loop(loop)
 			dns_resolver.add_to_loop(loop)
 			loop.run()
 		except (KeyboardInterrupt, IOError, OSError) as e:
@@ -211,7 +212,7 @@ class ServerPool(object):
 				except Exception as e:
 					logging.warn(e)
 
-			return True
+		return True
 
 	def get_server_transfer(self, port):
 		port = int(port)
