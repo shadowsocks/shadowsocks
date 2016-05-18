@@ -97,7 +97,7 @@ class DbTransfer(object):
 		rows = []
 		for r in cur.fetchall():
 			d = {}
-			for column in xrange(len(keys)):
+			for column in range(len(keys)):
 				d[keys[column]] = r[column]
 			rows.append(d)
 		cur.close()
