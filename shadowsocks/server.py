@@ -65,10 +65,13 @@ def main():
     config_password = config.get('password', 'm')
     del config['port_password']
     for port, password_obfs in port_password.items():
+        method = config["method"]
         protocol = config.get("protocol", 'origin')
         protocol_param = config.get("protocol_param", '')
         obfs = config.get("obfs", 'plain')
         obfs_param = config.get("obfs_param", '')
+        bind = config.get("bind", '')
+        bindv6 = config.get("bindv6", '')
         if type(password_obfs) == list:
             password = password_obfs[0]
             obfs = password_obfs[1]
@@ -76,10 +79,13 @@ def main():
                 protocol = password_obfs[2]
         elif type(password_obfs) == dict:
             password = password_obfs.get('password', config_password)
+            method = password_obfs.get('method', method)
             protocol = password_obfs.get('protocol', protocol)
             protocol_param = password_obfs.get('protocol_param', protocol_param)
             obfs = password_obfs.get('obfs', obfs)
             obfs_param = password_obfs.get('obfs_param', obfs_param)
+            bind = password_obfs.get('bind', bind)
+            bindv6 = password_obfs.get('bindv6', bindv6)
         else:
             password = password_obfs
         a_config = config.copy()
@@ -92,10 +98,13 @@ def main():
                     a_config['server_ipv6'] = a_config['server_ipv6'][1:-1]
                 a_config['server_port'] = int(port)
                 a_config['password'] = password
+                a_config['method'] = method
                 a_config['protocol'] = protocol
                 a_config['protocol_param'] = protocol_param
                 a_config['obfs'] = obfs
                 a_config['obfs_param'] = obfs_param
+                a_config['bind'] = bind
+                a_config['bindv6'] = bindv6
                 a_config['server'] = a_config['server_ipv6']
                 logging.info("starting server at [%s]:%d" %
                              (a_config['server'], int(port)))
@@ -110,10 +119,13 @@ def main():
             a_config = config.copy()
             a_config['server_port'] = int(port)
             a_config['password'] = password
+            a_config['method'] = method
             a_config['protocol'] = protocol
             a_config['protocol_param'] = protocol_param
             a_config['obfs'] = obfs
             a_config['obfs_param'] = obfs_param
+            a_config['bind'] = bind
+            a_config['bindv6'] = bindv6
             logging.info("starting server at %s:%d" %
                          (a_config['server'], int(port)))
             tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
