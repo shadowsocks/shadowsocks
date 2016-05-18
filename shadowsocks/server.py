@@ -70,8 +70,8 @@ def main():
         protocol_param = config.get("protocol_param", '')
         obfs = config.get("obfs", 'plain')
         obfs_param = config.get("obfs_param", '')
-        bind = config.get("bind", '')
-        bindv6 = config.get("bindv6", '')
+        bind = config.get("out_bind", '')
+        bindv6 = config.get("out_bindv6", '')
         if type(password_obfs) == list:
             password = password_obfs[0]
             obfs = password_obfs[1]
@@ -103,8 +103,8 @@ def main():
                 a_config['protocol_param'] = protocol_param
                 a_config['obfs'] = obfs
                 a_config['obfs_param'] = obfs_param
-                a_config['bind'] = bind
-                a_config['bindv6'] = bindv6
+                a_config['out_bind'] = bind
+                a_config['out_bindv6'] = bindv6
                 a_config['server'] = a_config['server_ipv6']
                 logging.info("starting server at [%s]:%d" %
                              (a_config['server'], int(port)))
@@ -124,8 +124,8 @@ def main():
             a_config['protocol_param'] = protocol_param
             a_config['obfs'] = obfs
             a_config['obfs_param'] = obfs_param
-            a_config['bind'] = bind
-            a_config['bindv6'] = bindv6
+            a_config['out_bind'] = bind
+            a_config['out_bindv6'] = bindv6
             logging.info("starting server at %s:%d" %
                          (a_config['server'], int(port)))
             tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))

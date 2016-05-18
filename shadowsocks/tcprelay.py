@@ -138,8 +138,8 @@ class TCPRelayHandler(object):
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["0.0.0.0:0"])
-        self._bind = config.get('bind', '')
-        self._bindv6 = config.get('bindv6', '')
+        self._bind = config.get('out_bind', '')
+        self._bindv6 = config.get('out_bindv6', '')
 
         self._fastopen_connected = False
         self._data_to_write_to_local = []
@@ -522,7 +522,7 @@ class TCPRelayHandler(object):
                 bind_addr = ''
                 if self._bind and af == socket.AF_INET:
                     bind_addr = self._bind
-                elif self._bindv6 and af == socket.AF_INET:
+                elif self._bindv6 and af == socket.AF_INET6:
                     bind_addr = self._bindv6
                 else:
                     bind_addr = self._local_sock.getsockname()[0]
