@@ -261,6 +261,12 @@ def get_config(is_local):
         except Exception as e:
             logging.error(e)
             sys.exit(2)
+        try:
+            config['ignore_bind'] = \
+                IPNetwork(config.get('ignore_bind', '127.0.0.0/8,::1/128'))
+        except Exception as e:
+            logging.error(e)
+            sys.exit(2)
     config['server_port'] = config.get('server_port', 8388)
 
     logging.getLogger('').handlers = []

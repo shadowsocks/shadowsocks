@@ -140,6 +140,7 @@ class TCPRelayHandler(object):
         self._redir_list = config.get('redirect', ["0.0.0.0:0"])
         self._bind = config.get('out_bind', '')
         self._bindv6 = config.get('out_bindv6', '')
+        self._ignore_bind_list = config.get('ignore_bind', [])
 
         self._fastopen_connected = False
         self._data_to_write_to_local = []
@@ -528,10 +529,13 @@ class TCPRelayHandler(object):
                     bind_addr = self._local_sock.getsockname()[0]
 
                 bind_addr = bind_addr.replace("::ffff:", "")
-                local_addrs = socket.getaddrinfo(bind_addr, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
-                if local_addrs[0][0] == af:
-                    logging.debug("bind %s" % (bind_addr,))
-                    remote_sock.bind((bind_addr, 0))
+                if bind_addr in self._ignore_bind_list:
+                    bind_addr = None
+                if bind_addr:
+                    local_addrs = socket.getaddrinfo(bind_addr, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
+                    if local_addrs[0][0] == af:
+                        logging.debug("bind %s" % (bind_addr,))
+                        remote_sock.bind((bind_addr, 0))
         return remote_sock
 
     def _handle_dns_resolved(self, result, error):
