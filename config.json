@@ -6,6 +6,7 @@
     "local_port": 1080,
     "password": "m",
     "timeout": 120,
+    "udp_timeout": 60,
     "method": "aes-256-cfb",
     "protocol": "auth_sha1_compatible",
     "protocol_param": "",
