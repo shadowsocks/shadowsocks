@@ -115,6 +115,7 @@ class DbTransfer(object):
 		except Exception as e:
 			logging.error('load switchrule.py fail')
 		cur_servers = {}
+		new_servers = {}
 		for row in rows:
 			try:
 				allow = switchrule.isTurnOn(row) and row['enable'] == 1 and row['u'] + row['d'] < row['transfer_enable']
@@ -139,9 +140,10 @@ class DbTransfer(object):
 					#password changed
 					logging.info('db stop server at port [%s] reason: password changed' % (port,))
 					ServerPool.get_instance().cb_del_server(port)
-					ServerPool.get_instance().new_server(port, passwd)
+					new_servers[port] = passwd
 
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
+				#new_servers[port] = passwd
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
 				ServerPool.get_instance().new_server(port, passwd)
 
@@ -151,6 +153,14 @@ class DbTransfer(object):
 			else:
 				logging.info('db stop server at port [%s] reason: port not exist' % (row['port']))
 				ServerPool.get_instance().cb_del_server(row['port'])
+
+		if len(new_servers) > 0:
+			from shadowsocks import eventloop
+			DbTransfer.get_instance().event.wait(eventloop.TIMEOUT_PRECISION)
+			for port in new_servers.keys():
+				passwd = new_servers[port]
+				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
+				ServerPool.get_instance().new_server(port, passwd)
 
 	@staticmethod
 	def del_servers():

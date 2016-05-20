@@ -1343,25 +1343,29 @@ class UDPRelay(object):
 
     def handle_periodic(self):
         if self._closed:
+            self._cache.clear(0)
+            self._dns_cache.sweep()
+            if self._eventloop:
+                self._eventloop.remove_periodic(self.handle_periodic)
+                self._eventloop.remove(self._server_socket)
             if self._server_socket:
                 self._server_socket.close()
                 self._server_socket = None
-                #for sock in self._sockets:
-                #    sock.close()
                 logging.info('closed UDP port %d', self._listen_port)
-        before_sweep_size = len(self._sockets)
-        self._cache.sweep()
-        self._dns_cache.sweep()
-        if before_sweep_size != len(self._sockets):
-            logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
-        self._sweep_timeout()
+        else:
+            before_sweep_size = len(self._sockets)
+            self._cache.sweep()
+            self._dns_cache.sweep()
+            if before_sweep_size != len(self._sockets):
+                logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
+            self._sweep_timeout()
 
     def close(self, next_tick=False):
         logging.debug('UDP close')
         self._closed = True
         if not next_tick:
-            self._cache.clear(0)
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.remove(self._server_socket)
             self._server_socket.close()
+            self._cache.clear(0)

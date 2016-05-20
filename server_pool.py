@@ -186,12 +186,12 @@ class ServerPool(object):
 		else:
 			logging.info("stopped server at %s:%d" % (self.config['server'], port))
 			try:
-				self.tcp_servers_pool[port].close(False)
+				self.tcp_servers_pool[port].close(True)
 				del self.tcp_servers_pool[port]
 			except Exception as e:
 				logging.warn(e)
 			try:
-				self.udp_servers_pool[port].close(False)
+				self.udp_servers_pool[port].close(True)
 				del self.udp_servers_pool[port]
 			except Exception as e:
 				logging.warn(e)
@@ -202,12 +202,12 @@ class ServerPool(object):
 			else:
 				logging.info("stopped server at [%s]:%d" % (self.config['server_ipv6'], port))
 				try:
-					self.tcp_ipv6_servers_pool[port].close(False)
+					self.tcp_ipv6_servers_pool[port].close(True)
 					del self.tcp_ipv6_servers_pool[port]
 				except Exception as e:
 					logging.warn(e)
 				try:
-					self.udp_ipv6_servers_pool[port].close(False)
+					self.udp_ipv6_servers_pool[port].close(True)
 					del self.udp_ipv6_servers_pool[port]
 				except Exception as e:
 					logging.warn(e)

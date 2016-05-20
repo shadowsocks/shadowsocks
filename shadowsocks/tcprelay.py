@@ -1018,9 +1018,8 @@ class TCPRelay(object):
                 self._server_socket.close()
                 self._server_socket = None
                 logging.info('closed TCP port %d', self._listen_port)
-            if not self._fd_to_handlers:
-                logging.info('stopping')
-                self._eventloop.stop()
+            for handler in list(self._fd_to_handlers.values()):
+                handler.destroy()
         self._sweep_timeout()
 
     def close(self, next_tick=False):
