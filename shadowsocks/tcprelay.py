@@ -276,6 +276,7 @@ class TCPRelayHandler(object):
                     uncomplete = True
                 else:
                     shell.print_exception(e)
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                     self.destroy()
                     return False
             return True
@@ -301,10 +302,12 @@ class TCPRelayHandler(object):
                 else:
                     #traceback.print_exc()
                     shell.print_exception(e)
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                     self.destroy()
                     return False
             except Exception as e:
                 shell.print_exception(e)
+                logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                 self.destroy()
                 return False
         if uncomplete:
@@ -315,14 +318,14 @@ class TCPRelayHandler(object):
                 self._data_to_write_to_remote.append(data)
                 self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
             else:
-                logging.error('write_all_to_sock:unknown socket')
+                logging.error('write_all_to_sock:unknown socket from %s:%d' % (self._client_address[0], self._client_address[1]))
         else:
             if sock == self._local_sock:
                 self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
             elif sock == self._remote_sock:
                 self._update_stream(STREAM_UP, WAIT_STATUS_READING)
             else:
-                logging.error('write_all_to_sock:unknown socket')
+                logging.error('write_all_to_sock:unknown socket from %s:%d' % (self._client_address[0], self._client_address[1]))
         return True
 
     def _get_redirect_host(self, client_address, ogn_data):
@@ -400,6 +403,7 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                     self.destroy()
 
     def _get_head_size(self, buf, def_value):
@@ -600,6 +604,7 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     if self._config['verbose']:
                         traceback.print_exc()
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
         self.destroy()
 
     def _on_local_read(self):
@@ -626,6 +631,7 @@ class TCPRelayHandler(object):
                         obfs_decode = self._obfs.server_decode(data)
                     except Exception as e:
                         shell.print_exception(e)
+                        logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                         self.destroy()
                         return
                     if obfs_decode[2]:
@@ -642,6 +648,7 @@ class TCPRelayHandler(object):
                         data = self._protocol.server_post_decrypt(data)
                     except Exception as e:
                         shell.print_exception(e)
+                        logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                         self.destroy()
             else:
                 return
@@ -703,6 +710,7 @@ class TCPRelayHandler(object):
                     obfs_decode = self._obfs.client_decode(data)
                 except Exception as e:
                     shell.print_exception(e)
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                     self.destroy()
                     return
                 if obfs_decode[1]:
@@ -716,6 +724,7 @@ class TCPRelayHandler(object):
                     data = self._protocol.client_post_decrypt(data)
                 except Exception as e:
                     shell.print_exception(e)
+                    logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                     self.destroy()
                     return
             else:
@@ -733,7 +742,7 @@ class TCPRelayHandler(object):
             shell.print_exception(e)
             if self._config['verbose']:
                 traceback.print_exc()
-            # TODO use logging when debug completed
+            logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
             self.destroy()
 
     def _on_local_write(self):
@@ -796,7 +805,7 @@ class TCPRelayHandler(object):
             if event & eventloop.POLL_OUT:
                 self._on_local_write()
         else:
-            logging.warn('unknown socket')
+            logging.warn('unknown socket from %s:%d' % (self._client_address[0], self._client_address[1]))
 
     def _log_error(self, e):
         logging.error('%s when handling connection from %s:%d' %
