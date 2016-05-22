@@ -12,8 +12,9 @@
     "protocol_param": "",
     "obfs": "http_simple_compatible",
     "obfs_param": "",
-    "redirect": "",
     "dns_ipv6": false,
+    "connect_verbose_info": 0,
+    "redirect": "",
     "fast_open": false,
     "workers": 1
 }

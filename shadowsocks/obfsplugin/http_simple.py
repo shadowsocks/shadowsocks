@@ -31,15 +31,20 @@ from shadowsocks import common
 from shadowsocks.obfsplugin import plain
 from shadowsocks.common import to_bytes, to_str, ord, chr
 
-def create_http_obfs(method):
+def create_http_simple_obfs(method):
     return http_simple(method)
+
+def create_http_post_obfs(method):
+    return http_post(method)
 
 def create_random_head_obfs(method):
     return random_head(method)
 
 obfs_map = {
-        'http_simple': (create_http_obfs,),
-        'http_simple_compatible': (create_http_obfs,),
+        'http_simple': (create_http_simple_obfs,),
+        'http_simple_compatible': (create_http_simple_obfs,),
+        'http_post': (create_http_post_obfs,),
+        'http_post_compatible': (create_http_post_obfs,),
         'random_head': (create_random_head_obfs,),
         'random_head_compatible': (create_random_head_obfs,),
 }
@@ -158,6 +163,75 @@ class http_simple(plain.plain):
             else: #not http header, run on original protocol
                 self.recv_buffer = None
                 logging.debug('http_simple: not match begin')
+                return self.not_match_return(buf)
+        else:
+            return (b'', True, False)
+
+        if b'\r\n\r\n' in buf:
+            datas = buf.split(b'\r\n\r\n', 1)
+            ret_buf = self.get_data_from_http_header(buf)
+            if len(datas) > 1:
+                ret_buf += datas[1]
+            if len(ret_buf) >= 15:
+                self.has_recv_header = True
+                return (ret_buf, True, False)
+            if len(ret_buf) == 0:
+                return self.not_match_return(buf)
+            return (b'', True, False)
+        else:
+            return (b'', True, False)
+
+class http_post(http_simple):
+    def __init__(self, method):
+        super(http_post, self).__init__(method)
+
+    def boundary(self):
+        return b''.join([random.choice(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") for i in range(32)])
+
+    def client_encode(self, buf):
+        if self.has_sent_header:
+            return buf
+        head_size = len(self.server_info.iv) + self.server_info.head_len
+        if len(buf) - head_size > 64:
+            headlen = head_size + random.randint(0, 64)
+        else:
+            headlen = len(buf)
+        headdata = buf[:headlen]
+        buf = buf[headlen:]
+        port = b''
+        if self.server_info.port != 80:
+            port = b':' + to_bytes(str(self.server_info.port))
+        http_head = b"POST /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
+        http_head += b"Host: " + to_bytes(self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
+        http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
+        http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n"
+        http_head += b"Content-Type: multipart/form-data; boundary=" + self.boundary() + b"\r\nDNT: 1\r\n"
+        http_head += "Connection: keep-alive\r\n\r\n"
+        self.has_sent_header = True
+        return http_head + buf
+
+    def not_match_return(self, buf):
+        self.has_sent_header = True
+        self.has_recv_header = True
+        if self.method == 'http_post':
+            return (b'E', False, False)
+        return (buf, True, False)
+
+    def server_decode(self, buf):
+        if self.has_recv_header:
+            return (buf, True, False)
+
+        self.recv_buffer += buf
+        buf = self.recv_buffer
+        if len(buf) > 10:
+            if match_begin(buf, b'GET ') or match_begin(buf, b'POST '):
+                if len(buf) > 65536:
+                    self.recv_buffer = None
+                    logging.warn('http_post: over size')
+                    return self.not_match_return(buf)
+            else: #not http header, run on original protocol
+                self.recv_buffer = None
+                logging.debug('http_post: not match begin')
                 return self.not_match_return(buf)
         else:
             return (b'', True, False)
