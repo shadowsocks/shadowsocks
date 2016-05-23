@@ -1008,6 +1008,9 @@ class TCPRelay(object):
                 if error_no in (errno.EAGAIN, errno.EINPROGRESS,
                                 errno.EWOULDBLOCK):
                     return
+                elif error_no == errno.ECONNRESET:
+                    shell.print_exception(e)
+                    logging.info("recv RST, ignore")
                 else:
                     shell.print_exception(e)
                     if self._config['verbose']:
