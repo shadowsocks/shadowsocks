@@ -1080,7 +1080,7 @@ class UDPRelay(object):
             client = socket.socket(af, socktype, proto)
             client.setblocking(False)
             is_dns = False
-            if len(data) > 12 and data[11:19] == b"\x00\x01\x00\x00\x00\x00\x00\x00":
+            if len(data) > 20 and data[11:19] == b"\x00\x01\x00\x00\x00\x00\x00\x00":
                 is_dns = True
             else:
                 pass
