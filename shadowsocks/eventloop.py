@@ -220,7 +220,7 @@ class EventLoop(object):
                             addr = sock.getpeername()[:2]
                             logging.error('exception peer name %s:%d' % (addr[0], addr[1]))
                         except:
-                            pass
+                            logging.error('no peer name')
             now = time.time()
             if asap or now - self._last_time >= TIMEOUT_PRECISION:
                 for callback in self._periodic_callbacks:

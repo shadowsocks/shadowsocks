@@ -768,22 +768,24 @@ class TCPRelayHandler(object):
         logging.debug('got local error')
         if self._local_sock:
             logging.error(eventloop.get_sock_error(self._local_sock))
+            logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
             try:
-                addr = self._local_sock.getpeername()[:2]
+                addr = self._local_sock.getpeername()
                 logging.error('local exception peer name %s:%d' % (addr[0], addr[1]))
             except:
-                pass
+                logging.error('no peer name')
         self.destroy()
 
     def _on_remote_error(self):
         logging.debug('got remote error')
         if self._remote_sock:
             logging.error(eventloop.get_sock_error(self._remote_sock))
+            logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
             try:
-                addr = self._remote_sock.getpeername()[:2]
+                addr = self._remote_sock.getpeername()
                 logging.error('remote exception peer name %s:%d' % (addr[0], addr[1]))
             except:
-                pass
+                logging.error('no peer name')
         self.destroy()
 
     def handle_event(self, sock, event):
