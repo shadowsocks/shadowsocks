@@ -34,8 +34,10 @@ method_supported.update(table.ciphers)
 
 
 def random_string(length):
-    return os.urandom(length)
-
+    try:
+        return os.urandom(length)
+    except NotImplementedError as e:
+        return openssl.rand_bytes(length)
 
 cached_keys = {}
 
