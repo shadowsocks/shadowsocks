@@ -108,8 +108,13 @@ class TCPRelayHandler(object):
         # if is_local, this is sslocal
         self._is_local = is_local
         self._stage = STAGE_INIT
-        self._encryptor = encrypt.Encryptor(config['password'],
-                                            config['method'])
+        try:
+            self._encryptor = encrypt.Encryptor(config['password'],
+                                                config['method'])
+        except Exception:
+            self._stage = STAGE_DESTROYED
+            logging.error('creater encryptor fail at port %d', server._listen_port)
+            return
         self._encrypt_correct = True
         self._obfs = obfs.obfs(config['obfs'])
         server_info = obfs.server_info(server.obfs_data)
@@ -149,6 +154,7 @@ class TCPRelayHandler(object):
         self._upstream_status = WAIT_STATUS_READING
         self._downstream_status = WAIT_STATUS_INIT
         self._client_address = local_sock.getpeername()[:2]
+        self._accept_address = local_sock.getsockname()[:2]
         self._remote_address = None
         if 'forbidden_ip' in config:
             self._forbidden_iplist = config['forbidden_ip']
@@ -530,7 +536,7 @@ class TCPRelayHandler(object):
                 elif self._bindv6 and af == socket.AF_INET6:
                     bind_addr = self._bindv6
                 else:
-                    bind_addr = self._local_sock.getsockname()[0]
+                    bind_addr = self._accept_address[0]
 
                 bind_addr = bind_addr.replace("::ffff:", "")
                 if bind_addr in self._ignore_bind_list:
@@ -816,6 +822,9 @@ class TCPRelayHandler(object):
         logging.error('%s when handling connection from %s:%d' %
                       (e, self._client_address[0], self._client_address[1]))
 
+    def stage(self):
+        return self._stage
+
     def destroy(self):
         # destroy the handler and release any resources
         # promises:
@@ -1005,9 +1014,11 @@ class TCPRelay(object):
             try:
                 logging.debug('accept')
                 conn = self._server_socket.accept()
-                TCPRelayHandler(self, self._fd_to_handlers,
+                handler = TCPRelayHandler(self, self._fd_to_handlers,
                                 self._eventloop, conn[0], self._config,
                                 self._dns_resolver, self._is_local)
+                if handler.stage() == STAGE_DESTROYED:
+                    conn[0].close()
             except (OSError, IOError) as e:
                 error_no = eventloop.errno_from_exception(e)
                 if error_no in (errno.EAGAIN, errno.EINPROGRESS,
