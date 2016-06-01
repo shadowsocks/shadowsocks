@@ -170,6 +170,7 @@ class TCPRelayHandler(object):
         self.last_activity = 0
         self._update_activity()
         self._server.add_connection(1)
+        self._server.stat_add(common.to_str(self._client_address[0]), 1)
 
     def __hash__(self):
         # default __hash__ is id / 16
@@ -877,9 +878,10 @@ class TCPRelayHandler(object):
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
         self._server.add_connection(-1)
+        self._server.stat_add(common.to_str(self._client_address[0]), -1)
 
 class TCPRelay(object):
-    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None, stat_counter=None):
         self._config = config
         self._is_local = is_local
         self._dns_resolver = dns_resolver
@@ -925,8 +927,9 @@ class TCPRelay(object):
             except socket.error:
                 logging.error('warning: fast open is not available')
                 self._config['fast_open'] = False
-        server_socket.listen(1024)
+        server_socket.listen(config.get('max_connect', 1024))
         self._server_socket = server_socket
+        self._stat_counter = stat_counter
         self._stat_callback = stat_callback
 
     def add_to_loop(self, loop):
@@ -949,6 +952,45 @@ class TCPRelay(object):
     def add_connection(self, val):
         self.server_connections += val
         logging.debug('server port %5d connections = %d' % (self._listen_port, self.server_connections,))
+
+    def update_stat(self, port, stat_dict, val):
+        newval = stat_dict.get(0, 0) + val
+        stat_dict[0] = newval
+        logging.debug('port %d connections %d' % (port, newval))
+        connections_step = 25
+        if newval >= stat_dict.get(-1, 0) + connections_step:
+            logging.info('port %d connections up to %d' % (port, newval))
+            stat_dict[-1] = stat_dict.get(-1, 0) + connections_step
+        elif newval <= stat_dict.get(-1, 0) - connections_step:
+            logging.info('port %d connections down to %d' % (port, newval))
+            stat_dict[-1] = stat_dict.get(-1, 0) - connections_step
+
+    def stat_add(self, local_addr, val):
+        if self._stat_counter is not None:
+            if self._listen_port not in self._stat_counter:
+                self._stat_counter[self._listen_port] = {}
+            newval = self._stat_counter[self._listen_port].get(local_addr, 0) + val
+            logging.debug('port %d addr %s connections %d' % (self._listen_port, local_addr, newval))
+            if newval <= 0:
+                if local_addr in self._stat_counter[self._listen_port]:
+                    del self._stat_counter[self._listen_port][local_addr]
+                if len(self._stat_counter[self._listen_port]) == 0:
+                    del self._stat_counter[self._listen_port]
+            else:
+                self._stat_counter[self._listen_port][local_addr] = newval
+                self.update_stat(self._listen_port, self._stat_counter[self._listen_port], val)
+
+            newval = self._stat_counter.get(0, 0) + val
+            self._stat_counter[0] = newval
+            logging.debug('Total connections %d' % newval)
+
+            connections_step = 50
+            if newval >= self._stat_counter.get(-1, 0) + connections_step:
+                logging.info('Total connections up to %d' % newval)
+                self._stat_counter[-1] = self._stat_counter.get(-1, 0) + connections_step
+            elif newval <= self._stat_counter.get(-1, 0) - connections_step:
+                logging.info('Total connections down to %d' % newval)
+                self._stat_counter[-1] = self._stat_counter.get(-1, 0) - connections_step
 
     def update_activity(self, handler, data_len):
         if data_len and self._stat_callback:

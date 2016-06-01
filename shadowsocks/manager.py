@@ -86,9 +86,9 @@ class Manager(object):
             return
         logging.info("adding server at %s:%d" % (config['server'], port))
         t = tcprelay.TCPRelay(config, self._dns_resolver, False,
-                              self.stat_callback)
+                              stat_callback=self.stat_callback)
         u = udprelay.UDPRelay(config, self._dns_resolver, False,
-                              self.stat_callback)
+                              stat_callback=self.stat_callback)
         t.add_to_loop(self._loop)
         u.add_to_loop(self._loop)
         self._relays[port] = (t, u)

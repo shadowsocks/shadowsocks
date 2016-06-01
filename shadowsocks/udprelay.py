@@ -863,7 +863,7 @@ def client_key(source_addr, server_af):
 
 
 class UDPRelay(object):
-    def __init__(self, config, dns_resolver, is_local, stat_callback=None):
+    def __init__(self, config, dns_resolver, is_local, stat_callback=None, stat_counter=None):
         self._config = config
         if config.get('connect_verbose_info', 0) > 0:
             common.connect_log = logging.info

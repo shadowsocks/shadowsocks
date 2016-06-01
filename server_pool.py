@@ -61,6 +61,7 @@ class ServerPool(object):
 		self.tcp_ipv6_servers_pool = {}
 		self.udp_servers_pool = {}
 		self.udp_ipv6_servers_pool = {}
+		self.stat_counter = {}
 
 		self.loop = eventloop.EventLoop()
 		thread = MainThread( (self.loop, self.dns_resolver, self.mgr) )
@@ -129,11 +130,11 @@ class ServerPool(object):
 				try:
 					logging.info("starting server at [%s]:%d" % (a_config['server'], port))
 
-					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
+					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False, stat_counter=self.stat_counter)
 					tcp_server.add_to_loop(self.loop)
 					self.tcp_ipv6_servers_pool.update({port: tcp_server})
 
-					udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False)
+					udp_server = udprelay.UDPRelay(a_config, self.dns_resolver, False, stat_counter=self.stat_counter)
 					udp_server.add_to_loop(self.loop)
 					self.udp_ipv6_servers_pool.update({port: udp_server})
 

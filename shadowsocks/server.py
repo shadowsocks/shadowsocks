@@ -61,6 +61,10 @@ def main():
     tcp_servers = []
     udp_servers = []
     dns_resolver = asyncdns.DNSResolver()
+    if int(config['workers']) > 1:
+        stat_counter_dict = None
+    else:
+        stat_counter_dict = {}
     port_password = config['port_password']
     config_password = config.get('password', 'm')
     del config['port_password']
@@ -108,8 +112,8 @@ def main():
                 a_config['server'] = a_config['server_ipv6']
                 logging.info("starting server at [%s]:%d" %
                              (a_config['server'], int(port)))
-                tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
-                udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
+                tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False, stat_counter=stat_counter_dict))
+                udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False, stat_counter=stat_counter_dict))
                 if a_config['server_ipv6'] == b"::":
                     ipv6_ok = True
             except Exception as e:
@@ -128,8 +132,8 @@ def main():
             a_config['out_bindv6'] = bindv6
             logging.info("starting server at %s:%d" %
                          (a_config['server'], int(port)))
-            tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
-            udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
+            tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False, stat_counter=stat_counter_dict))
+            udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False, stat_counter=stat_counter_dict))
         except Exception as e:
             if not ipv6_ok:
                 shell.print_exception(e)
