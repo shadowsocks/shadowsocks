@@ -184,6 +184,7 @@ class UDPRelay(object):
             server_addr, server_port = dest_addr, dest_port
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._one_time_auth_enable or addrtype & ADDRTYPE_AUTH:
+                self._one_time_auth_enable = True
                 if len(data) < header_length + ONETIMEAUTH_BYTES:
                     logging.warn('UDP one time auth header is too short')
                     return
