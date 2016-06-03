@@ -11,7 +11,7 @@ MYSQL_DB = 'shadowsocks'
 MYSQL_UPDATE_TIME = 60
 
 # API
-API_URL = 'breakwa11.org'
+API_HOST = 'breakwa11.org'
 API_PORT = 80
 API_PATH = '/mu/v2/'
 API_TOKEN = 'abcdef'
