@@ -64,8 +64,8 @@ class ServerPool(object):
 		self.stat_counter = {}
 
 		self.loop = eventloop.EventLoop()
-		thread = MainThread( (self.loop, self.dns_resolver, self.mgr) )
-		thread.start()
+		self.thread = MainThread( (self.loop, self.dns_resolver, self.mgr) )
+		self.thread.start()
 
 	@staticmethod
 	def get_instance():

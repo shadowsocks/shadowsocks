@@ -39,16 +39,16 @@ class DbTransfer(object):
 					continue
 				elif last_transfer[id][0] <= curr_transfer[id][0] and \
 				last_transfer[id][1] <= curr_transfer[id][1]:
-					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * Config.MYSQL_TRANSFER_MUL),
-										int((curr_transfer[id][1] - last_transfer[id][1]) * Config.MYSQL_TRANSFER_MUL)]
+					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * Config.TRANSFER_MUL),
+										int((curr_transfer[id][1] - last_transfer[id][1]) * Config.TRANSFER_MUL)]
 				else:
-					dt_transfer[id] = [int(curr_transfer[id][0] * Config.MYSQL_TRANSFER_MUL),
-										int(curr_transfer[id][1] * Config.MYSQL_TRANSFER_MUL)]
+					dt_transfer[id] = [int(curr_transfer[id][0] * Config.TRANSFER_MUL),
+										int(curr_transfer[id][1] * Config.TRANSFER_MUL)]
 			else:
 				if curr_transfer[id][0] == 0 and curr_transfer[id][1] == 0:
 					continue
-				dt_transfer[id] = [int(curr_transfer[id][0] * Config.MYSQL_TRANSFER_MUL),
-									int(curr_transfer[id][1] * Config.MYSQL_TRANSFER_MUL)]
+				dt_transfer[id] = [int(curr_transfer[id][0] * Config.TRANSFER_MUL),
+									int(curr_transfer[id][1] * Config.TRANSFER_MUL)]
 
 		query_head = 'UPDATE user'
 		query_sub_when = ''
@@ -166,10 +166,10 @@ class DbTransfer(object):
 	def del_servers():
 		for port in ServerPool.get_instance().tcp_servers_pool.keys():
 			if ServerPool.get_instance().server_is_run(port) > 0:
-					ServerPool.get_instance().cb_del_server(port)
+				ServerPool.get_instance().cb_del_server(port)
 		for port in ServerPool.get_instance().tcp_ipv6_servers_pool.keys():
 			if ServerPool.get_instance().server_is_run(port) > 0:
-					ServerPool.get_instance().cb_del_server(port)
+				ServerPool.get_instance().cb_del_server(port)
 
 	@staticmethod
 	def thread_db():
@@ -190,7 +190,7 @@ class DbTransfer(object):
 					trace = traceback.format_exc()
 					logging.error(trace)
 					#logging.warn('db thread except:%s' % e)
-				if DbTransfer.get_instance().event.wait(Config.MYSQL_UPDATE_TIME):
+				if DbTransfer.get_instance().event.wait(Config.MYSQL_UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
 					break
 		except KeyboardInterrupt as e:
 			pass

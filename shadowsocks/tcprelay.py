@@ -170,7 +170,7 @@ class TCPRelayHandler(object):
         self.last_activity = 0
         self._update_activity()
         self._server.add_connection(1)
-        self._server.stat_add(common.to_str(self._client_address[0]), 1)
+        self._server.stat_add(self._client_address[0], 1)
 
     def __hash__(self):
         # default __hash__ is id / 16
@@ -878,7 +878,7 @@ class TCPRelayHandler(object):
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
         self._server.add_connection(-1)
-        self._server.stat_add(common.to_str(self._client_address[0]), -1)
+        self._server.stat_add(self._client_address[0], -1)
 
 class TCPRelay(object):
     def __init__(self, config, dns_resolver, is_local, stat_callback=None, stat_counter=None):

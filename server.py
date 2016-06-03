@@ -50,8 +50,8 @@ def main():
 		thread = MainThread()
 		thread.start()
 		try:
-			while True:
-				time.sleep(99999)
+			while thread.is_alive():
+				time.sleep(10)
 		except (KeyboardInterrupt, IOError, OSError) as e:
 			import traceback
 			traceback.print_exc()
