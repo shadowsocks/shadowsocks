@@ -6,9 +6,9 @@ import cymysql
 import time
 import sys
 from server_pool import ServerPool
-import Config
 import traceback
 from shadowsocks import common
+from configloader import load_config, get_config
 
 class DbTransfer(object):
 
@@ -39,16 +39,16 @@ class DbTransfer(object):
 					continue
 				elif last_transfer[id][0] <= curr_transfer[id][0] and \
 				last_transfer[id][1] <= curr_transfer[id][1]:
-					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * Config.TRANSFER_MUL),
-										int((curr_transfer[id][1] - last_transfer[id][1]) * Config.TRANSFER_MUL)]
+					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * get_config().TRANSFER_MUL),
+										int((curr_transfer[id][1] - last_transfer[id][1]) * get_config().TRANSFER_MUL)]
 				else:
-					dt_transfer[id] = [int(curr_transfer[id][0] * Config.TRANSFER_MUL),
-										int(curr_transfer[id][1] * Config.TRANSFER_MUL)]
+					dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
+										int(curr_transfer[id][1] * get_config().TRANSFER_MUL)]
 			else:
 				if curr_transfer[id][0] == 0 and curr_transfer[id][1] == 0:
 					continue
-				dt_transfer[id] = [int(curr_transfer[id][0] * Config.TRANSFER_MUL),
-									int(curr_transfer[id][1] * Config.TRANSFER_MUL)]
+				dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
+									int(curr_transfer[id][1] * get_config().TRANSFER_MUL)]
 
 		query_head = 'UPDATE user'
 		query_sub_when = ''
@@ -71,8 +71,8 @@ class DbTransfer(object):
 					' END, t = ' + str(int(last_time)) + \
 					' WHERE port IN (%s)' % query_sub_in
 		#print query_sql
-		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
-								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
+		conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT, user=get_config().MYSQL_USER,
+								passwd=get_config().MYSQL_PASS, db=get_config().MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
 		cur.execute(query_sql)
 		cur.close()
@@ -90,8 +90,8 @@ class DbTransfer(object):
 		except Exception as e:
 			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
 		reload(cymysql)
-		conn = cymysql.connect(host=Config.MYSQL_HOST, port=Config.MYSQL_PORT, user=Config.MYSQL_USER,
-								passwd=Config.MYSQL_PASS, db=Config.MYSQL_DB, charset='utf8')
+		conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT, user=get_config().MYSQL_USER,
+								passwd=get_config().MYSQL_PASS, db=get_config().MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
 		cur.execute("SELECT " + ','.join(keys) + " FROM user")
 		rows = []
@@ -180,7 +180,7 @@ class DbTransfer(object):
 		last_rows = []
 		try:
 			while True:
-				reload(Config)
+				load_config()
 				try:
 					DbTransfer.get_instance().push_db_all_user()
 					rows = DbTransfer.get_instance().pull_db_all_user()
@@ -190,7 +190,7 @@ class DbTransfer(object):
 					trace = traceback.format_exc()
 					logging.error(trace)
 					#logging.warn('db thread except:%s' % e)
-				if DbTransfer.get_instance().event.wait(Config.MYSQL_UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
+				if DbTransfer.get_instance().event.wait(get_config().MYSQL_UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
 					break
 		except KeyboardInterrupt as e:
 			pass

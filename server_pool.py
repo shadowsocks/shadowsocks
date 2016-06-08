@@ -24,16 +24,11 @@
 import os
 import logging
 import time
-from shadowsocks import shell
-from shadowsocks import eventloop
-from shadowsocks import tcprelay
-from shadowsocks import udprelay
-from shadowsocks import asyncdns
+from shadowsocks import shell, eventloop, tcprelay, udprelay, asyncdns
 import threading
 import sys
-import asyncmgr
-import Config
 from socket import *
+from configloader import load_config, get_config
 
 class MainThread(threading.Thread):
 	def __init__(self, params):
@@ -127,6 +122,7 @@ class ServerPool(object):
 				a_config['server'] = a_config['server_ipv6']
 				a_config['server_port'] = port
 				a_config['password'] = password
+				a_config['max_connect'] = 128
 				try:
 					logging.info("starting server at [%s]:%d" % (a_config['server'], port))
 
@@ -151,6 +147,7 @@ class ServerPool(object):
 				a_config = self.config.copy()
 				a_config['server_port'] = port
 				a_config['password'] = password
+				a_config['max_connect'] = 128
 				try:
 					logging.info("starting server at %s:%d" % (a_config['server'], port))
 
@@ -173,7 +170,7 @@ class ServerPool(object):
 		logging.info("del server at %d" % port)
 		try:
 			udpsock = socket(AF_INET, SOCK_DGRAM)
-			udpsock.sendto('%s:%s:0:0' % (Config.MANAGE_PASS, port), (Config.MANAGE_BIND_IP, Config.MANAGE_PORT))
+			udpsock.sendto('%s:%s:0:0' % (get_config().MANAGE_PASS, port), (get_config().MANAGE_BIND_IP, get_config().MANAGE_PORT))
 			udpsock.close()
 		except Exception as e:
 			logging.warn(e)

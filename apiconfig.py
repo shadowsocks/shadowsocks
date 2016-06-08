@@ -1,6 +1,7 @@
 ﻿# Config
 TRANSFER_MUL = 1.0
-API_INTERFACE = 'mysql'
+NODE_ID = 1
+API_INTERFACE = 'sspanelv2' #sspanelv2, muapiv2
 
 # Mysql
 MYSQL_HOST = 'mdss.mengsky.net'
@@ -11,11 +12,10 @@ MYSQL_DB = 'shadowsocks'
 MYSQL_UPDATE_TIME = 60
 
 # API
-API_HOST = 'breakwa11.org'
+API_HOST = 'breakwa11.moe'
 API_PORT = 80
 API_PATH = '/mu/v2/'
 API_TOKEN = 'abcdef'
-API_NODE_ID = 'id001'
 API_UPDATE_TIME = 60
 
 # Manager (ignore this)
