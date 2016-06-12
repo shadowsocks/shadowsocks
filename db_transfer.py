@@ -124,7 +124,7 @@ class DbTransfer(object):
 
 			port = row['port']
 			passwd = common.to_bytes(row['passwd'])
-			cfg = {}
+			cfg = {'password': passwd}
 			for name in ['method', 'obfs', 'protocol']:
 				if name in row:
 					cfg[name] = row[name]
@@ -139,12 +139,25 @@ class DbTransfer(object):
 				if not allow:
 					logging.info('db stop server at port [%s]' % (port,))
 					ServerPool.get_instance().cb_del_server(port)
-				elif (port in ServerPool.get_instance().tcp_servers_pool and ServerPool.get_instance().tcp_servers_pool[port]._config['password'] != passwd) \
-					or (port in ServerPool.get_instance().tcp_ipv6_servers_pool and ServerPool.get_instance().tcp_ipv6_servers_pool[port]._config['password'] != passwd):
-					#password changed
-					logging.info('db stop server at port [%s] reason: password changed' % (port,))
-					ServerPool.get_instance().cb_del_server(port)
-					new_servers[port] = (passwd, cfg)
+				else:
+					cfgchange = False
+					if (port in ServerPool.get_instance().tcp_servers_pool):
+						relay = ServerPool.get_instance().tcp_servers_pool[port]
+						for name in ['password', 'method', 'obfs', 'protocol']:
+							if name in cfg and cfg[name] != relay._config[name]:
+								cfgchange = True
+								break;
+					if (port in ServerPool.get_instance().tcp_ipv6_servers_pool):
+						relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
+						for name in ['password', 'method', 'obfs', 'protocol']:
+							if name in cfg and cfg[name] != relay._config[name]:
+								cfgchange = True
+								break;
+					#config changed
+					if cfgchange:
+						logging.info('db stop server at port [%s] reason: config changed: %s' % (port, cfg))
+						ServerPool.get_instance().cb_del_server(port)
+						new_servers[port] = (passwd, cfg)
 
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
 				#new_servers[port] = passwd
