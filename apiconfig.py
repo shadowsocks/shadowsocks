@@ -1,7 +1,7 @@
 ﻿# Config
 TRANSFER_MUL = 1.0
 NODE_ID = 1
-API_INTERFACE = 'sspanelv2' #sspanelv2, sspanelv3, muapiv2
+API_INTERFACE = 'sspanelv2' #sspanelv2, sspanelv3, sspanelv3ssr, muapiv2(not support)
 
 # Mysql
 MYSQL_HOST = 'mdss.mengsky.net'
