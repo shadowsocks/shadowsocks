@@ -1,6 +1,12 @@
+from configloader import load_config, get_config
+
 def getKeys():
-	return ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
-	#return ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable', 'plan' ] # append the column name 'plan'
+	load_config()
+	key_list = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
+	if get_config().API_INTERFACE == 'sspanelv3':
+		key_list += ['method']
+	return key_list
+	#return key_list + ['plan'] # append the column name 'plan'
 
 def isTurnOn(row):
 	return True

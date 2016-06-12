@@ -124,6 +124,10 @@ class DbTransfer(object):
 
 			port = row['port']
 			passwd = common.to_bytes(row['passwd'])
+			cfg = {}
+			for name in ['method', 'obfs', 'protocol']:
+				if name in row:
+					cfg[name] = row[name]
 
 			if port not in cur_servers:
 				cur_servers[port] = passwd
@@ -140,12 +144,12 @@ class DbTransfer(object):
 					#password changed
 					logging.info('db stop server at port [%s] reason: password changed' % (port,))
 					ServerPool.get_instance().cb_del_server(port)
-					new_servers[port] = passwd
+					new_servers[port] = (passwd, cfg)
 
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
 				#new_servers[port] = passwd
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
-				ServerPool.get_instance().new_server(port, passwd)
+				ServerPool.get_instance().new_server(port, passwd, cfg)
 
 		for row in last_rows:
 			if row['port'] in cur_servers:
@@ -158,9 +162,9 @@ class DbTransfer(object):
 			from shadowsocks import eventloop
 			DbTransfer.get_instance().event.wait(eventloop.TIMEOUT_PRECISION)
 			for port in new_servers.keys():
-				passwd = new_servers[port]
+				passwd, cfg = new_servers[port]
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
-				ServerPool.get_instance().new_server(port, passwd)
+				ServerPool.get_instance().new_server(port, passwd, cfg)
 
 	@staticmethod
 	def del_servers():
