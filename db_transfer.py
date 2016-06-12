@@ -129,6 +129,10 @@ class DbTransfer(object):
 				if name in row:
 					cfg[name] = row[name]
 
+			for name in cfg.keys():
+				if hasattr(cfg[name], 'encode'):
+					cfg[name] = cfg[name].encode('utf-8')
+
 			if port not in cur_servers:
 				cur_servers[port] = passwd
 			else:
@@ -141,13 +145,13 @@ class DbTransfer(object):
 					ServerPool.get_instance().cb_del_server(port)
 				else:
 					cfgchange = False
-					if (port in ServerPool.get_instance().tcp_servers_pool):
+					if port in ServerPool.get_instance().tcp_servers_pool:
 						relay = ServerPool.get_instance().tcp_servers_pool[port]
 						for name in ['password', 'method', 'obfs', 'protocol']:
 							if name in cfg and cfg[name] != relay._config[name]:
 								cfgchange = True
 								break;
-					if (port in ServerPool.get_instance().tcp_ipv6_servers_pool):
+					if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
 						relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
 						for name in ['password', 'method', 'obfs', 'protocol']:
 							if name in cfg and cfg[name] != relay._config[name]:
@@ -162,7 +166,7 @@ class DbTransfer(object):
 			elif allow and ServerPool.get_instance().server_run_status(port) is False:
 				#new_servers[port] = passwd
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
-				ServerPool.get_instance().new_server(port, passwd, cfg)
+				ServerPool.get_instance().new_server(port, cfg)
 
 		for row in last_rows:
 			if row['port'] in cur_servers:
@@ -177,7 +181,7 @@ class DbTransfer(object):
 			for port in new_servers.keys():
 				passwd, cfg = new_servers[port]
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
-				ServerPool.get_instance().new_server(port, passwd, cfg)
+				ServerPool.get_instance().new_server(port, cfg)
 
 	@staticmethod
 	def del_servers():

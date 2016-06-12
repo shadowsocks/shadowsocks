@@ -106,7 +106,7 @@ class ServerPool(object):
 				return False
 		return True
 
-	def new_server(self, port, password, user_config):
+	def new_server(self, port, user_config):
 		ret = True
 		port = int(port)
 		ipv6_ok = False
@@ -122,7 +122,6 @@ class ServerPool(object):
 					a_config['server_ipv6'] = a_config['server_ipv6'][1:-1]
 				a_config['server'] = a_config['server_ipv6']
 				a_config['server_port'] = port
-				a_config['password'] = password
 				a_config['max_connect'] = 128
 				try:
 					logging.info("starting server at [%s]:%d" % (a_config['server'], port))
@@ -148,7 +147,6 @@ class ServerPool(object):
 				a_config = self.config.copy()
 				a_config.update(user_config)
 				a_config['server_port'] = port
-				a_config['password'] = password
 				a_config['max_connect'] = 128
 				try:
 					logging.info("starting server at %s:%d" % (a_config['server'], port))
