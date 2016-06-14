@@ -206,8 +206,6 @@ class auth_simple(verify_base):
         self.server_info.data.set_max_client(max_client)
 
     def pack_data(self, buf):
-        if len(buf) == 0:
-            return b''
         rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 16)
         data = common.chr(len(rnd_data) + 1) + rnd_data + buf
         data = struct.pack('>H', len(data) + 6) + data
@@ -364,8 +362,6 @@ class auth_sha1(verify_base):
         self.server_info.data.set_max_client(max_client)
 
     def pack_data(self, buf):
-        if len(buf) == 0:
-            return b''
         rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 16)
         data = common.chr(len(rnd_data) + 1) + rnd_data + buf
         data = struct.pack('>H', len(data) + 6) + data
@@ -606,8 +602,6 @@ class auth_sha1_v2(verify_base):
         return common.chr(255) + struct.pack('>H', len(rnd_data) + 3) + rnd_data
 
     def pack_data(self, buf):
-        if len(buf) == 0:
-            return b''
         data = self.rnd_data(len(buf)) + buf
         data = struct.pack('>H', len(data) + 6) + data
         adler32 = zlib.adler32(data) & 0xFFFFFFFF
