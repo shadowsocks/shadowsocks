@@ -27,27 +27,28 @@ if __name__ == '__main__':
 import server_pool
 import db_transfer
 from shadowsocks import shell
-
-#def test():
-#	 thread.start_new_thread(DbTransfer.thread_db, ())
-#	 Api.web_server()
+from configloader import load_config, get_config
 
 class MainThread(threading.Thread):
-	def __init__(self):
+	def __init__(self, obj):
 		threading.Thread.__init__(self)
+		self.obj = obj
 
 	def run(self):
-		db_transfer.DbTransfer.thread_db()
+		self.obj.thread_db(self.obj)
 
 	def stop(self):
-		db_transfer.DbTransfer.thread_db_stop()
+		self.obj.thread_db_stop()
 
 def main():
 	shell.check_python()
 	if False:
 		db_transfer.DbTransfer.thread_db()
 	else:
-		thread = MainThread()
+		if get_config().API_INTERFACE == 'mudbjson':
+			thread = MainThread(db_transfer.MuJsonTransfer)
+		else:
+			thread = MainThread(db_transfer.DbTransfer)
 		thread.start()
 		try:
 			while thread.is_alive():

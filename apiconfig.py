@@ -1,10 +1,10 @@
 ﻿# Config
 TRANSFER_MUL = 1.0
 NODE_ID = 1
-API_INTERFACE = 'sspanelv2' #sspanelv2, sspanelv3, sspanelv3ssr, muapiv2(not support)
+API_INTERFACE = 'sspanelv2' #mudbjson, sspanelv2, sspanelv3, sspanelv3ssr, muapiv2(not support)
 
 # Mysql
-MYSQL_HOST = 'mdss.mengsky.net'
+MYSQL_HOST = '127.0.0.1'
 MYSQL_PORT = 3306
 MYSQL_USER = 'ss'
 MYSQL_PASS = 'ss'
@@ -12,7 +12,7 @@ MYSQL_DB = 'shadowsocks'
 MYSQL_UPDATE_TIME = 60
 
 # API
-API_HOST = 'breakwa11.moe'
+API_HOST = '127.0.0.1'
 API_PORT = 80
 API_PATH = '/mu/v2/'
 API_TOKEN = 'abcdef'

@@ -6,23 +6,16 @@ import time
 import sys
 from server_pool import ServerPool
 import traceback
-from shadowsocks import common
+from shadowsocks import common, shell
 from configloader import load_config, get_config
 
+db_instance = None
+
 class DbTransfer(object):
-
-	instance = None
-
 	def __init__(self):
 		import threading
 		self.last_get_transfer = {}
 		self.event = threading.Event()
-
-	@staticmethod
-	def get_instance():
-		if DbTransfer.instance is None:
-			DbTransfer.instance = DbTransfer()
-		return DbTransfer.instance
 
 	def update_all_user(self, dt_transfer):
 		import cymysql
@@ -83,8 +76,7 @@ class DbTransfer(object):
 		self.update_all_user(dt_transfer)
 		self.last_get_transfer = curr_transfer
 
-	@staticmethod
-	def pull_db_all_user():
+	def pull_db_all_user(self):
 		import cymysql
 		#数据库所有用户信息
 		try:
@@ -107,8 +99,7 @@ class DbTransfer(object):
 		conn.close()
 		return rows
 
-	@staticmethod
-	def del_server_out_of_bound_safe(last_rows, rows):
+	def del_server_out_of_bound_safe(self, last_rows, rows):
 		#停止超流量的服务
 		#启动没超流量的服务
 		#需要动态载入switchrule，以便实时修改规则
@@ -180,7 +171,7 @@ class DbTransfer(object):
 
 		if len(new_servers) > 0:
 			from shadowsocks import eventloop
-			DbTransfer.get_instance().event.wait(eventloop.TIMEOUT_PRECISION)
+			self.event.wait(eventloop.TIMEOUT_PRECISION)
 			for port in new_servers.keys():
 				passwd, cfg = new_servers[port]
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
@@ -196,32 +187,68 @@ class DbTransfer(object):
 				ServerPool.get_instance().cb_del_server(port)
 
 	@staticmethod
-	def thread_db():
+	def thread_db(obj):
 		import socket
 		import time
+		global db_instance
 		timeout = 60
 		socket.setdefaulttimeout(timeout)
 		last_rows = []
+		db_instance = obj()
 		try:
 			while True:
 				load_config()
 				try:
-					DbTransfer.get_instance().push_db_all_user()
-					rows = DbTransfer.get_instance().pull_db_all_user()
-					DbTransfer.del_server_out_of_bound_safe(last_rows, rows)
+					db_instance.push_db_all_user()
+					rows = db_instance.pull_db_all_user()
+					db_instance.del_server_out_of_bound_safe(last_rows, rows)
 					last_rows = rows
 				except Exception as e:
 					trace = traceback.format_exc()
 					logging.error(trace)
 					#logging.warn('db thread except:%s' % e)
-				if DbTransfer.get_instance().event.wait(get_config().MYSQL_UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
+				if db_instance.event.wait(get_config().MYSQL_UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
 					break
 		except KeyboardInterrupt as e:
 			pass
-		DbTransfer.del_servers()
+		db_instance.del_servers()
 		ServerPool.get_instance().stop()
+		db_instance = None
 
 	@staticmethod
 	def thread_db_stop():
-		DbTransfer.get_instance().event.set()
+		global db_instance
+		db_instance.event.set()
+
+class MuJsonTransfer(DbTransfer):
+	def __init__(self):
+		super(MuJsonTransfer, self).__init__()
+
+	def update_all_user(self, dt_transfer):
+		import json
+		rows = None
+
+		config_path = "mudb.json"
+		with open(config_path, 'r+') as f:
+			rows = shell.parse_json_in_str(f.read().decode('utf8'))
+			for row in rows:
+				if "port" in row:
+					port = row["port"]
+					if port in dt_transfer:
+						row["u"] += dt_transfer[port][0]
+						row["d"] += dt_transfer[port][1]
+
+		if rows:
+			output = json.dumps(rows, sort_keys=True, indent=4, separators=(',', ': '))
+			with open(config_path, 'w') as f:
+				f.write(output)
+
+	def pull_db_all_user(self):
+		rows = None
+
+		config_path = "mudb.json"
+		with open(config_path, 'r+') as f:
+			rows = shell.parse_json_in_str(f.read().decode('utf8'))
+
+		return rows
 

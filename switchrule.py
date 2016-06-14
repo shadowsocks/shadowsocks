@@ -1,7 +1,6 @@
 from configloader import load_config, get_config
 
 def getKeys():
-	load_config()
 	key_list = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
 	if get_config().API_INTERFACE == 'sspanelv3':
 		key_list += ['method']
