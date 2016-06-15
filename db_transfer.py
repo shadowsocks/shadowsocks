@@ -120,7 +120,7 @@ class DbTransfer(object):
 			passwd = common.to_bytes(row['passwd'])
 			cfg = {'password': passwd}
 
-			read_config_keys = ['method', 'obfs', 'protocol', 'forbidden_port']
+			read_config_keys = ['method', 'obfs', 'protocol', 'forbidden_ip', 'forbidden_port']
 			for name in read_config_keys:
 				if name in row and row[name]:
 					cfg[name] = row[name]

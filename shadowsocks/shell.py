@@ -199,7 +199,7 @@ def get_config(is_local):
             elif key == '--user':
                 config['user'] = to_str(value)
             elif key == '--forbidden-ip':
-                config['forbidden_ip'] = to_str(value).split(',')
+                config['forbidden_ip'] = to_str(value)
             elif key in ('-h', '--help'):
                 if is_local:
                     print_local_help()

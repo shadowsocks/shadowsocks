@@ -233,6 +233,7 @@ class IPNetwork(object):
     ADDRLENGTH = {socket.AF_INET: 32, socket.AF_INET6: 128, False: 0}
 
     def __init__(self, addrs):
+        self.addrs_str = addrs
         self._network_list_v4 = []
         self._network_list_v6 = []
         if type(addrs) == str:
@@ -283,8 +284,12 @@ class IPNetwork(object):
         else:
             return False
 
+    def __cmp__(self, other):
+        return cmp(self.addrs_str, other.addrs_str)
+
 class PortRange(object):
     def __init__(self, range_str):
+        self.range_str = range_str
         self.range = set()
         if type(range_str) == str:
             range_str = range_str.split(',')
@@ -310,8 +315,8 @@ class PortRange(object):
     def __contains__(self, val):
         return val in self.range
 
-    def __eq__(self, other):
-        return self.range == other.range
+    def __cmp__(self, other):
+        return cmp(self.range_str, other.range_str)
 
 def test_inet_conv():
     ipv4 = b'8.8.4.4'
