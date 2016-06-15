@@ -303,6 +303,7 @@ class PortRange(object):
                     i = int_range[0]
                     while i <= int_range[1]:
                         self.range.add(i)
+                        i += 1
             except Exception as e:
                 logging.error(e)
 
