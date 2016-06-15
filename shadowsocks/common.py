@@ -310,6 +310,9 @@ class PortRange(object):
     def __contains__(self, val):
         return val in self.range
 
+    def __eq__(self, other):
+        return self.range == other.range
+
 def test_inet_conv():
     ipv4 = b'8.8.4.4'
     b = inet_pton(socket.AF_INET, ipv4)

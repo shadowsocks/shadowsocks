@@ -119,10 +119,13 @@ class DbTransfer(object):
 			port = row['port']
 			passwd = common.to_bytes(row['passwd'])
 			cfg = {'password': passwd}
-			for name in ['method', 'obfs', 'protocol']:
+
+			read_config_keys = ['method', 'obfs', 'protocol', 'forbidden_port']
+			for name in read_config_keys:
 				if name in row and row[name]:
 					cfg[name] = row[name]
 
+			merge_config_keys = ['password'] + read_config_keys
 			for name in cfg.keys():
 				if hasattr(cfg[name], 'encode'):
 					cfg[name] = cfg[name].encode('utf-8')
@@ -141,13 +144,13 @@ class DbTransfer(object):
 					cfgchange = False
 					if port in ServerPool.get_instance().tcp_servers_pool:
 						relay = ServerPool.get_instance().tcp_servers_pool[port]
-						for name in ['password', 'method', 'obfs', 'protocol']:
+						for name in merge_config_keys:
 							if name in cfg and cfg[name] != relay._config[name]:
 								cfgchange = True
 								break;
 					if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
 						relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
-						for name in ['password', 'method', 'obfs', 'protocol']:
+						for name in merge_config_keys:
 							if name in cfg and cfg[name] != relay._config[name]:
 								cfgchange = True
 								break;
@@ -249,6 +252,17 @@ class MuJsonTransfer(DbTransfer):
 		config_path = "mudb.json"
 		with open(config_path, 'r+') as f:
 			rows = shell.parse_json_in_str(f.read().decode('utf8'))
+			for row in rows:
+				try:
+					if 'forbidden_ip' in row:
+						row['forbidden_ip'] = common.IPNetwork(row['forbidden_ip'])
+				except Exception as e:
+					logging.error(e)
+				try:
+					if 'forbidden_port' in row:
+						row['forbidden_port'] = common.PortRange(row['forbidden_port'])
+				except Exception as e:
+					logging.error(e)
 
 		return rows
 
