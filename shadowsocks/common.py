@@ -297,7 +297,8 @@ class PortRange(object):
             try:
                 int_range = item.split('-')
                 if len(int_range) == 1:
-                    self.range.add(int(item))
+                    if item:
+                        self.range.add(int(item))
                 elif len(int_range) == 2:
                     int_range[0] = int(int_range[0])
                     int_range[1] = int(int_range[1])
