@@ -926,6 +926,10 @@ class UDPRelay(object):
             self._forbidden_iplist = config['forbidden_ip']
         else:
             self._forbidden_iplist = None
+        if 'forbidden_port' in config:
+            self._forbidden_portset = config['forbidden_port']
+        else:
+            self._forbidden_portset = None
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -1083,8 +1087,10 @@ class UDPRelay(object):
                     return
             if self._forbidden_portset:
                 if sa[1] in self._forbidden_portset:
-                    raise Exception('Port %d is in forbidden list, reject' %
+                    logging.debug('Port %d is in forbidden list, reject' %
                                     sa[1])
+                    # drop
+                    return
             client = socket.socket(af, socktype, proto)
             client.setblocking(False)
             is_dns = False
