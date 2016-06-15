@@ -283,6 +283,31 @@ class IPNetwork(object):
         else:
             return False
 
+class PortRange(object):
+    def __init__(self, range_str):
+        self.range = set()
+        if type(range_str) == str:
+            range_str = range_str.split(',')
+        for item in range_str:
+            try:
+                int_range = item.split('-')
+                if len(int_range) == 1:
+                    self.range.add(int(item))
+                elif len(int_range) == 2:
+                    int_range[0] = int(int_range[0])
+                    int_range[1] = int(int_range[1])
+                    if int_range[0] < 0:
+                        int_range[0] = 0
+                    if int_range[1] > 65535:
+                        int_range[1] = 65535
+                    i = int_range[0]
+                    while i <= int_range[1]:
+                        self.range.add(i)
+            except Exception as e:
+                logging.error(e)
+
+    def __contains__(self, val):
+        return val in self.range
 
 def test_inet_conv():
     ipv4 = b'8.8.4.4'

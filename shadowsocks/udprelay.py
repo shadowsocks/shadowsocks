@@ -301,6 +301,10 @@ class TCPRelayHandler(object):
             self._forbidden_iplist = config['forbidden_ip']
         else:
             self._forbidden_iplist = None
+        if 'forbidden_port' in config:
+            self._forbidden_portset = config['forbidden_port']
+        else:
+            self._forbidden_portset = None
         #fd_to_handlers[local_sock.fileno()] = self
         #local_sock.setblocking(False)
         #loop.add(local_sock, eventloop.POLL_IN | eventloop.POLL_ERR)
@@ -1077,6 +1081,10 @@ class UDPRelay(object):
                                   common.to_str(sa[0]))
                     # drop
                     return
+            if self._forbidden_portset:
+                if sa[1] in self._forbidden_portset:
+                    raise Exception('Port %d is in forbidden list, reject' %
+                                    sa[1])
             client = socket.socket(af, socktype, proto)
             client.setblocking(False)
             is_dns = False

@@ -23,7 +23,7 @@ import json
 import sys
 import getopt
 import logging
-from shadowsocks.common import to_bytes, to_str, IPNetwork
+from shadowsocks.common import to_bytes, to_str, IPNetwork, PortRange
 from shadowsocks import encrypt
 
 
@@ -258,6 +258,11 @@ def get_config(is_local):
         try:
             config['forbidden_ip'] = \
                 IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
+        except Exception as e:
+            logging.error(e)
+            sys.exit(2)
+        try:
+            config['forbidden_port'] = PortRange(config.get('forbidden_port', ''))
         except Exception as e:
             logging.error(e)
             sys.exit(2)
