@@ -662,7 +662,7 @@ class TCPRelayHandler(object):
                         data = obfs_decode[0]
                     try:
                         newdata = self._protocol.server_post_decrypt(data)
-                        if data and not newdata:
+                        '''if data and not newdata:
                             data = self._protocol.server_pre_encrypt(data)
                             data = self._encryptor.encrypt(data)
                             data = self._obfs.server_encode(data)
@@ -674,7 +674,7 @@ class TCPRelayHandler(object):
                                     traceback.print_exc()
                                 logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                                 self.destroy()
-                                return
+                                return'''
                         data = newdata
                     except Exception as e:
                         shell.print_exception(e)
