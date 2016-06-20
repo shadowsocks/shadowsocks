@@ -149,7 +149,7 @@ General options:
 ''')
 
 def main():
-	shortopts = 'hadeclu:p:k:O:o:m:t'
+	shortopts = 'adeclu:p:k:O:o:m:t:f:h'
 	longopts = ['help']
 	action = None
 	user = {}
@@ -178,6 +178,8 @@ def main():
 				user['protocal'] = value
 			elif key == '-m':
 				user['method'] = value
+			elif key == '-f':
+				user['forbidden_port'] = value
 			elif key == '-t':
 				val = float(value)
 				try:
@@ -196,10 +198,12 @@ def main():
 	if action == 0:
 		manage.clear_ud(user)
 	elif action == 1:
+		if 'user' not in user and 'port' in user:
+			user['user'] = str(user['port'])
 		if 'user' in user and 'port' in user:
 			manage.add(user)
 		else:
-			print("You have to set the user name and port with -u/-p")
+			print("You have to set the port with -p")
 	elif action == 2:
 		if 'user' in user or 'port' in user:
 			manage.delete(user)
