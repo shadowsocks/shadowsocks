@@ -110,12 +110,16 @@ class MuMgr(object):
 			if 'port' in user and row['port'] != user['port']:
 				match = False
 			if match:
-				print("clear user %s" % self.userinfo(row['user']))
 				row.update(up)
+				print("clear user [%s]" % row['user'])
 		self.data.save(self.config_path)
 
 	def list_user(self, user):
 		self.data.load(self.config_path)
+		if not user:
+			for row in self.data.json:
+				print("user [%s] port %s" % (row['user'], row['port']))
+			return
 		for row in self.data.json:
 			match = True
 			if 'user' in user and row['user'] != user['user']:
