@@ -3,6 +3,9 @@ TRANSFER_MUL = 1.0
 NODE_ID = 1
 API_INTERFACE = 'sspanelv2' #mudbjson, sspanelv2, sspanelv3, sspanelv3ssr, muapiv2(not support)
 
+#mudb
+MUDB_FILE = 'mudb.json'
+
 # Mysql
 MYSQL_HOST = '127.0.0.1'
 MYSQL_PORT = 3306

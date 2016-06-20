@@ -231,7 +231,7 @@ class MuJsonTransfer(DbTransfer):
 		import json
 		rows = None
 
-		config_path = "mudb.json"
+		config_path = get_config().MUDB_FILE
 		with open(config_path, 'r+') as f:
 			rows = shell.parse_json_in_str(f.read().decode('utf8'))
 			for row in rows:
@@ -249,7 +249,7 @@ class MuJsonTransfer(DbTransfer):
 	def pull_db_all_user(self):
 		rows = None
 
-		config_path = "mudb.json"
+		config_path = get_config().MUDB_FILE
 		with open(config_path, 'r+') as f:
 			rows = shell.parse_json_in_str(f.read().decode('utf8'))
 			for row in rows:
