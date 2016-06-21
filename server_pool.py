@@ -123,6 +123,7 @@ class ServerPool(object):
 				a_config['server'] = a_config['server_ipv6']
 				a_config['server_port'] = port
 				a_config['max_connect'] = 128
+				a_config['method'] = common.to_str(a_config['method'])
 				try:
 					logging.info("starting server at [%s]:%d" % (common.to_str(a_config['server']), port))
 
@@ -148,8 +149,9 @@ class ServerPool(object):
 				a_config.update(user_config)
 				a_config['server_port'] = port
 				a_config['max_connect'] = 128
+				a_config['method'] = common.to_str(a_config['method'])
 				try:
-					logging.info("starting server at %s:%d" % (a_config['server'], port))
+					logging.info("starting server at %s:%d" % (common.to_str(a_config['server']), port))
 
 					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False)
 					tcp_server.add_to_loop(self.loop)
