@@ -88,9 +88,9 @@ class verify_base(plain.plain):
 
 class client_queue(object):
     def __init__(self, begin_id):
-        self.front = begin_id
-        self.back = begin_id
-        self.alloc = {}
+        self.front = begin_id - 64
+        self.back = begin_id + 1
+        self.alloc = {begin_id: 1}
         self.enable = True
         self.last_update = time.time()
 
@@ -102,10 +102,9 @@ class client_queue(object):
 
     def re_enable(self, connection_id):
         self.enable = True
-        self.alloc = {}
         self.front = connection_id - 64
-        self.back = connection_id
-        self.alloc[connection_id] = 1
+        self.back = connection_id + 1
+        self.alloc = {connection_id: 1}
 
     def insert(self, connection_id):
         self.update()
