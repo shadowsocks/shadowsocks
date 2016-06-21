@@ -24,7 +24,7 @@
 import os
 import logging
 import time
-from shadowsocks import shell, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import shell, eventloop, tcprelay, udprelay, asyncdns, common
 import threading
 import sys
 from socket import *
@@ -124,7 +124,7 @@ class ServerPool(object):
 				a_config['server_port'] = port
 				a_config['max_connect'] = 128
 				try:
-					logging.info("starting server at [%s]:%d" % (a_config['server'], port))
+					logging.info("starting server at [%s]:%d" % (common.to_str(a_config['server']), port))
 
 					tcp_server = tcprelay.TCPRelay(a_config, self.dns_resolver, False, stat_counter=self.stat_counter)
 					tcp_server.add_to_loop(self.loop)
@@ -134,14 +134,14 @@ class ServerPool(object):
 					udp_server.add_to_loop(self.loop)
 					self.udp_ipv6_servers_pool.update({port: udp_server})
 
-					if a_config['server_ipv6'] == "::":
+					if common.to_str(a_config['server_ipv6']) == "::":
 						ipv6_ok = True
 				except Exception as e:
 					logging.warn("IPV6 %s " % (e,))
 
 		if 'server' in self.config:
 			if port in self.tcp_servers_pool:
-				logging.info("server already at %s:%d" % (self.config['server'], port))
+				logging.info("server already at %s:%d" % (common.to_str(self.config['server']), port))
 				return 'this port server is already running'
 			else:
 				a_config = self.config.copy()

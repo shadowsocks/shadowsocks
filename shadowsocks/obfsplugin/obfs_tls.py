@@ -169,8 +169,8 @@ class tls_auth(plain.plain):
             data = b"\x16" + self.tls_version + struct.pack('>H', len(data)) + data
             return data
         if self.has_recv_header:
-            data = b"\x14" + self.tls_version + "\x00\x01\x01" #ChangeCipherSpec
-            data += b"\x16" + self.tls_version + "\x00\x20" + os.urandom(22) #Finished
+            data = b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
+            data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
             data += hmac.new(self.server_info.key + self.server_info.data.client_id, data, hashlib.sha1).digest()[:10]
             ret = data + self.send_buffer
             self.send_buffer = b''
@@ -196,8 +196,8 @@ class tls_auth(plain.plain):
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"0016c02bc02fc00ac009c013c01400330039002f0035000a0100006fff01000100000a00080006001700180019000b0002010000230000337400000010002900270568322d31360568322d31350568322d313402683208737064792f332e3108687474702f312e31000500050100000000000d001600140401050106010201040305030603020304020202")
         data = b"\x02\x00" + struct.pack('>H', len(data)) + data #server hello
         data = b"\x16" + self.tls_version + struct.pack('>H', len(data)) + data
-        data += b"\x14" + self.tls_version + "\x00\x01\x01" #ChangeCipherSpec
-        data += b"\x16" + self.tls_version + "\x00\x20" + os.urandom(22) #Finished
+        data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
+        data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
         data += hmac.new(self.server_info.key + self.client_id, data, hashlib.sha1).digest()[:10]
         return data
 
@@ -326,8 +326,8 @@ class tls_ticket_auth(plain.plain):
             data = b"\x16\x03\x01" + struct.pack('>H', len(data)) + data
             return data
         elif self.handshake_status == 1 and len(buf) == 0:
-            data = b"\x14" + self.tls_version + "\x00\x01\x01" #ChangeCipherSpec
-            data += b"\x16" + self.tls_version + "\x00\x20" + os.urandom(22) #Finished
+            data = b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
+            data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
             data += hmac.new(self.server_info.key + self.server_info.data.client_id, data, hashlib.sha1).digest()[:10]
             ret = data + self.send_buffer
             self.send_buffer = b''
@@ -376,8 +376,8 @@ class tls_ticket_auth(plain.plain):
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"c02f000005ff01000100")
         data = b"\x02\x00" + struct.pack('>H', len(data)) + data #server hello
         data = b"\x16\x03\x03" + struct.pack('>H', len(data)) + data
-        data += b"\x14" + self.tls_version + "\x00\x01\x01" #ChangeCipherSpec
-        data += b"\x16" + self.tls_version + "\x00\x20" + os.urandom(22) #Finished
+        data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
+        data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
         data += hmac.new(self.server_info.key + self.client_id, data, hashlib.sha1).digest()[:10]
         return data
 
@@ -410,10 +410,10 @@ class tls_ticket_auth(plain.plain):
             verify_len = 43 - 10
             if len(buf) < 43:
                 raise Exception('server_decode data error')
-            if not match_begin(buf, b"\x14" + self.tls_version + "\x00\x01\x01"): #ChangeCipherSpec
+            if not match_begin(buf, b"\x14" + self.tls_version + b"\x00\x01\x01"): #ChangeCipherSpec
                 raise Exception('server_decode data error')
             buf = buf[6:]
-            if not match_begin(buf, b"\x16" + self.tls_version + "\x00\x20"): #Finished
+            if not match_begin(buf, b"\x16" + self.tls_version + b"\x00\x20"): #Finished
                 raise Exception('server_decode data error')
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
                 raise Exception('server_decode data error')

@@ -6,17 +6,17 @@ from shadowsocks import common, shell
 from configloader import load_config, get_config
 import getopt
 import sys
+import json
 
 class MuJsonLoader(object):
 	def __init__(self):
 		self.json = None
 
 	def load(self, path):
-		with open(path, 'r+') as f:
-			self.json = shell.parse_json_in_str(f.read().decode('utf8'))
+		with open(path, 'rb+') as f:
+			self.json = json.loads(f.read().decode('utf8'))
 
 	def save(self, path):
-		import json
 		if self.json:
 			output = json.dumps(self.json, sort_keys=True, indent=4, separators=(',', ': '))
 			with open(path, 'w') as f:

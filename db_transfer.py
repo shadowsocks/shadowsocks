@@ -8,7 +8,9 @@ from server_pool import ServerPool
 import traceback
 from shadowsocks import common, shell
 from configloader import load_config, get_config
+import importloader
 
+switchrule = None
 db_instance = None
 
 class DbTransfer(object):
@@ -80,8 +82,7 @@ class DbTransfer(object):
 		import cymysql
 		#数据库所有用户信息
 		try:
-			import switchrule
-			reload(switchrule)
+			switchrule = importloader.load('switchrule')
 			keys = switchrule.getKeys()
 		except Exception as e:
 			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
@@ -99,13 +100,19 @@ class DbTransfer(object):
 		conn.close()
 		return rows
 
+	def cmp(self, val1, val2):
+		if type(val1) is bytes:
+			val1 = common.to_str(val1)
+		if type(val2) is bytes:
+			val2 = common.to_str(val2)
+		return val1 == val2
+
 	def del_server_out_of_bound_safe(self, last_rows, rows):
 		#停止超流量的服务
 		#启动没超流量的服务
 		#需要动态载入switchrule，以便实时修改规则
 		try:
-			import switchrule
-			reload(switchrule)
+			switchrule = importloader.load('switchrule')
 		except Exception as e:
 			logging.error('load switchrule.py fail')
 		cur_servers = {}
@@ -145,13 +152,13 @@ class DbTransfer(object):
 					if port in ServerPool.get_instance().tcp_servers_pool:
 						relay = ServerPool.get_instance().tcp_servers_pool[port]
 						for name in merge_config_keys:
-							if name in cfg and cfg[name] != relay._config[name]:
+							if name in cfg and not self.cmp(cfg[name], relay._config[name]):
 								cfgchange = True
 								break;
 					if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
 						relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
 						for name in merge_config_keys:
-							if name in cfg and cfg[name] != relay._config[name]:
+							if name in cfg and not self.cmp(cfg[name], relay._config[name]):
 								cfgchange = True
 								break;
 					#config changed
@@ -182,10 +189,10 @@ class DbTransfer(object):
 
 	@staticmethod
 	def del_servers():
-		for port in ServerPool.get_instance().tcp_servers_pool.keys():
+		for port in [v for v in ServerPool.get_instance().tcp_servers_pool.keys()]:
 			if ServerPool.get_instance().server_is_run(port) > 0:
 				ServerPool.get_instance().cb_del_server(port)
-		for port in ServerPool.get_instance().tcp_ipv6_servers_pool.keys():
+		for port in [v for v in ServerPool.get_instance().tcp_ipv6_servers_pool.keys()]:
 			if ServerPool.get_instance().server_is_run(port) > 0:
 				ServerPool.get_instance().cb_del_server(port)
 
@@ -232,8 +239,8 @@ class MuJsonTransfer(DbTransfer):
 		rows = None
 
 		config_path = get_config().MUDB_FILE
-		with open(config_path, 'r+') as f:
-			rows = shell.parse_json_in_str(f.read().decode('utf8'))
+		with open(config_path, 'rb+') as f:
+			rows = json.loads(f.read().decode('utf8'))
 			for row in rows:
 				if "port" in row:
 					port = row["port"]
@@ -247,11 +254,12 @@ class MuJsonTransfer(DbTransfer):
 				f.write(output)
 
 	def pull_db_all_user(self):
+		import json
 		rows = None
 
 		config_path = get_config().MUDB_FILE
-		with open(config_path, 'r+') as f:
-			rows = shell.parse_json_in_str(f.read().decode('utf8'))
+		with open(config_path, 'rb+') as f:
+			rows = json.loads(f.read().decode('utf8'))
 			for row in rows:
 				try:
 					if 'forbidden_ip' in row:

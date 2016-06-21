@@ -85,7 +85,7 @@ def inet_pton(family, addr):
         if '.' in addr:  # a v4 addr
             v4addr = addr[addr.rindex(':') + 1:]
             v4addr = socket.inet_aton(v4addr)
-            v4addr = map(lambda x: ('%02X' % ord(x)), v4addr)
+            v4addr = ['%02X' % ord(x) for x in v4addr]
             v4addr.insert(2, ':')
             newaddr = addr[:addr.rindex(':') + 1] + ''.join(v4addr)
             return inet_pton(family, newaddr)
@@ -289,10 +289,9 @@ class IPNetwork(object):
 
 class PortRange(object):
     def __init__(self, range_str):
-        self.range_str = range_str
+        self.range_str = to_str(range_str)
         self.range = set()
-        if type(range_str) == str:
-            range_str = range_str.split(',')
+        range_str = to_str(range_str).split(',')
         for item in range_str:
             try:
                 int_range = item.split('-')
