@@ -103,7 +103,7 @@ class client_queue(object):
     def re_enable(self, connection_id):
         self.enable = True
         self.alloc = {}
-        self.front = connection_id - 16
+        self.front = connection_id - 64
         self.back = connection_id
         self.alloc[connection_id] = 1
 
