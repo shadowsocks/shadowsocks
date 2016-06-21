@@ -994,14 +994,11 @@ class TCPRelay(object):
                 self._stat_counter[self._listen_port] = {}
             newval = self._stat_counter[self._listen_port].get(local_addr, 0) + val
             logging.debug('port %d addr %s connections %d' % (self._listen_port, local_addr, newval))
+            self._stat_counter[self._listen_port][local_addr] = newval
+            self.update_stat(self._listen_port, self._stat_counter[self._listen_port], val)
             if newval <= 0:
                 if local_addr in self._stat_counter[self._listen_port]:
                     del self._stat_counter[self._listen_port][local_addr]
-                if len(self._stat_counter[self._listen_port]) == 0:
-                    del self._stat_counter[self._listen_port]
-            else:
-                self._stat_counter[self._listen_port][local_addr] = newval
-                self.update_stat(self._listen_port, self._stat_counter[self._listen_port], val)
 
             newval = self._stat_counter.get(0, 0) + val
             self._stat_counter[0] = newval

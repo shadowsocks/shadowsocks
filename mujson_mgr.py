@@ -147,6 +147,7 @@ Options:
   -O PROTOCOL            protocol plugin, default: auth_sha1_v2_compatible
   -o OBFS                obfs plugin, default: tls1.2_ticket_auth_compatible
   -t TRANSFER            max transfer for G bytes, default: 1048576, can be float point number
+  -f FORBID              set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
 
 General options:
   -h, --help             show this help message and exit
