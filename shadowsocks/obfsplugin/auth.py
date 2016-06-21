@@ -90,7 +90,7 @@ class client_queue(object):
     def __init__(self, begin_id):
         self.front = begin_id - 64
         self.back = begin_id + 1
-        self.alloc = {begin_id: 1}
+        self.alloc = {}
         self.enable = True
         self.last_update = time.time()
 
@@ -104,23 +104,23 @@ class client_queue(object):
         self.enable = True
         self.front = connection_id - 64
         self.back = connection_id + 1
-        self.alloc = {connection_id: 1}
+        self.alloc = {}
 
     def insert(self, connection_id):
-        self.update()
         if not self.enable:
-            logging.warn('auth_simple: not enable')
-            return False
-        if connection_id < self.front:
-            logging.warn('auth_simple: duplicate id')
+            logging.warn('obfs auth: not enable')
             return False
         if not self.is_active():
             self.re_enable(connection_id)
+        self.update()
+        if connection_id < self.front:
+            logging.warn('obfs auth: duplicate id')
+            return False
         if connection_id > self.front + 0x4000:
-            logging.warn('auth_simple: wrong id')
+            logging.warn('obfs auth: wrong id')
             return False
         if connection_id in self.alloc:
-            logging.warn('auth_simple: duplicate id 2')
+            logging.warn('obfs auth: duplicate id 2')
             return False
         if self.back <= connection_id:
             self.back = connection_id + 1
@@ -154,7 +154,7 @@ class obfs_auth_data(object):
                 if self.client_id[c_id].is_active():
                     active += 1
             if active >= self.max_client:
-                logging.warn('auth_simple: max active clients exceeded')
+                logging.warn('obfs auth: max active clients exceeded')
                 return False
 
             if len(self.client_id) < self.max_client:
@@ -176,7 +176,7 @@ class obfs_auth_data(object):
                     else:
                         self.client_id[client_id].re_enable(connection_id)
                     return self.client_id[client_id].insert(connection_id)
-            logging.warn('auth_simple: no inactive client [assert]')
+            logging.warn('obfs auth: no inactive client [assert]')
             return False
         else:
             return self.client_id[client_id].insert(connection_id)
