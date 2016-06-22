@@ -284,23 +284,44 @@ class DNSResolver(object):
     def _parse_resolv(self):
         self._servers = []
         try:
-            with open('/etc/resolv.conf', 'rb') as f:
+            with open('dns.conf', 'rb') as f:
                 content = f.readlines()
                 for line in content:
                     line = line.strip()
                     if line:
-                        if line.startswith(b'nameserver'):
-                            parts = line.split()
-                            if len(parts) >= 2:
-                                server = parts[1]
-                                if common.is_ip(server) == socket.AF_INET:
-                                    if type(server) != str:
-                                        server = server.decode('utf8')
-                                    self._servers.append(server)
+                        parts = line.split(' ', 1)
+                        if len(parts) >= 2:
+                            server = parts[0]
+                            port = int(parts[1])
+                        else:
+                            server = parts[0]
+                            port = 53
+                        if common.is_ip(server) == socket.AF_INET:
+                            if type(server) != str:
+                                server = server.decode('utf8')
+                            self._servers.append((server, port))
         except IOError:
             pass
         if not self._servers:
-            self._servers = ['8.8.4.4', '8.8.8.8']
+            try:
+                with open('/etc/resolv.conf', 'rb') as f:
+                    content = f.readlines()
+                    for line in content:
+                        line = line.strip()
+                        if line:
+                            if line.startswith(b'nameserver'):
+                                parts = line.split()
+                                if len(parts) >= 2:
+                                    server = parts[1]
+                                    if common.is_ip(server) == socket.AF_INET:
+                                        if type(server) != str:
+                                            server = server.decode('utf8')
+                                        self._servers.append((server, 53))
+            except IOError:
+                pass
+        if not self._servers:
+            self._servers = [('8.8.4.4', 53), ('8.8.8.8', 53)]
+        logging.info('dns server: %s' % (self._servers,))
 
     def _parse_hosts(self):
         etc_path = '/etc/hosts'
@@ -400,7 +421,7 @@ class DNSResolver(object):
             self._loop.add(self._sock, eventloop.POLL_IN, self)
         else:
             data, addr = sock.recvfrom(1024)
-            if addr[0] not in self._servers:
+            if addr not in self._servers:
                 logging.warn('received a packet other than our dns')
                 return
             self._handle_data(data)
@@ -425,7 +446,7 @@ class DNSResolver(object):
         for server in self._servers:
             logging.debug('resolving %s with type %d using server %s',
                           hostname, qtype, server)
-            self._sock.sendto(req, (server, 53))
+            self._sock.sendto(req, server)
 
     def resolve(self, hostname, callback):
         if type(hostname) != bytes:

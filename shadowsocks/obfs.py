@@ -45,7 +45,7 @@ class obfs(object):
         if self._method_info:
             self.obfs = self.get_obfs(method)
         else:
-            raise Exception('method %s not supported' % method)
+            raise Exception('obfs plugin [%s] not supported' % method)
 
     def init_data(self):
         return self.obfs.init_data()
