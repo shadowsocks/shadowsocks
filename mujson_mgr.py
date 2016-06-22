@@ -221,6 +221,8 @@ def main():
 			print("You have to set the user name or port with -u/-p")
 	elif action == 4:
 		manage.list_user(user)
+	elif action is None:
+		print_server_help()
 
 if __name__ == '__main__':
 	main()
