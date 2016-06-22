@@ -289,7 +289,7 @@ class DNSResolver(object):
                 for line in content:
                     line = line.strip()
                     if line:
-                        parts = line.split(' ', 1)
+                        parts = line.split(b' ', 1)
                         if len(parts) >= 2:
                             server = parts[0]
                             port = int(parts[1])
