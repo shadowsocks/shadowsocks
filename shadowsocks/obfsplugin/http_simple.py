@@ -172,7 +172,7 @@ class http_simple(plain.plain):
             ret_buf = self.get_data_from_http_header(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
-            if len(ret_buf) >= 15:
+            if len(ret_buf) >= 7:
                 self.has_recv_header = True
                 return (ret_buf, True, False)
             if len(ret_buf) == 0:
@@ -241,7 +241,7 @@ class http_post(http_simple):
             ret_buf = self.get_data_from_http_header(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
-            if len(ret_buf) >= 15:
+            if len(ret_buf) >= 7:
                 self.has_recv_header = True
                 return (ret_buf, True, False)
             if len(ret_buf) == 0:
