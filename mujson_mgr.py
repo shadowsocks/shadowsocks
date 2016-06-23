@@ -180,7 +180,7 @@ def main():
 			elif key == '-o':
 				user['obfs'] = value
 			elif key == '-O':
-				user['protocal'] = value
+				user['protocol'] = value
 			elif key == '-m':
 				user['method'] = value
 			elif key == '-f':
