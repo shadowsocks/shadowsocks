@@ -150,6 +150,8 @@ def pack_addr(address):
     return b'\x03' + chr(len(address)) + address
 
 def pre_parse_header(data):
+    if not data:
+        return None
     datatype = ord(data[0])
     if datatype == 0x80:
         if len(data) <= 2:
