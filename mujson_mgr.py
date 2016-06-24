@@ -4,6 +4,7 @@
 import traceback
 from shadowsocks import common, shell
 from configloader import load_config, get_config
+import random
 import getopt
 import sys
 import json
@@ -48,11 +49,15 @@ class MuMgr(object):
 				ret += "    %s : %s" % (key, user[key])
 		return ret
 
+	def rand_pass(self):
+		return b''.join([random.choice(b'''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-_=+(){}[]^&%$@''') for i in range(8)])
+
 	def add(self, user):
-		up = {'enable': True, 'u': 0, 'd': 0, 'passwd': "m", 'method': "aes-128-cfb",
+		up = {'enable': True, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
 		'protocol': "auth_sha1_v2_compatible",
 		'obfs': "tls1.2_ticket_auth_compatible",
 		'transfer_enable': 1125899906842624}
+		up['passwd'] = self.rand_pass()
 		up.update(user)
 
 		self.data.load(self.config_path)

@@ -1,26 +1,2 @@
 [
-	{
-		"user": "admin",
-		"port": 443,
-		"u": 0,
-		"d": 0,
-		"transfer_enable": 1125899906842624,
-		"passwd": "admin",
-		"method": "aes-128-cfb",
-		"protocol": "auth_sha1_v2_compatible",
-		"obfs": "tls1.2_ticket_auth_compatible",
-		"enable": true
-	},
-	{
-		"user": "user001",
-		"port": 10001,
-		"u": 0,
-		"d": 0,
-		"transfer_enable": 1099511627776,
-		"passwd": "abc123",
-		"method": "rc4-md5",
-		"protocol": "auth_sha1_v2_compatible",
-		"obfs": "http_post_compatible",
-		"enable": true
-	}
 ]
