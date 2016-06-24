@@ -668,7 +668,7 @@ class TCPRelayHandler(object):
                     try:
                         data, sendback = self._protocol.server_post_decrypt(data)
                         if sendback:
-                            backdata = self._protocol.server_pre_encrypt('')
+                            backdata = self._protocol.server_pre_encrypt(b'')
                             backdata = self._encryptor.encrypt(backdata)
                             backdata = self._obfs.server_encode(backdata)
                             try:
