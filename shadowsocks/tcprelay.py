@@ -364,7 +364,7 @@ class TCPRelayHandler(object):
         return (host_post, 80)
 
     def _handel_protocol_error(self, client_address, ogn_data):
-        logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
+        logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d via port %d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1], self._server._listen_port))
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
@@ -518,12 +518,17 @@ class TCPRelayHandler(object):
         if not self._remote_udp:
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
+                    if self._remote_address:
+                        raise Exception('IP %s is in forbidden list, when connect to %s:%d via port %d' %
+                            (common.to_str(sa[0]), self._remote_address[0], self._remote_address[1], self._server._listen_port))
                     raise Exception('IP %s is in forbidden list, reject' %
                                     common.to_str(sa[0]))
             if self._forbidden_portset:
                 if sa[1] in self._forbidden_portset:
-                    raise Exception('Port %d is in forbidden list, reject' %
-                                    sa[1])
+                    if self._remote_address:
+                        raise Exception('Port %d is in forbidden list, when connect to %s:%d via port %d' %
+                            (sa[1], self._remote_address[0], self._remote_address[1], self._server._listen_port))
+                    raise Exception('Port %d is in forbidden list, reject' % sa[1])
         remote_sock = socket.socket(af, socktype, proto)
         self._remote_sock = remote_sock
         self._fd_to_handlers[remote_sock.fileno()] = self
@@ -661,21 +666,20 @@ class TCPRelayHandler(object):
                     else:
                         data = obfs_decode[0]
                     try:
-                        newdata = self._protocol.server_post_decrypt(data)
-                        '''if data and not newdata:
-                            data = self._protocol.server_pre_encrypt(data)
-                            data = self._encryptor.encrypt(data)
-                            data = self._obfs.server_encode(data)
+                        data, sendback = self._protocol.server_post_decrypt(data)
+                        if sendback:
+                            backdata = self._protocol.server_pre_encrypt('')
+                            backdata = self._encryptor.encrypt(backdata)
+                            backdata = self._obfs.server_encode(backdata)
                             try:
-                                self._write_to_sock(data, self._local_sock)
+                                self._write_to_sock(backdata, self._local_sock)
                             except Exception as e:
                                 shell.print_exception(e)
                                 if self._config['verbose']:
                                     traceback.print_exc()
                                 logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
                                 self.destroy()
-                                return'''
-                        data = newdata
+                                return
                     except Exception as e:
                         shell.print_exception(e)
                         logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))

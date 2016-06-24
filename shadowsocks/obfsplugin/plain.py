@@ -67,7 +67,7 @@ class plain(object):
         return (buf, True, False)
 
     def server_post_decrypt(self, buf):
-        return buf
+        return (buf, False)
 
     def client_udp_pre_encrypt(self, buf):
         return buf

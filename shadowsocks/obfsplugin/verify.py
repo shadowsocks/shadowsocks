@@ -151,7 +151,7 @@ class verify_simple(verify_base):
 
     def server_post_decrypt(self, buf):
         if self.raw_trans:
-            return buf
+            return (buf, False)
         self.recv_buf += buf
         out_buf = b''
         while len(self.recv_buf) > 2:
@@ -160,7 +160,7 @@ class verify_simple(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return b'E'
+                    return (b'E', False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -170,7 +170,7 @@ class verify_simple(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return b'E'
+                    return (b'E', False)
                 else:
                     raise Exception('server_post_decrype data uncorrect CRC32')
 
@@ -180,7 +180,7 @@ class verify_simple(verify_base):
 
         if out_buf:
             self.decrypt_packet_num += 1
-        return out_buf
+        return (out_buf, False)
 
 class verify_deflate(verify_base):
     def __init__(self, method):
@@ -236,7 +236,7 @@ class verify_deflate(verify_base):
 
     def server_post_decrypt(self, buf):
         if self.raw_trans:
-            return buf
+            return (buf, False)
         self.recv_buf += buf
         out_buf = b''
         while len(self.recv_buf) > 2:
@@ -256,7 +256,7 @@ class verify_deflate(verify_base):
 
         if out_buf:
             self.decrypt_packet_num += 1
-        return out_buf
+        return (out_buf, False)
 
 class verify_sha1(verify_base):
     def __init__(self, method):
@@ -303,26 +303,26 @@ class verify_sha1(verify_base):
 
     def server_post_decrypt(self, buf):
         if self.raw_trans:
-            return buf
+            return (buf, False)
         self.recv_buf += buf
         out_buf = b''
         if not self.has_recv_header:
             if len(self.recv_buf) < 2:
-                return b''
+                return (b'', False)
             if (ord(self.recv_buf[0]) & 0x10) != 0x10:
                 if self.method == 'verify_sha1':
                     logging.error('Not One-time authentication header')
-                    return b'E'
+                    return (b'E', False)
                 else:
                     self.raw_trans = True
-                    return self.recv_buf
+                    return (self.recv_buf, False)
             head_size = self.get_head_size(self.recv_buf, 30)
             if len(self.recv_buf) < head_size + 10:
-                return b''
+                return (b'', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:head_size], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[head_size:head_size + 10]:
                 logging.error('server_post_decrype data uncorrect auth HMAC-SHA1')
-                return b'E'
+                return (b'E', False)
             out_buf = to_bytes(chr(ord(self.recv_buf[0]) & 0xEF)) + self.recv_buf[1:head_size]
             self.recv_buf = self.recv_buf[head_size + 10:]
             self.has_recv_header = True
@@ -340,7 +340,7 @@ class verify_sha1(verify_base):
             out_buf += data
             self.recv_buf = self.recv_buf[length:]
 
-        return out_buf
+        return (out_buf, False)
 
     def client_udp_pre_encrypt(self, buf):
         ret = self.pack_auth_data(buf)
