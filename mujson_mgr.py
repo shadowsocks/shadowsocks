@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import traceback
-from shadowsocks import common, shell
+from shadowsocks import shell
 from configloader import load_config, get_config
 import random
 import getopt
@@ -50,7 +50,7 @@ class MuMgr(object):
 		return ret
 
 	def rand_pass(self):
-		return b''.join([random.choice(b'''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-_=+(){}[]^&%$@''') for i in range(8)])
+		return ''.join([random.choice('''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-_=+(){}[]^&%$@''') for i in range(8)])
 
 	def add(self, user):
 		up = {'enable': True, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
