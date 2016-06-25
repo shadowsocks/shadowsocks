@@ -181,7 +181,7 @@ class DbTransfer(object):
 
 		if len(new_servers) > 0:
 			from shadowsocks import eventloop
-			self.event.wait(eventloop.TIMEOUT_PRECISION)
+			self.event.wait(eventloop.TIMEOUT_PRECISION + eventloop.TIMEOUT_PRECISION / 2)
 			for port in new_servers.keys():
 				passwd, cfg = new_servers[port]
 				logging.info('db start server at port [%s] pass [%s]' % (port, passwd))
