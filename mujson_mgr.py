@@ -8,6 +8,7 @@ import random
 import getopt
 import sys
 import json
+import base64
 
 class MuJsonLoader(object):
 	def __init__(self):
@@ -26,7 +27,16 @@ class MuJsonLoader(object):
 class MuMgr(object):
 	def __init__(self):
 		self.config_path = get_config().MUDB_FILE
+		self.server_addr = get_config().SERVER_PUB_ADDR
 		self.data = MuJsonLoader()
+
+	def ssrlink(self, user):
+		protocol = user.get('protocol', '')
+		obfs = user.get('obfs', '')
+		protocol = protocol.replace("_compatible", "")
+		obfs = obfs.replace("_compatible", "")
+		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, base64.urlsafe_b64encode(user['passwd']))
+		return "ssr://" + base64.urlsafe_b64encode(link)
 
 	def userinfo(self, user):
 		ret = ""
@@ -38,15 +48,16 @@ class MuMgr(object):
 					ret += "    %s : %s" % (key, val)
 				elif val / 1024**2 < 4:
 					val /= float(1024)
-					ret += "    %s : %s  K bytes" % (key, val)
+					ret += "    %s : %s  K Bytes" % (key, val)
 				elif val / 1024**3 < 4:
 					val /= float(1024**2)
-					ret += "    %s : %s  M bytes" % (key, val)
+					ret += "    %s : %s  M Bytes" % (key, val)
 				else:
 					val /= float(1024**3)
-					ret += "    %s : %s  G bytes" % (key, val)
+					ret += "    %s : %s  G Bytes" % (key, val)
 			else:
 				ret += "    %s : %s" % (key, user[key])
+		ret += "\n    " + self.ssrlink(user)
 		return ret
 
 	def rand_pass(self):
