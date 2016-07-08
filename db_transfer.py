@@ -250,8 +250,9 @@ class MuJsonTransfer(DbTransfer):
 
 		if rows:
 			output = json.dumps(rows, sort_keys=True, indent=4, separators=(',', ': '))
-			with open(config_path, 'w') as f:
+			with open(config_path, 'r+') as f:
 				f.write(output)
+				f.truncate()
 
 	def pull_db_all_user(self):
 		import json

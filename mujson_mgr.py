@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import traceback
-from shadowsocks import shell
+from shadowsocks import shell, common
 from configloader import load_config, get_config
 import random
 import getopt
@@ -21,8 +21,9 @@ class MuJsonLoader(object):
 	def save(self, path):
 		if self.json:
 			output = json.dumps(self.json, sort_keys=True, indent=4, separators=(',', ': '))
-			with open(path, 'w') as f:
+			with open(path, 'r+') as f:
 				f.write(output)
+				f.truncate()
 
 class MuMgr(object):
 	def __init__(self):
@@ -35,8 +36,8 @@ class MuMgr(object):
 		obfs = user.get('obfs', '')
 		protocol = protocol.replace("_compatible", "")
 		obfs = obfs.replace("_compatible", "")
-		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, base64.urlsafe_b64encode(user['passwd']))
-		return "ssr://" + base64.urlsafe_b64encode(link)
+		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))))
+		return "ssr://" + common.to_str(base64.urlsafe_b64encode(common.to_bytes(link)))
 
 	def userinfo(self, user):
 		ret = ""

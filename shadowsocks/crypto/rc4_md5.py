@@ -35,6 +35,7 @@ def create_cipher(alg, key, iv, op, key_as_bytes=0, d=None, salt=None,
 
 ciphers = {
     'rc4-md5': (16, 16, create_cipher),
+    'rc4-md5-6': (16, 6, create_cipher),
 }
 
 
