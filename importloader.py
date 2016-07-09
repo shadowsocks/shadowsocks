@@ -4,6 +4,7 @@
 def load(name):
 	try:
 		obj = __import__(name)
+		reload(obj)
 		return obj
 	except:
 		pass
@@ -11,6 +12,7 @@ def load(name):
 	try:
 		import importlib
 		obj = importlib.__import__(name)
+		importlib.reload(obj)
 		return obj
 	except:
 		pass
