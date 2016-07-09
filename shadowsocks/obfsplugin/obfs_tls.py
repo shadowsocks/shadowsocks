@@ -281,7 +281,7 @@ class tls_ticket_auth(plain.plain):
         self.send_buffer = b''
         self.recv_buffer = b''
         self.client_id = b''
-        self.max_time_dif = 60 * 60 # time dif (second) setting
+        self.max_time_dif = 0 # time dif (second) setting
         self.tls_version = b'\x03\x03'
 
     def init_data(self):
@@ -457,8 +457,13 @@ class tls_ticket_auth(plain.plain):
         sha1 = hmac.new(self.server_info.key + sessionid, verifyid[:22], hashlib.sha1).digest()[:10]
         utc_time = struct.unpack('>I', verifyid[:4])[0]
         time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
-        if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
-                or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
+        if self.server_info.obfs_param:
+            try:
+                self.max_time_dif = int(self.server_info.obfs_param)
+            except:
+                pass
+        if self.max_time_dif > 0 and (time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
+                or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2):
             logging.info("tls_auth wrong time")
             return self.decode_error_return(ogn_buf)
         if sha1 != verifyid[22:]:
