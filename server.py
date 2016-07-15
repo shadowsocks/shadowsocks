@@ -47,8 +47,10 @@ def main():
 	else:
 		if get_config().API_INTERFACE == 'mudbjson':
 			thread = MainThread(db_transfer.MuJsonTransfer)
-		else:
+		elif get_config().API_INTERFACE == 'sspanelv2':
 			thread = MainThread(db_transfer.DbTransfer)
+		else:
+			thread = MainThread(db_transfer.Dbv3Transfer)
 		thread.start()
 		try:
 			while thread.is_alive():
