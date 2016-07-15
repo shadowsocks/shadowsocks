@@ -128,7 +128,8 @@ class DbTransfer(object):
 			port = row['port']
 			passwd = common.to_bytes(row['passwd'])
 			cfg = {'password': passwd}
-			self.port_uid_table[row['port']] = row['id']
+			if 'id' in row:
+				self.port_uid_table[row['port']] = row['id']
 
 			read_config_keys = ['method', 'obfs', 'obfs_param', 'protocol', 'protocol_param', 'forbidden_ip', 'forbidden_port']
 			for name in read_config_keys:
@@ -181,7 +182,8 @@ class DbTransfer(object):
 			else:
 				logging.info('db stop server at port [%s] reason: port not exist' % (row['port']))
 				ServerPool.get_instance().cb_del_server(row['port'])
-				del self.port_uid_table[row['port']]
+				if row['port'] in self.port_uid_table:
+					del self.port_uid_table[row['port']]
 
 		if len(new_servers) > 0:
 			from shadowsocks import eventloop
@@ -260,7 +262,8 @@ class Dbv3Transfer(DbTransfer):
 			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, transfer[1])
 
 			cur = conn.cursor()
-			cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `Node_ID`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
+			if id in self.port_uid_table:
+				cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `Node_ID`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
 					str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
 					str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
 					self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
