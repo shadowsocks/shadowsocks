@@ -29,12 +29,18 @@ class DbTransfer(object):
 		query_sub_in = None
 		last_time = time.time()
 		for id in dt_transfer.keys():
-			query_sub_when += ' WHEN %s THEN u+%s' % (id, dt_transfer[id][0])
-			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, dt_transfer[id][1])
+			transfer = dt_transfer[id]
+			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
+			if transfer[0] + transfer[1] < update_trs:
+				continue
+
+			query_sub_when += ' WHEN %s THEN u+%s' % (id, transfer[0])
+			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, transfer[1])
 			if query_sub_in is not None:
 				query_sub_in += ',%s' % id
 			else:
 				query_sub_in = '%s' % id
+
 		if query_sub_when == '':
 			return
 		query_sql = query_head + ' SET u = CASE port' + query_sub_when + \
@@ -56,9 +62,8 @@ class DbTransfer(object):
 		#上次和本次的增量
 		dt_transfer = {}
 		for id in curr_transfer.keys():
-			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
 			if id in last_transfer:
-				if curr_transfer[id][0] + curr_transfer[id][1] - last_transfer[id][0] - last_transfer[id][1] < update_trs:
+				if curr_transfer[id][0] + curr_transfer[id][1] - last_transfer[id][0] - last_transfer[id][1] <= 0:
 					self.user_pass[id] = self.user_pass.get(id, 0) + 1
 					continue
 				if last_transfer[id][0] <= curr_transfer[id][0] and \
@@ -69,7 +74,7 @@ class DbTransfer(object):
 					dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
 										int(curr_transfer[id][1] * get_config().TRANSFER_MUL)]
 			else:
-				if curr_transfer[id][0] + curr_transfer[id][1] < update_trs:
+				if curr_transfer[id][0] + curr_transfer[id][1] <= 0:
 					self.user_pass[id] = self.user_pass.get(id, 0) + 1
 					continue
 				dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
@@ -258,6 +263,13 @@ class Dbv3Transfer(DbTransfer):
 
 		for id in dt_transfer.keys():
 			transfer = dt_transfer[id]
+			alive_user_count = alive_user_count + 1
+			bandwidth_thistime = bandwidth_thistime + transfer[0] + transfer[1]
+
+			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
+			if transfer[0] + transfer[1] < update_trs:
+				continue
+
 			query_sub_when += ' WHEN %s THEN u+%s' % (id, transfer[0])
 			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, transfer[1])
 
@@ -268,9 +280,6 @@ class Dbv3Transfer(DbTransfer):
 					str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
 					self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
 			cur.close()
-
-			alive_user_count = alive_user_count + 1
-			bandwidth_thistime = bandwidth_thistime + transfer[0] + transfer[1]
 
 			if query_sub_in is not None:
 				query_sub_in += ',%s' % id
