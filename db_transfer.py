@@ -284,7 +284,7 @@ class Dbv3Transfer(DbTransfer):
 			cur = conn.cursor()
 			try:
 				if id in self.port_uid_table:
-					cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `Node_ID`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
+					cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `node_id`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
 						str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
 						str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
 						self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
@@ -308,7 +308,7 @@ class Dbv3Transfer(DbTransfer):
 
 		try:
 			cur = conn.cursor()
-			cur.execute("INSERT INTO `ss_node_online_log` (`id`, `Node_ID`, `online_user`, `log_time`) VALUES (NULL, '" + \
+			cur.execute("INSERT INTO `ss_node_online_log` (`id`, `node_id`, `online_user`, `log_time`) VALUES (NULL, '" + \
 					str(get_config().NODE_ID) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
 			cur.close()
 
