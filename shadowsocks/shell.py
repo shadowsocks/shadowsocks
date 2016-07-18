@@ -294,6 +294,7 @@ Proxy options:
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
   -t TIMEOUT             timeout in seconds, default: 300
+  -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
 
 General options:
