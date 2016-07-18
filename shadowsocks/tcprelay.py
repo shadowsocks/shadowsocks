@@ -339,6 +339,7 @@ class TCPRelayHandler(object):
                     if onetimeauth_verify(_hash, _data, key) is False:
                         logging.warn('one time auth fail')
                         self.destroy()
+                        return
                     header_length += ONETIMEAUTH_BYTES
             self._remote_address = (common.to_str(remote_addr), remote_port)
             # pause reading
