@@ -30,6 +30,12 @@ class MuMgr(object):
 		self.config_path = get_config().MUDB_FILE
 		self.server_addr = get_config().SERVER_PUB_ADDR
 		self.data = MuJsonLoader()
+		if self.server_addr == '127.0.0.1':
+			try:
+				import socket
+				self.server_addr = socket.gethostbyname(socket.gethostname())
+			except:
+				pass
 
 	def ssrlink(self, user):
 		protocol = user.get('protocol', '')
