@@ -23,19 +23,26 @@ class DbTransfer(object):
 
 	def update_all_user(self, dt_transfer):
 		import cymysql
+		update_transfer = {}
+		
 		query_head = 'UPDATE user'
 		query_sub_when = ''
 		query_sub_when2 = ''
 		query_sub_in = None
 		last_time = time.time()
+
 		for id in dt_transfer.keys():
 			transfer = dt_transfer[id]
 			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
 			if transfer[0] + transfer[1] < update_trs:
 				continue
+			if id in self.user_pass:
+				del self.user_pass[id]
 
-			query_sub_when += ' WHEN %s THEN u+%s' % (id, transfer[0])
-			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, transfer[1])
+			query_sub_when += ' WHEN %s THEN u+%s' % (id, int(transfer[0] * get_config().TRANSFER_MUL))
+			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, int(transfer[1] * get_config().TRANSFER_MUL))
+			update_transfer[id] = transfer
+
 			if query_sub_in is not None:
 				query_sub_in += ',%s' % id
 			else:
@@ -64,26 +71,22 @@ class DbTransfer(object):
 		for id in curr_transfer.keys():
 			if id in last_transfer:
 				if curr_transfer[id][0] + curr_transfer[id][1] - last_transfer[id][0] - last_transfer[id][1] <= 0:
-					self.user_pass[id] = self.user_pass.get(id, 0) + 1
 					continue
 				if last_transfer[id][0] <= curr_transfer[id][0] and \
 						last_transfer[id][1] <= curr_transfer[id][1]:
-					dt_transfer[id] = [int((curr_transfer[id][0] - last_transfer[id][0]) * get_config().TRANSFER_MUL),
-										int((curr_transfer[id][1] - last_transfer[id][1]) * get_config().TRANSFER_MUL)]
+					dt_transfer[id] = [curr_transfer[id][0] - last_transfer[id][0],
+										curr_transfer[id][1] - last_transfer[id][1]]
 				else:
-					dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
-										int(curr_transfer[id][1] * get_config().TRANSFER_MUL)]
+					dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
 			else:
 				if curr_transfer[id][0] + curr_transfer[id][1] <= 0:
-					self.user_pass[id] = self.user_pass.get(id, 0) + 1
 					continue
-				dt_transfer[id] = [int(curr_transfer[id][0] * get_config().TRANSFER_MUL),
-									int(curr_transfer[id][1] * get_config().TRANSFER_MUL)]
-			if id in self.user_pass:
-				del self.user_pass[id]
+				dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
 
-		self.update_all_user(dt_transfer)
-		self.last_get_transfer = curr_transfer
+		update_transfer = self.update_all_user(dt_transfer)
+		for id in update_transfer.keys():
+			last = self.last_get_transfer.get(id, [0,0])
+			self.last_get_transfer[id] = [last[0] + update_transfer[id][0], last[1] + update_transfer[id][1]]
 
 	def pull_db_all_user(self):
 		import cymysql
@@ -247,6 +250,7 @@ class Dbv3Transfer(DbTransfer):
 
 	def update_all_user(self, dt_transfer):
 		import cymysql
+		update_transfer = {}
 
 		query_head = 'UPDATE user'
 		query_sub_when = ''
@@ -268,17 +272,24 @@ class Dbv3Transfer(DbTransfer):
 
 			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
 			if transfer[0] + transfer[1] < update_trs:
+				self.user_pass[id] = self.user_pass.get(id, 0) + 1
 				continue
+			if id in self.user_pass:
+				del self.user_pass[id]
 
-			query_sub_when += ' WHEN %s THEN u+%s' % (id, transfer[0])
-			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, transfer[1])
+			query_sub_when += ' WHEN %s THEN u+%s' % (id, int(transfer[0] * get_config().TRANSFER_MUL))
+			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, int(transfer[1] * get_config().TRANSFER_MUL))
+			update_transfer[id] = transfer
 
 			cur = conn.cursor()
-			if id in self.port_uid_table:
-				cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `Node_ID`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
-					str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
-					str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
-					self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
+			try:
+				if id in self.port_uid_table:
+					cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `Node_ID`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
+						str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
+						str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
+						self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
+			except:
+				logging.warn('no `user_traffic_log` in db')
 			cur.close()
 
 			if query_sub_in is not None:
@@ -295,18 +306,22 @@ class Dbv3Transfer(DbTransfer):
 			cur.execute(query_sql)
 			cur.close()
 
-		cur = conn.cursor()
-		cur.execute("INSERT INTO `ss_node_online_log` (`id`, `Node_ID`, `online_user`, `log_time`) VALUES (NULL, '" + \
-				str(get_config().NODE_ID) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
-		cur.close()
+		try:
+			cur = conn.cursor()
+			cur.execute("INSERT INTO `ss_node_online_log` (`id`, `Node_ID`, `online_user`, `log_time`) VALUES (NULL, '" + \
+					str(get_config().NODE_ID) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
+			cur.close()
 
-		cur = conn.cursor()
-		cur.execute("INSERT INTO `ss_node_info_log` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
-				str(get_config().NODE_ID) + "', '" + str(self.uptime()) + "', '" + \
-				str(self.load()) + "', unix_timestamp()); ")
-		cur.close()
+			cur = conn.cursor()
+			cur.execute("INSERT INTO `ss_node_info_log` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
+					str(get_config().NODE_ID) + "', '" + str(self.uptime()) + "', '" + \
+					str(self.load()) + "', unix_timestamp()); ")
+			cur.close()
+		except:
+			logging.warn('no `ss_node_online_log` or `ss_node_info_log` in db')
 
 		conn.close()
+		return update_transfer
 
 	def load(self):
 		import os
@@ -348,6 +363,8 @@ class MuJsonTransfer(DbTransfer):
 			with open(config_path, 'r+') as f:
 				f.write(output)
 				f.truncate()
+
+		return dt_transfer
 
 	def pull_db_all_user(self):
 		import json

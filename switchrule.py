@@ -5,7 +5,7 @@ def getKeys():
 	if get_config().API_INTERFACE == 'sspanelv3':
 		key_list += ['id', 'method']
 	elif get_config().API_INTERFACE == 'sspanelv3ssr':
-		key_list += ['id', 'method', 'obfs', 'protocol']
+		key_list += ['id', 'method', 'obfs', 'protocol', 'obfs_param', 'protocol_param']
 	return key_list
 	#return key_list + ['plan'] # append the column name 'plan'
 

@@ -163,6 +163,8 @@ Options:
   -m METHOD              encryption method, default: aes-128-cfb
   -O PROTOCOL            protocol plugin, default: auth_sha1_v2_compatible
   -o OBFS                obfs plugin, default: tls1.2_ticket_auth_compatible
+  -G PROTOCOL_PARAM      protocol plugin param
+  -g OBFS_PARAM          obfs plugin param
   -t TRANSFER            max transfer for G bytes, default: 1048576, can be float point number
   -f FORBID              set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
 
@@ -171,7 +173,7 @@ General options:
 ''')
 
 def main():
-	shortopts = 'adeclu:p:k:O:o:m:t:f:h'
+	shortopts = 'adeclu:p:k:O:o:G:g:m:t:f:h'
 	longopts = ['help']
 	action = None
 	user = {}
@@ -198,6 +200,10 @@ def main():
 				user['obfs'] = value
 			elif key == '-O':
 				user['protocol'] = value
+			elif key == '-g':
+				user['obfs_param'] = value
+			elif key == '-G':
+				user['protocol_param'] = value
 			elif key == '-m':
 				user['method'] = value
 			elif key == '-f':
