@@ -28,26 +28,45 @@ class MuJsonLoader(object):
 class MuMgr(object):
 	def __init__(self):
 		self.config_path = get_config().MUDB_FILE
-		self.server_addr = get_config().SERVER_PUB_ADDR
+		try:
+			self.server_addr = get_config().SERVER_PUB_ADDR
+		except:
+			self.server_addr = '127.0.0.1'
 		self.data = MuJsonLoader()
+
 		if self.server_addr == '127.0.0.1':
+			self.server_addr = self.getipaddr()
+
+	def getipaddr(self, ifname = 'eth0'):
+		import socket
+		import struct
+		import fcntl
+		ret = '127.0.0.1'
+		try:
+			ret = socket.gethostbyname(socket.getfqdn(socket.gethostname()))
+		except:
+			pass
+		if ret == '127.0.0.1':
 			try:
-				import socket
-				self.server_addr = socket.gethostbyname(socket.gethostname())
+				s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				ret = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', ifname[:15]))[20:24])
 			except:
 				pass
+		return ret
 
-	def ssrlink(self, user):
+	def ssrlink(self, user, encode):
 		protocol = user.get('protocol', '')
 		obfs = user.get('obfs', '')
 		protocol = protocol.replace("_compatible", "")
 		obfs = obfs.replace("_compatible", "")
 		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))))
-		return "ssr://" + common.to_str(base64.urlsafe_b64encode(common.to_bytes(link)))
+		return "ssr://" + ( encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))) or link)
 
 	def userinfo(self, user):
 		ret = ""
 		for key in user.keys():
+			if key in ['enable']:
+				continue
 			ret += '\n'
 			if key in ['transfer_enable', 'u', 'd'] :
 				val = user[key]
@@ -64,7 +83,8 @@ class MuMgr(object):
 					ret += "    %s : %s  G Bytes" % (key, val)
 			else:
 				ret += "    %s : %s" % (key, user[key])
-		ret += "\n    " + self.ssrlink(user)
+		ret += "\n    " + self.ssrlink(user, False)
+		ret += "\n    " + self.ssrlink(user, True)
 		return ret
 
 	def rand_pass(self):
