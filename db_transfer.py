@@ -54,8 +54,15 @@ class DbTransfer(object):
 					' END, d = CASE port' + query_sub_when2 + \
 					' END, t = ' + str(int(last_time)) + \
 					' WHERE port IN (%s)' % query_sub_in
-		conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT, user=get_config().MYSQL_USER,
-								passwd=get_config().MYSQL_PASS, db=get_config().MYSQL_DB, charset='utf8')
+		if get_config().MYSQL_SSL_ENABLE == 1:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8',
+					ssl={'ca':get_config().MYSQL_SSL_CA,'cert':get_config().MYSQL_SSL_CERT,'key':get_config().MYSQL_SSL_KEY})
+		else:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
 		cur.execute(query_sql)
 		cur.close()
@@ -97,8 +104,15 @@ class DbTransfer(object):
 			keys = switchrule.getKeys()
 		except Exception as e:
 			keys = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
-		conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT, user=get_config().MYSQL_USER,
-								passwd=get_config().MYSQL_PASS, db=get_config().MYSQL_DB, charset='utf8')
+		if get_config().MYSQL_SSL_ENABLE == 1:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8',
+					ssl={'ca':get_config().MYSQL_SSL_CA,'cert':get_config().MYSQL_SSL_CERT,'key':get_config().MYSQL_SSL_KEY})
+		else:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8')
 		cur = conn.cursor()
 		cur.execute("SELECT " + ','.join(keys) + " FROM user")
 		rows = []
@@ -262,8 +276,15 @@ class Dbv3Transfer(DbTransfer):
 		alive_user_count = 0
 		bandwidth_thistime = 0
 
-		conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT, user=get_config().MYSQL_USER,
-								passwd=get_config().MYSQL_PASS, db=get_config().MYSQL_DB, charset='utf8')
+		if get_config().MYSQL_SSL_ENABLE == 1:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8',
+					ssl={'ca':get_config().MYSQL_SSL_CA,'cert':get_config().MYSQL_SSL_CERT,'key':get_config().MYSQL_SSL_KEY})
+		else:
+			conn = cymysql.connect(host=get_config().MYSQL_HOST, port=get_config().MYSQL_PORT,
+					user=get_config().MYSQL_USER, passwd=get_config().MYSQL_PASS,
+					db=get_config().MYSQL_DB, charset='utf8')
 		conn.autocommit(True)
 
 		for id in dt_transfer.keys():

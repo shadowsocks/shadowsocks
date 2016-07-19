@@ -203,6 +203,20 @@ def main():
 	longopts = ['help']
 	action = None
 	user = {}
+	fast_set_obfs = {'0': 'plain',
+			'1': 'http_simple_compatible',
+			'-1': 'http_simple',
+			'2': 'http_post_compatible',
+			'-2': 'http_post',
+			'3': 'tls1.2_ticket_auth_compatible',
+			'-3': 'tls1.2_ticket_auth'}
+	fast_set_protocol = {'0': 'origin',
+			'1': 'verify_sha1_compatible',
+			'-1': 'verify_sha1',
+			'2': 'auth_sha1_compatible',
+			'-2': 'auth_sha1',
+			'3': 'auth_sha1_v2_compatible',
+			'-3': 'auth_sha1_v2'}
 	try:
 		optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
 		for key, value in optlist:
@@ -223,9 +237,15 @@ def main():
 			elif key == '-k':
 				user['passwd'] = value
 			elif key == '-o':
-				user['obfs'] = value
+				if value in fast_set_obfs:
+					user['obfs'] = fast_set_obfs[value]
+				else:
+					user['obfs'] = value
 			elif key == '-O':
-				user['protocol'] = value
+				if value in fast_set_protocol:
+					user['protocol'] = fast_set_protocol[value]
+				else:
+					user['protocol'] = value
 			elif key == '-g':
 				user['obfs_param'] = value
 			elif key == '-G':
