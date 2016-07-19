@@ -370,7 +370,7 @@ class TCPRelayHandler(object):
         host, port = self._get_redirect_host(client_address, ogn_data)
         if port == 0:
             raise Exception('can not parse header')
-        data = b"\x03" + common.chr(len(host)) + common.to_bytes(host) + struct.pack('>H', port)
+        data = b"\x03" + common.to_bytes(common.chr(len(host))) + common.to_bytes(host) + struct.pack('>H', port)
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
         return data + ogn_data
 

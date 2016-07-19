@@ -6,7 +6,7 @@ import time
 import sys
 from server_pool import ServerPool
 import traceback
-from shadowsocks import common, shell
+from shadowsocks import common, shell, lru_cache
 from configloader import load_config, get_config
 import importloader
 
@@ -17,9 +17,11 @@ class DbTransfer(object):
 	def __init__(self):
 		import threading
 		self.last_get_transfer = {}
+		self.last_update_transfer = {}
 		self.event = threading.Event()
 		self.user_pass = {}
 		self.port_uid_table = {}
+		self.onlineuser_cache = lru_cache.LRUCache(timeout=60*30)
 
 	def update_all_user(self, dt_transfer):
 		import cymysql
@@ -72,7 +74,7 @@ class DbTransfer(object):
 
 	def push_db_all_user(self):
 		#更新用户流量到数据库
-		last_transfer = self.last_get_transfer
+		last_transfer = self.last_update_transfer
 		curr_transfer = ServerPool.get_instance().get_servers_transfer()
 		#上次和本次的增量
 		dt_transfer = {}
@@ -90,11 +92,18 @@ class DbTransfer(object):
 				if curr_transfer[id][0] + curr_transfer[id][1] <= 0:
 					continue
 				dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
+			if id in self.last_get_transfer:
+				if curr_transfer[id][0] + curr_transfer[id][1] > self.last_get_transfer[id][0] + self.last_get_transfer[id][1]:
+					self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
+			else:
+				self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
+		self.onlineuser_cache.sweep()
 
 		update_transfer = self.update_all_user(dt_transfer)
 		for id in update_transfer.keys():
-			last = self.last_get_transfer.get(id, [0,0])
-			self.last_get_transfer[id] = [last[0] + update_transfer[id][0], last[1] + update_transfer[id][1]]
+			last = self.last_update_transfer.get(id, [0,0])
+			self.last_update_transfer[id] = [last[0] + update_transfer[id][0], last[1] + update_transfer[id][1]]
+		self.last_get_transfer = curr_transfer
 
 	def pull_db_all_user(self):
 		import cymysql
@@ -273,7 +282,7 @@ class Dbv3Transfer(DbTransfer):
 		query_sub_in = None
 		last_time = time.time()
 
-		alive_user_count = 0
+		alive_user_count = len(self.onlineuser_cache)
 		bandwidth_thistime = 0
 
 		if get_config().MYSQL_SSL_ENABLE == 1:
@@ -289,7 +298,6 @@ class Dbv3Transfer(DbTransfer):
 
 		for id in dt_transfer.keys():
 			transfer = dt_transfer[id]
-			alive_user_count = alive_user_count + 1
 			bandwidth_thistime = bandwidth_thistime + transfer[0] + transfer[1]
 
 			update_trs = 1024 * max(2048 - self.user_pass.get(id, 0) * 64, 16)
