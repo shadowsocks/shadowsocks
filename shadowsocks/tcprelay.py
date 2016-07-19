@@ -466,7 +466,7 @@ class TCPRelayHandler(object):
                 header_result = parse_header(data)
                 if header_result is not None:
                     try:
-                        common.to_str(remote_addr)
+                        common.to_str(header_result[1])
                     except Exception as e:
                         header_result = None
                 if header_result is None:
