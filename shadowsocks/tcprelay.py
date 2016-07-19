@@ -468,9 +468,15 @@ class TCPRelayHandler(object):
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                     header_result = parse_header(data)
             connecttype, remote_addr, remote_port, header_length = header_result
-            common.connect_log('%s connecting %s:%d from %s:%d' %
+            try:
+                common.connect_log('%s connecting %s:%d from %s:%d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
                             common.to_str(remote_addr), remote_port,
+                            self._client_address[0], self._client_address[1]))
+            except Exception as e:
+                common.connect_log('%s connecting %s:%d from %s:%d' %
+                        ((connecttype == 0) and 'TCP' or 'UDP',
+                            binascii.hexlify(remote_addr), remote_port,
                             self._client_address[0], self._client_address[1]))
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
