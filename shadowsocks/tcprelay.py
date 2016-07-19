@@ -354,7 +354,7 @@ class TCPRelayHandler(object):
         if type(host_list) == list:
             host_post = common.to_str(host_list[((hash_code & 0xffffffff) + addr) % len(host_list)])
         else:
-            host_post = host_list
+            host_post = common.to_str(host_list)
         items = host_post.rsplit(':', 1)
         if len(items) > 1:
             try:
@@ -464,19 +464,18 @@ class TCPRelayHandler(object):
                 if data is None:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                 header_result = parse_header(data)
+                if header_result is not None:
+                    try:
+                        common.to_str(remote_addr)
+                    except Exception as e:
+                        header_result = None
                 if header_result is None:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                     header_result = parse_header(data)
             connecttype, remote_addr, remote_port, header_length = header_result
-            try:
-                common.connect_log('%s connecting %s:%d from %s:%d' %
+            common.connect_log('%s connecting %s:%d from %s:%d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
                             common.to_str(remote_addr), remote_port,
-                            self._client_address[0], self._client_address[1]))
-            except Exception as e:
-                common.connect_log('%s connecting %s:%d from %s:%d' %
-                        ((connecttype == 0) and 'TCP' or 'UDP',
-                            binascii.hexlify(remote_addr), remote_port,
                             self._client_address[0], self._client_address[1]))
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
