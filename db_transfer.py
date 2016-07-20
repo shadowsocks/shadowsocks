@@ -224,8 +224,8 @@ class DbTransfer(object):
 			self.event.wait(eventloop.TIMEOUT_PRECISION + eventloop.TIMEOUT_PRECISION / 2)
 			for port in new_servers.keys():
 				passwd, cfg = new_servers[port]
-				protocol = cfb.get('protocol', ServerPool.get_instance().config.get('protocol', 'origin'))
-				obfs = cfb.get('obfs', ServerPool.get_instance().config.get('obfs', 'plain'))
+				protocol = cfg.get('protocol', ServerPool.get_instance().config.get('protocol', 'origin'))
+				obfs = cfg.get('obfs', ServerPool.get_instance().config.get('obfs', 'plain'))
 				logging.info('db start server at port [%s] pass [%s] protocol [%s] obfs [%s]' % (port, passwd, protocol, obfs))
 				ServerPool.get_instance().new_server(port, cfg)
 
