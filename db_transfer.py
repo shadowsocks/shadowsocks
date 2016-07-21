@@ -278,11 +278,6 @@ class DbTransfer(TransferBase):
 	def pull_db_all_user(self):
 		import cymysql
 		#数据库所有用户信息
-		try:
-			switchrule = importloader.load('switchrule')
-			keys = switchrule.getKeys(self.key_list)
-		except Exception as e:
-			keys = self.key_list
 		if self.cfg["ssl_enable"] == 1:
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
@@ -293,6 +288,17 @@ class DbTransfer(TransferBase):
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8')
 
+		rows = self.pull_db_users(conn)
+		conn.close()
+		return rows
+
+	def pull_db_users(self, conn):
+		try:
+			switchrule = importloader.load('switchrule')
+			keys = switchrule.getKeys(self.key_list)
+		except Exception as e:
+			keys = self.key_list
+
 		cur = conn.cursor()
 		cur.execute("SELECT " + ','.join(keys) + " FROM user")
 		rows = []
@@ -302,7 +308,6 @@ class DbTransfer(TransferBase):
 				d[keys[column]] = r[column]
 			rows.append(d)
 		cur.close()
-		conn.close()
 		return rows
 
 class Dbv3Transfer(DbTransfer):
@@ -394,6 +399,39 @@ class Dbv3Transfer(DbTransfer):
 		conn.close()
 		return update_transfer
 
+	def pull_db_users(self, conn):
+		try:
+			switchrule = importloader.load('switchrule')
+			keys = switchrule.getKeys(self.key_list)
+		except Exception as e:
+			keys = self.key_list
+
+		cur = conn.cursor()
+
+		cur.execute("SELECT `traffic_rate` FROM ss_node where `id`='" + str(get_config().NODE_ID) + "'")
+		nodeinfo = cur.fetchone()
+
+		if nodeinfo == None :
+			rows = []
+			cur.close()
+			conn.commit()
+			conn.close()
+			return rows
+		cur.close()
+
+		self.cfg['transfer_mul'] = float(nodeinfo['traffic_rate'])
+
+		cur = conn.cursor()
+		cur.execute("SELECT " + ','.join(keys) + " FROM user")
+		rows = []
+		for r in cur.fetchall():
+			d = {}
+			for column in range(len(keys)):
+				d[keys[column]] = r[column]
+			rows.append(d)
+		cur.close()
+		return rows
+
 	def load(self):
 		import os
 		return os.popen("cat /proc/loadavg | awk '{ print $1\" \"$2\" \"$3 }'").readlines()[0]
@@ -403,7 +441,7 @@ class Dbv3Transfer(DbTransfer):
 
 	def traffic_format(self, traffic):
 		if traffic < 1024 * 8:
-			return str(traffic) + "B";
+			return str(int(traffic)) + "B";
 
 		if traffic < 1024 * 1024 * 2:
 			return str(round((traffic / 1024.0), 2)) + "KB";
