@@ -22,6 +22,7 @@ class DbTransfer(object):
 		self.user_pass = {}
 		self.port_uid_table = {}
 		self.onlineuser_cache = lru_cache.LRUCache(timeout=60*30)
+		self.start_time = time.time()
 
 	def update_all_user(self, dt_transfer):
 		import cymysql
@@ -362,7 +363,7 @@ class Dbv3Transfer(DbTransfer):
 		return os.popen("cat /proc/loadavg | awk '{ print $1\" \"$2\" \"$3 }'").readlines()[0]
 
 	def uptime(self):
-		return time.clock()
+		return time.time() - self.start_time
 
 	def traffic_format(self, traffic):
 		if traffic < 1024 * 8:
