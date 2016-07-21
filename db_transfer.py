@@ -321,7 +321,7 @@ class Dbv3Transfer(DbTransfer):
 					cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `node_id`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
 						str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
 						str(get_config().NODE_ID) + "', '" + str(get_config().TRANSFER_MUL) + "', '" + \
-						self.traffic_format(transfer[0] + transfer[1]) + "', unix_timestamp()); ")
+						self.traffic_format((transfer[0] + transfer[1]) * get_config().TRANSFER_MUL) + "', unix_timestamp()); ")
 			except:
 				logging.warn('no `user_traffic_log` in db')
 			cur.close()
@@ -362,14 +362,13 @@ class Dbv3Transfer(DbTransfer):
 		return os.popen("cat /proc/loadavg | awk '{ print $1\" \"$2\" \"$3 }'").readlines()[0]
 
 	def uptime(self):
-		with open('/proc/uptime', 'r') as f:
-			return float(f.readline().split()[0])
+		return time.clock()
 
 	def traffic_format(self, traffic):
 		if traffic < 1024 * 8:
 			return str(traffic) + "B";
 
-		if traffic < 1024 * 1024 * 8:
+		if traffic < 1024 * 1024 * 2:
 			return str(round((traffic / 1024.0), 2)) + "KB";
 
 		return str(round((traffic / 1048576.0), 2)) + "MB";
