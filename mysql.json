@@ -1,0 +1,13 @@
+{
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "ss",
+    "password": "pass",
+    "db": "shadowsocks",
+    "node_id": 1,
+    "transfer_mul": 1.0,
+    "ssl_enable": 0,
+    "ssl_ca": "",
+    "ssl_cert": "",
+    "ssl_key": ""
+}

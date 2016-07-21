@@ -65,8 +65,15 @@ class TableCipher(object):
         else:
             return translate(data, self._decrypt_table)
 
+class NoneCipher(object):
+    def __init__(self, cipher_name, key, iv, op):
+        pass
+
+    def update(self, data):
+        return data
 
 ciphers = {
+    'none': (0, 0, NoneCipher),
     'table': (0, 0, TableCipher)
 }
 

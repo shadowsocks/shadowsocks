@@ -1,11 +1,4 @@
-from configloader import load_config, get_config
-
-def getKeys():
-	key_list = ['port', 'u', 'd', 'transfer_enable', 'passwd', 'enable' ]
-	if get_config().API_INTERFACE == 'sspanelv3':
-		key_list += ['id', 'method']
-	elif get_config().API_INTERFACE == 'sspanelv3ssr':
-		key_list += ['id', 'method', 'obfs', 'protocol', 'obfs_param', 'protocol_param']
+def getKeys(key_list):
 	return key_list
 	#return key_list + ['plan'] # append the column name 'plan'
 
