@@ -413,17 +413,21 @@ class Dbv3Transfer(DbTransfer):
 
 		cur = conn.cursor()
 
-		cur.execute("SELECT `traffic_rate` FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
+		node_info_keys = ['traffic_rate']
+		cur.execute("SELECT " + ','.join(node_info_keys) +" FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
 		nodeinfo = cur.fetchone()
 
-		if nodeinfo == None :
+		if nodeinfo == None:
 			rows = []
 			cur.close()
 			conn.commit()
 			return rows
 		cur.close()
 
-		self.cfg['transfer_mul'] = float(nodeinfo['traffic_rate'])
+		node_info_dict = {}
+		for column in range(len(nodeinfo)):
+			node_info_dict[node_info_keys[column]] = r[column]
+		self.cfg['transfer_mul'] = float(node_info_dict['traffic_rate'])
 
 		cur = conn.cursor()
 		cur.execute("SELECT " + ','.join(keys) + " FROM user")
