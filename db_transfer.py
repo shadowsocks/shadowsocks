@@ -415,7 +415,6 @@ class Dbv3Transfer(DbTransfer):
 			rows = []
 			cur.close()
 			conn.commit()
-			conn.close()
 			return rows
 		cur.close()
 
