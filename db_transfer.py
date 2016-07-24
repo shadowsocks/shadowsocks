@@ -426,7 +426,7 @@ class Dbv3Transfer(DbTransfer):
 
 		node_info_dict = {}
 		for column in range(len(nodeinfo)):
-			node_info_dict[node_info_keys[column]] = r[column]
+			node_info_dict[node_info_keys[column]] = nodeinfo[column]
 		self.cfg['transfer_mul'] = float(node_info_dict['traffic_rate'])
 
 		cur = conn.cursor()
