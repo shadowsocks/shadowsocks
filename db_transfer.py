@@ -413,7 +413,7 @@ class Dbv3Transfer(DbTransfer):
 
 		cur = conn.cursor()
 
-		cur.execute("SELECT `traffic_rate` FROM ss_node where `id`='" + str(get_config().NODE_ID) + "'")
+		cur.execute("SELECT `traffic_rate` FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
 		nodeinfo = cur.fetchone()
 
 		if nodeinfo == None :
