@@ -23,11 +23,14 @@ class TransferBase(object):
 		self.user_pass = {}
 		self.port_uid_table = {}
 		self.onlineuser_cache = lru_cache.LRUCache(timeout=60*30)
+		self.pull_ok = False
 
 	def load_cfg(self):
 		pass
 
 	def push_db_all_user(self):
+		if self.pull_ok is False:
+			return
 		#更新用户流量到数据库
 		last_transfer = self.last_update_transfer
 		curr_transfer = ServerPool.get_instance().get_servers_transfer()
@@ -179,6 +182,8 @@ class TransferBase(object):
 				try:
 					db_instance.push_db_all_user()
 					rows = db_instance.pull_db_all_user()
+					if rows:
+						db_instance.pull_ok = True
 					db_instance.del_server_out_of_bound_safe(last_rows, rows)
 					last_rows = rows
 				except Exception as e:
