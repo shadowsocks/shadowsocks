@@ -345,23 +345,37 @@ class TCPRelayHandler(object):
         addrs = socket.getaddrinfo(client_address[0], client_address[1], 0, socket.SOCK_STREAM, socket.SOL_TCP)
         af, socktype, proto, canonname, sa = addrs[0]
         address_bytes = common.inet_pton(af, sa[0])
-        if len(address_bytes) == 16:
+        if af == socket.AF_INET6:
             addr = struct.unpack('>Q', address_bytes[8:])[0]
-        if len(address_bytes) == 4:
+        elif af == socket.AF_INET:
             addr = struct.unpack('>I', address_bytes)[0]
         else:
             addr = 0
+
+        host_port = []
+        match_port = False
         if type(host_list) == list:
-            host_post = common.to_str(host_list[((hash_code & 0xffffffff) + addr) % len(host_list)])
-        else:
-            host_post = common.to_str(host_list)
-        items = host_post.rsplit(':', 1)
-        if len(items) > 1:
-            try:
-                return (items[0], int(items[1]))
-            except:
-                pass
-        return (host_post, 80)
+            for host in host_list:
+                items = common.to_str(host).rsplit(':', 1)
+                if len(items) > 1:
+                    try:
+                        port = int(items[1])
+                        if port == self._server._listen_port:
+                            match_port = True
+                        host_port.append((items[0], port))
+                    except:
+                        pass
+                else:
+                    host_port.append((host, 80))
+
+        if match_port:
+            last_host_port = host_port
+            host_port = []
+            for host in last_host_port:
+                if host[1] == self._server._listen_port:
+                    host_port.append(host)
+
+        return host_port[((hash_code & 0xffffffff) + addr) % len(host_port)]
 
     def _handel_protocol_error(self, client_address, ogn_data):
         logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d via port %d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1], self._server._listen_port))
@@ -473,10 +487,9 @@ class TCPRelayHandler(object):
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                     header_result = parse_header(data)
             connecttype, remote_addr, remote_port, header_length = header_result
-            common.connect_log('%s connecting %s:%d from %s:%d' %
+            common.connect_log('%s connecting %s:%d via port %d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
-                            common.to_str(remote_addr), remote_port,
-                            self._client_address[0], self._client_address[1]))
+                            common.to_str(remote_addr), remote_port, self._server._listen_port))
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
             # pause reading
@@ -815,7 +828,7 @@ class TCPRelayHandler(object):
         if self._remote_sock:
             logging.error(eventloop.get_sock_error(self._remote_sock))
             if self._remote_address:
-                logging.error("when connect to %s:%d from %s:%d" % (self._remote_address[0], self._remote_address[1], self._client_address[0], self._client_address[1]))
+                logging.error("when connect to %s:%d" % (self._remote_address[0], self._remote_address[1]))
             else:
                 logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
         self.destroy()

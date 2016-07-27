@@ -36,9 +36,6 @@ from shadowsocks import common, lru_cache
 from shadowsocks.obfsplugin import plain
 from shadowsocks.common import to_bytes, to_str, ord, chr
 
-def create_auth_simple(method):
-    return auth_simple(method)
-
 def create_auth_sha1(method):
     return auth_sha1(method)
 
@@ -46,7 +43,6 @@ def create_auth_sha1_v2(method):
     return auth_sha1_v2(method)
 
 obfs_map = {
-        'auth_simple': (create_auth_simple,),
         'auth_sha1': (create_auth_sha1,),
         'auth_sha1_compatible': (create_auth_sha1,),
         'auth_sha1_v2': (create_auth_sha1_v2,),
@@ -137,7 +133,7 @@ class obfs_auth_data(object):
         self.startup_time = int(time.time() - 30) & 0xFFFFFFFF
         self.local_client_id = b''
         self.connection_id = 0
-        self.set_max_client(16) # max active client count
+        self.set_max_client(64) # max active client count
 
     def update(self, client_id, connection_id):
         if client_id in self.client_id:
@@ -180,162 +176,6 @@ class obfs_auth_data(object):
             return False
         else:
             return self.client_id[client_id].insert(connection_id)
-
-class auth_simple(verify_base):
-    def __init__(self, method):
-        super(auth_simple, self).__init__(method)
-        self.recv_buf = b''
-        self.unit_len = 8100
-        self.decrypt_packet_num = 0
-        self.raw_trans = False
-        self.has_sent_header = False
-        self.has_recv_header = False
-        self.client_id = 0
-        self.connection_id = 0
-        self.max_time_dif = 60 * 5 # time dif (second) setting
-
-    def init_data(self):
-        return obfs_auth_data()
-
-    def set_server_info(self, server_info):
-        self.server_info = server_info
-        try:
-            max_client = int(server_info.protocol_param)
-        except:
-            max_client = 16
-        self.server_info.data.set_max_client(max_client)
-
-    def pack_data(self, buf):
-        rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 16)
-        data = common.chr(len(rnd_data) + 1) + rnd_data + buf
-        data = struct.pack('>H', len(data) + 6) + data
-        crc = (0xffffffff - binascii.crc32(data)) & 0xffffffff
-        data += struct.pack('<I', crc)
-        return data
-
-    def auth_data(self):
-        utc_time = int(time.time()) & 0xFFFFFFFF
-        if self.server_info.data.connection_id > 0xFF000000:
-            self.server_info.data.local_client_id = b''
-        if not self.server_info.data.local_client_id:
-            self.server_info.data.local_client_id = os.urandom(4)
-            logging.debug("local_client_id %s" % (binascii.hexlify(self.server_info.data.local_client_id),))
-            self.server_info.data.connection_id = struct.unpack('<I', os.urandom(4))[0] & 0xFFFFFF
-        self.server_info.data.connection_id += 1
-        return b''.join([struct.pack('<I', utc_time),
-                self.server_info.data.local_client_id,
-                struct.pack('<I', self.server_info.data.connection_id)])
-
-    def client_pre_encrypt(self, buf):
-        ret = b''
-        if not self.has_sent_header:
-            head_size = self.get_head_size(buf, 30)
-            datalen = min(len(buf), random.randint(0, 31) + head_size)
-            ret += self.pack_data(self.auth_data() + buf[:datalen])
-            buf = buf[datalen:]
-            self.has_sent_header = True
-        while len(buf) > self.unit_len:
-            ret += self.pack_data(buf[:self.unit_len])
-            buf = buf[self.unit_len:]
-        ret += self.pack_data(buf)
-        return ret
-
-    def client_post_decrypt(self, buf):
-        if self.raw_trans:
-            return buf
-        self.recv_buf += buf
-        out_buf = b''
-        while len(self.recv_buf) > 2:
-            length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192 or length < 7:
-                self.raw_trans = True
-                self.recv_buf = b''
-                raise Exception('client_post_decrypt data error')
-            if length > len(self.recv_buf):
-                break
-
-            if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
-                self.raw_trans = True
-                self.recv_buf = b''
-                raise Exception('client_post_decrypt data uncorrect CRC32')
-
-            pos = common.ord(self.recv_buf[2]) + 2
-            out_buf += self.recv_buf[pos:length - 4]
-            self.recv_buf = self.recv_buf[length:]
-
-        if out_buf:
-            self.decrypt_packet_num += 1
-        return out_buf
-
-    def server_pre_encrypt(self, buf):
-        ret = b''
-        while len(buf) > self.unit_len:
-            ret += self.pack_data(buf[:self.unit_len])
-            buf = buf[self.unit_len:]
-        ret += self.pack_data(buf)
-        return ret
-
-    def server_post_decrypt(self, buf):
-        if self.raw_trans:
-            return (buf, False)
-        self.recv_buf += buf
-        out_buf = b''
-        while len(self.recv_buf) > 2:
-            length = struct.unpack('>H', self.recv_buf[:2])[0]
-            if length >= 8192 or length < 7:
-                self.raw_trans = True
-                self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    logging.info('auth_simple: over size')
-                    return (b'E', False)
-                else:
-                    raise Exception('server_post_decrype data error')
-            if length > len(self.recv_buf):
-                break
-
-            if (binascii.crc32(self.recv_buf[:length]) & 0xffffffff) != 0xffffffff:
-                logging.info('auth_simple: crc32 error, data %s' % (binascii.hexlify(self.recv_buf[:length]),))
-                self.raw_trans = True
-                self.recv_buf = b''
-                if self.decrypt_packet_num == 0:
-                    return (b'E', False)
-                else:
-                    raise Exception('server_post_decrype data uncorrect CRC32')
-
-            pos = common.ord(self.recv_buf[2]) + 2
-            out_buf += self.recv_buf[pos:length - 4]
-            if not self.has_recv_header:
-                if len(out_buf) < 12:
-                    self.raw_trans = True
-                    self.recv_buf = b''
-                    logging.info('auth_simple: too short')
-                    return (b'E', False)
-                utc_time = struct.unpack('<I', out_buf[:4])[0]
-                client_id = struct.unpack('<I', out_buf[4:8])[0]
-                connection_id = struct.unpack('<I', out_buf[8:12])[0]
-                time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
-                if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
-                        or common.int32(utc_time - self.server_info.data.startup_time) < 0:
-                    self.raw_trans = True
-                    self.recv_buf = b''
-                    logging.info('auth_simple: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))
-                    return (b'E', False)
-                elif self.server_info.data.insert(client_id, connection_id):
-                    self.has_recv_header = True
-                    out_buf = out_buf[12:]
-                    self.client_id = client_id
-                    self.connection_id = connection_id
-                else:
-                    self.raw_trans = True
-                    self.recv_buf = b''
-                    logging.info('auth_simple: auth fail, data %s' % (binascii.hexlify(out_buf),))
-                    return (b'E', False)
-            self.recv_buf = self.recv_buf[length:]
-
-        if out_buf:
-            self.server_info.data.update(self.client_id, self.connection_id)
-            self.decrypt_packet_num += 1
-        return (out_buf, False)
 
 class auth_sha1(verify_base):
     def __init__(self, method):
@@ -476,7 +316,7 @@ class auth_sha1(verify_base):
             utc_time = struct.unpack('<I', out_buf[:4])[0]
             client_id = struct.unpack('<I', out_buf[4:8])[0]
             connection_id = struct.unpack('<I', out_buf[8:12])[0]
-            time_dif = common.int32((int(time.time()) & 0xffffffff) - utc_time)
+            time_dif = common.int32(utc_time - (int(time.time()) & 0xffffffff))
             if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
                     or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
                 self.raw_trans = True
