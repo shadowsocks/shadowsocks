@@ -1111,9 +1111,9 @@ class UDPRelay(object):
 
             logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
 
-            common.connect_log('UDP data to %s:%d from %s:%d' %
+            common.connect_log('UDP data to %s:%d via port %d' %
                         (common.to_str(server_addr), server_port,
-                            r_addr[0], r_addr[1]))
+                            self._listen_port))
 
         self._cache.clear(self._udp_cache_size)
         self._cache_dns_client.clear(16)
