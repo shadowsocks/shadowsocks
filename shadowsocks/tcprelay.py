@@ -354,19 +354,20 @@ class TCPRelayHandler(object):
 
         host_port = []
         match_port = False
-        if type(host_list) == list:
-            for host in host_list:
-                items = common.to_str(host).rsplit(':', 1)
-                if len(items) > 1:
-                    try:
-                        port = int(items[1])
-                        if port == self._server._listen_port:
-                            match_port = True
-                        host_port.append((items[0], port))
-                    except:
-                        pass
-                else:
-                    host_port.append((host, 80))
+        if type(host_list) != list:
+            host_list = [host_list]
+        for host in host_list:
+            items = common.to_str(host).rsplit(':', 1)
+            if len(items) > 1:
+                try:
+                    port = int(items[1])
+                    if port == self._server._listen_port:
+                        match_port = True
+                    host_port.append((items[0], port))
+                except:
+                    pass
+            else:
+                host_port.append((host, 80))
 
         if match_port:
             last_host_port = host_port
