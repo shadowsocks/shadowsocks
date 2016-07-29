@@ -563,6 +563,11 @@ class TCPRelayHandler(object):
             remote_sock_v6.setblocking(False)
         else:
             remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+            remote_sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 120)
+            remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 20)
+            remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
+
             if not self._is_local:
                 bind_addr = ''
                 if self._bind and af == socket.AF_INET:
