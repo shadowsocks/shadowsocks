@@ -104,7 +104,7 @@ class tls_simple(plain.plain):
     def decode_error_return(self, buf):
         self.has_sent_header = True
         if self.method == 'tls_simple':
-            return (b'E', False, False)
+            return (b'E'*64, False, False)
         return (buf, True, False)
 
     def server_decode(self, buf):
@@ -205,7 +205,7 @@ class tls_auth(plain.plain):
         self.raw_trans_sent = True
         self.raw_trans_recv = True
         if self.method == 'tls1.0_session_auth':
-            return (b'E', False, False)
+            return (b'E'*64, False, False)
         return (buf, True, False)
 
     def server_decode(self, buf):
@@ -384,7 +384,7 @@ class tls_ticket_auth(plain.plain):
     def decode_error_return(self, buf):
         self.handshake_status = -1
         if self.method == 'tls1.2_session_auth':
-            return (b'E', False, False)
+            return (b'E'*64, False, False)
         return (buf, True, False)
 
     def server_decode(self, buf):
