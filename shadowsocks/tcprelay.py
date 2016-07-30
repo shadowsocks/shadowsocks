@@ -565,7 +565,7 @@ class TCPRelayHandler(object):
         else:
             remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             remote_sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            if platform.system() != 'Windows':
+            if platform.system() in ['Linux']:
                 remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 120)
                 remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 20)
                 remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
