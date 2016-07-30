@@ -59,8 +59,8 @@ class MuMgr(object):
 		obfs = user.get('obfs', '')
 		protocol = protocol.replace("_compatible", "")
 		obfs = obfs.replace("_compatible", "")
-		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))))
-		return "ssr://" + ( encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))) or link)
+		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))).replace("=", ""))
+		return "ssr://" + ( encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))).replace("=", "") or link)
 
 	def userinfo(self, user):
 		ret = ""
