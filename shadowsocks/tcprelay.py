@@ -579,7 +579,7 @@ class TCPRelayHandler(object):
                 remote_sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 1000 * val_idle, 1000 * val_intvl))
             elif platform.system() in ["Darwin"]: #OSX
                 TCP_KEEPALIVE = 0x10
-                sock.setsockopt(socket.SOL_TCP, TCP_KEEPALIVE, val_intvl * 2)
+                remote_sock.setsockopt(socket.SOL_TCP, TCP_KEEPALIVE, val_intvl * 2)
 
             if not self._is_local:
                 bind_addr = ''
