@@ -312,6 +312,8 @@ class tls_ticket_auth(plain.plain):
             host = self.server_info.obfs_param or self.server_info.host
             if host and host[-1] in string.digits:
                 host = ''
+            hosts = host.split(',')
+            host = random.choice(hosts)
             ext += self.sni(host)
             ext += b"\x00\x17\x00\x00"
             ext += b"\x00\x23\x00\xd0" + os.urandom(208) # ticket

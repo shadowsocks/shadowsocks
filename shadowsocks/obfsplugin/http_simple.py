@@ -96,10 +96,21 @@ class http_simple(plain.plain):
         port = b''
         if self.server_info.port != 80:
             port = b':' + to_bytes(str(self.server_info.port))
+        body = None
+        hosts = (self.server_info.obfs_param or self.server_info.host)
+        pos = hosts.find("#")
+        if pos >= 0:
+            body = hosts[pos + 1:].replace("\\n", "\r\n")
+            hosts = hosts[:pos]
+        hosts = hosts.split(',')
+        host = random.choice(hosts)
         http_head = b"GET /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
-        http_head += b"Host: " + to_bytes(self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
-        http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
-        http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\n\r\n"
+        http_head += b"Host: " + to_bytes(host) + port + b"\r\n"
+        if body:
+            http_head += body + "\r\n\r\n"
+        else:
+            http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
+            http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nDNT: 1\r\nConnection: keep-alive\r\n\r\n"
         self.has_sent_header = True
         return http_head + buf
 
@@ -199,12 +210,23 @@ class http_post(http_simple):
         port = b''
         if self.server_info.port != 80:
             port = b':' + to_bytes(str(self.server_info.port))
+        body = None
+        hosts = (self.server_info.obfs_param or self.server_info.host)
+        pos = hosts.find("#")
+        if pos >= 0:
+            body = hosts[pos + 1:].replace("\\n", "\r\n")
+            hosts = hosts[:pos]
+        hosts = hosts.split(',')
+        host = random.choice(hosts)
         http_head = b"POST /" + self.encode_head(headdata) + b" HTTP/1.1\r\n"
-        http_head += b"Host: " + to_bytes(self.server_info.obfs_param or self.server_info.host) + port + b"\r\n"
-        http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
-        http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n"
-        http_head += b"Content-Type: multipart/form-data; boundary=" + self.boundary() + b"\r\nDNT: 1\r\n"
-        http_head += "Connection: keep-alive\r\n\r\n"
+        http_head += b"Host: " + to_bytes(host) + port + b"\r\n"
+        if body:
+            http_head += body + "\r\n\r\n"
+        else:
+            http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
+            http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n"
+            http_head += b"Content-Type: multipart/form-data; boundary=" + self.boundary() + b"\r\nDNT: 1\r\n"
+            http_head += "Connection: keep-alive\r\n\r\n"
         self.has_sent_header = True
         return http_head + buf
 
