@@ -565,10 +565,21 @@ class TCPRelayHandler(object):
         else:
             remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             remote_sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            if self._is_local:
+                val_idle = 60
+                val_intvl = 5
+            else:
+                val_idle = 120
+                val_intvl = 20
             if platform.system() in ['Linux']:
-                remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, 120)
-                remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 20)
+                remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, val_idle)
+                remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, val_intvl)
                 remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 5)
+            elif platform.system() in ['Windows']:
+                remote_sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 1000 * val_idle, 1000 * val_intvl))
+            elif platform.system() in ["Darwin"]: #OSX
+                TCP_KEEPALIVE = 0x10
+                sock.setsockopt(socket.SOL_TCP, TCP_KEEPALIVE, val_intvl * 2)
 
             if not self._is_local:
                 bind_addr = ''
