@@ -320,7 +320,7 @@ class Dbv3Transfer(DbTransfer):
 		super(Dbv3Transfer, self).__init__()
 		self.key_list += ['id', 'method']
 		if get_config().API_INTERFACE == 'sspanelv3ssr':
-			self.key_list += ['obfs', 'protocol', 'obfs_param', 'protocol_param']
+			self.key_list += ['obfs', 'protocol']
 		self.start_time = time.time()
 
 	def update_all_user(self, dt_transfer):
