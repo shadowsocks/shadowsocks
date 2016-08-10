@@ -1,0 +1,256 @@
+2.8.2 2015-08-10
+- Fix a encoding problem in manager
+
+2.8.1 2015-08-06
+- Respond ok to add and remove commands
+
+2.8 2015-08-06
+- Add Shadowsocks manager
+
+2.7 2015-08-02
+- Optimize speed for multiple ports
+
+2.6.11 2015-07-10
+- Fix a compatibility issue in UDP Relay
+
+2.6.10 2015-06-08
+- Optimize LRU cache
+- Refine logging
+
+2.6.9 2015-05-19
+- Fix a stability issue on Windows
+
+2.6.8 2015-02-10
+- Support multiple server ip on client side
+- Support --version
+- Minor fixes
+
+2.6.7 2015-02-02
+- Support --user
+- Support CIDR format in --forbidden-ip
+- Minor fixes
+
+2.6.6 2015-01-23
+- Fix a crash in forbidden list
+
+2.6.5 2015-01-18
+- Try both 32 bit and 64 bit dll on Windows
+
+2.6.4 2015-01-14
+- Also search lib* when searching libraries
+
+2.6.3 2015-01-12
+- Support --forbidden-ip to ban some IP, i.e. localhost
+- Search OpenSSL and libsodium harder
+- Now works on OpenWRT
+
+2.6.2 2015-01-03
+- Log client IP
+
+2.6.1 2014-12-26
+- Fix a problem with TCP Fast Open on local side
+- Fix sometimes daemon_start returns wrong exit status
+
+2.6 2014-12-21
+- Add daemon support
+
+2.5 2014-12-11
+- Add salsa20 and chacha20
+
+2.4.3 2014-11-10
+- Fix an issue on Python 3
+- Fix an issue with IPv6
+
+2.4.2 2014-11-06
+- Fix command line arguments on Python 3
+- Support table on Python 3
+- Fix TCP Fast Open on Python 3
+
+2.4.1 2014-11-01
+- Fix setup.py for non-utf8 locales on Python 3
+
+2.4 2014-11-01
+- Python 3 support
+- Performance improvement
+- Fix LRU cache behavior
+
+2.3.2 2014-10-11
+- Fix OpenSSL on Windows
+
+2.3.1 2014-10-09
+- Does not require M2Crypto any more
+
+2.3 2014-09-23
+- Support CFB1, CFB8 and CTR mode of AES
+- Do not require password config when using port_password
+- Use SIGTERM instead of SIGQUIT on Windows
+
+2.2.2 2014-09-14
+- Fix when multiple DNS set, IPv6 only sites are broken
+
+2.2.1 2014-09-10
+- Support graceful shutdown
+- Fix some bugs
+
+2.2.0 2014-09-09
+- Add RC4-MD5 encryption
+
+2.1.0 2014-08-10
+- Use only IPv4 DNS server
+- Does not ship config.json
+- Better error message
+
+2.0.12 2014-07-26
+- Support -q quiet mode
+- Exit 0 when showing help with -h
+
+2.0.11 2014-07-12
+- Prefers IP addresses over hostnames, more friendly with socksify and openvpn
+
+2.0.10 2014-07-11
+- Fix UDP on local
+
+2.0.9 2014-07-06
+- Fix EWOULDBLOCK on Windows
+- Fix Unicode config problem on some platforms
+
+2.0.8 2014-06-23
+- Use multiple DNS to query hostnames
+
+2.0.7 2014-06-21
+- Fix fastopen on local
+- Fallback when fastopen is not available
+- Add verbose logging mode -vv
+- Verify if hostname is valid
+
+2.0.6 2014-06-19
+- Fix CPU 100% on POLL_HUP
+- More friendly logging
+
+2.0.5 2014-06-18
+- Support a simple config format for multiple ports
+
+2.0.4 2014-06-12
+- Fix worker master
+
+2.0.3 2014-06-11
+- Fix table encryption with UDP
+
+2.0.2 2014-06-11
+- Add asynchronous DNS in TCP relay
+
+2.0.1 2014-06-05
+- Better logging
+- Maybe fix bad file descriptor
+
+2.0 2014-06-05
+- Use a new event model
+- Remove gevent
+- Refuse to use default password
+- Fix a problem when using multiple passwords with table encryption
+
+1.4.5 2014-05-24
+- Add timeout in TCP server
+- Close sockets in master process
+
+1.4.4 2014-05-17
+- Support multiple workers
+
+1.4.3 2014-05-13
+- Fix Windows
+
+1.4.2 2014-05-10
+- Add salsa20-ctr cipher
+
+1.4.1 2014-05-03
+- Fix error log
+- Fix EINPROGESS with some version of gevent
+
+1.4.0 2014-05-02
+- Adds UDP relay
+- TCP fast open support on Linux 3.7+
+
+1.3.7 2014-04-10
+- Fix a typo in help
+
+1.3.6 2014-04-10
+- Fix a typo in help
+
+1.3.5 2014-04-07
+- Add help
+- Change default local binding address into 127.0.0.1
+
+1.3.4 2014-02-17
+- Fix a bug when no config file exists
+- Client now support multiple server ports and multiple server/port pairs
+- Better error message with bad config.json format and wrong password
+
+1.3.3 2013-07-09
+- Fix default key length of rc2
+
+1.3.2 2013-07-04
+- Server will listen at server IP specified in config
+- Check config file and show some warning messages
+
+1.3.1 2013-06-29
+- Fix -c arg
+
+1.3.0 2013-06-22
+- Move to pypi
+
+1.2.3 2013-06-14
+- add bind address
+
+1.2.2 2013-05-31
+- local can listen at ::0 with -6 arg; bump 1.2.2
+
+1.2.1 2013-05-23
+- Fix an OpenSSL crash
+
+1.2 2013-05-22
+- Use random iv, we finally have strong encryption
+
+1.1.1 2013-05-21
+- Add encryption, AES, blowfish, etc.
+
+1.1 2013-05-16
+- Support IPv6 addresses (type 4)
+- Drop Python 2.5 support
+
+1.0 2013-04-03
+- Fix -6 IPv6
+
+0.9.4 2013-03-04
+- Support Python 2.5
+
+0.9.3 2013-01-14
+- Fix conn termination null data
+
+0.9.2 2013-01-05
+- Change default timeout
+
+0.9.1 2013-01-05
+- Add Travis-CI test
+
+0.9 2012-12-30
+- Replace send with sendall, fix FreeBSD
+
+0.6 2012-12-06
+- Support args
+
+0.5 2012-11-08
+- Fix encryption with negative md5sum
+
+0.4 2012-11-02
+- Move config into a JSON file
+- Auto-detect config path
+
+0.3 2012-06-06
+- Move socks5 negotiation to local
+
+0.2 2012-05-11
+- Add -6 arg for IPv6
+- Fix socket.error
+
+0.1 2012-04-20
+- Initial version

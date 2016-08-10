@@ -1,0 +1,21 @@
+language: python
+python:
+  - 2.6
+  - 2.7
+  - 3.3
+  - 3.4
+cache:
+  directories:
+    - dante-1.4.0
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq build-essential dnsutils iproute nginx bc
+  - sudo dd if=/dev/urandom of=/usr/share/nginx/www/file bs=1M count=10
+  - sudo sh -c "echo '127.0.0.1    localhost' > /etc/hosts"
+  - sudo service nginx restart
+  - pip install pep8 pyflakes nose coverage PySocks
+  - sudo tests/socksify/install.sh
+  - sudo tests/libsodium/install.sh
+  - sudo tests/setup_tc.sh
+script:
+  - tests/jenkins.sh

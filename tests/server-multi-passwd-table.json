@@ -1,0 +1,19 @@
+{
+    "server": "127.0.0.1",
+    "server_port": 8384,
+    "local_port": 1081,
+    "password": "foobar4",
+    "port_password": {
+        "8381": "foobar1",
+        "8382": "foobar2",
+        "8383": "foobar3",
+        "8384": "foobar4",
+        "8385": "foobar5",
+        "8386": "foobar6",
+        "8387": "foobar7",
+        "8388": "foobar8",
+        "8389": "foobar9"
+    },
+    "timeout": 60,
+    "method": "table"
+}
