@@ -100,7 +100,8 @@ class http_simple(plain.plain):
         hosts = (self.server_info.obfs_param or self.server_info.host)
         pos = hosts.find("#")
         if pos >= 0:
-            body = hosts[pos + 1:].replace("\\n", "\r\n")
+            body = hosts[pos + 1:].replace("\n", "\r\n")
+            body = body.replace("\\n", "\r\n")
             hosts = hosts[:pos]
         hosts = hosts.split(',')
         host = random.choice(hosts)
