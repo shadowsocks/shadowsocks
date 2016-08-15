@@ -41,13 +41,6 @@ class TransferBase(object):
 				dt_transfer[id] = [self.last_get_transfer[id][0] - last_transfer[id][0], self.last_get_transfer[id][1] - last_transfer[id][1]]
 
 		for id in curr_transfer.keys():
-			#有流量的，先记录在线状态
-			if id in self.last_get_transfer:
-				if curr_transfer[id][0] + curr_transfer[id][1] > self.last_get_transfer[id][0] + self.last_get_transfer[id][1]:
-					self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
-			else:
-				self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
-
 			#算出与上次记录的流量差值，保存于dt_transfer表
 			if id in last_transfer:
 				if curr_transfer[id][0] + curr_transfer[id][1] - last_transfer[id][0] - last_transfer[id][1] <= 0:
@@ -62,6 +55,13 @@ class TransferBase(object):
 				if curr_transfer[id][0] + curr_transfer[id][1] <= 0:
 					continue
 				dt_transfer[id] = [curr_transfer[id][0], curr_transfer[id][1]]
+
+			#有流量的，先记录在线状态
+			if id in self.last_get_transfer:
+				if curr_transfer[id][0] + curr_transfer[id][1] > self.last_get_transfer[id][0] + self.last_get_transfer[id][1]:
+					self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
+			else:
+				self.onlineuser_cache[id] = curr_transfer[id][0] + curr_transfer[id][1]
 
 		self.onlineuser_cache.sweep()
 
