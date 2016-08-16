@@ -245,7 +245,7 @@ class verify_deflate(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return None
+                    return (b'E'*64, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):

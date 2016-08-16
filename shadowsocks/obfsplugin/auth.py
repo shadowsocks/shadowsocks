@@ -313,8 +313,7 @@ class auth_sha1(verify_base):
             pos = common.ord(self.recv_buf[6]) + 6
             out_buf = self.recv_buf[pos:length - 10]
             if len(out_buf) < 12:
-                self.recv_buf = b''
-                logging.info('auth_sha1: too short')
+                logging.info('auth_sha1: too short, data %s' % (binascii.hexlify(self.recv_buf),))
                 return self.not_match_return(self.recv_buf)
             utc_time = struct.unpack('<I', out_buf[:4])[0]
             client_id = struct.unpack('<I', out_buf[4:8])[0]
@@ -322,7 +321,6 @@ class auth_sha1(verify_base):
             time_dif = common.int32(utc_time - (int(time.time()) & 0xffffffff))
             if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
                     or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
-                self.recv_buf = b''
                 logging.info('auth_sha1: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))
                 return self.not_match_return(self.recv_buf)
             elif self.server_info.data.insert(client_id, connection_id):
@@ -331,7 +329,6 @@ class auth_sha1(verify_base):
                 self.client_id = client_id
                 self.connection_id = connection_id
             else:
-                self.recv_buf = b''
                 logging.info('auth_sha1: auth fail, data %s' % (binascii.hexlify(out_buf),))
                 return self.not_match_return(self.recv_buf)
             self.recv_buf = self.recv_buf[length:]
@@ -551,8 +548,7 @@ class auth_sha1_v2(verify_base):
                 pos = struct.unpack('>H', self.recv_buf[7:9])[0] + 6
             out_buf = self.recv_buf[pos:length - 10]
             if len(out_buf) < 12:
-                self.recv_buf = b''
-                logging.info('auth_sha1_v2: too short, data %s' % (binascii.hexlify(out_buf),))
+                logging.info('auth_sha1_v2: too short, data %s' % (binascii.hexlify(self.recv_buf),))
                 return self.not_match_return(self.recv_buf)
             client_id = struct.unpack('<Q', out_buf[:8])[0]
             connection_id = struct.unpack('<I', out_buf[8:12])[0]
@@ -562,7 +558,6 @@ class auth_sha1_v2(verify_base):
                 self.client_id = client_id
                 self.connection_id = connection_id
             else:
-                self.recv_buf = b''
                 logging.info('auth_sha1_v2: auth fail, data %s' % (binascii.hexlify(out_buf),))
                 return self.not_match_return(self.recv_buf)
             self.recv_buf = self.recv_buf[length:]
