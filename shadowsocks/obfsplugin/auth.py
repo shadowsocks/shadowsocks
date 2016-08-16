@@ -63,6 +63,7 @@ class verify_base(plain.plain):
     def __init__(self, method):
         super(verify_base, self).__init__(method)
         self.method = method
+        self.no_compatible_method = ''
 
     def init_data(self):
         return ''
@@ -81,6 +82,12 @@ class verify_base(plain.plain):
 
     def server_decode(self, buf):
         return (buf, True, False)
+
+    def not_match_return(self, buf):
+        self.raw_trans = True
+        if self.method == self.no_compatible_method:
+            return (b'E'*64, False)
+        return (buf, False)
 
 class client_queue(object):
     def __init__(self, begin_id):
@@ -189,6 +196,7 @@ class auth_sha1(verify_base):
         self.client_id = 0
         self.connection_id = 0
         self.max_time_dif = 60 * 60 # time dif (second) setting
+        self.no_compatible_method = 'auth_sha1'
 
     def init_data(self):
         return obfs_auth_data()
@@ -294,45 +302,38 @@ class auth_sha1(verify_base):
                 return (b'', False)
             crc = struct.pack('<I', binascii.crc32(self.server_info.key) & 0xFFFFFFFF)
             if crc != self.recv_buf[:4]:
-                if self.method == 'auth_sha1':
-                    return (b'E', False)
-                else:
-                    self.raw_trans = True
-                    return (self.recv_buf, False)
+                return self.not_match_return(self.recv_buf)
             length = struct.unpack('>H', self.recv_buf[4:6])[0]
             if length > len(self.recv_buf):
                 return (b'', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:length - 10], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[length - 10:length]:
                 logging.error('auth_sha1 data uncorrect auth HMAC-SHA1')
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             pos = common.ord(self.recv_buf[6]) + 6
             out_buf = self.recv_buf[pos:length - 10]
             if len(out_buf) < 12:
-                self.raw_trans = True
                 self.recv_buf = b''
                 logging.info('auth_sha1: too short')
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             utc_time = struct.unpack('<I', out_buf[:4])[0]
             client_id = struct.unpack('<I', out_buf[4:8])[0]
             connection_id = struct.unpack('<I', out_buf[8:12])[0]
             time_dif = common.int32(utc_time - (int(time.time()) & 0xffffffff))
             if time_dif < -self.max_time_dif or time_dif > self.max_time_dif \
                     or common.int32(utc_time - self.server_info.data.startup_time) < -self.max_time_dif / 2:
-                self.raw_trans = True
                 self.recv_buf = b''
                 logging.info('auth_sha1: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(out_buf),))
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             elif self.server_info.data.insert(client_id, connection_id):
                 self.has_recv_header = True
                 out_buf = out_buf[12:]
                 self.client_id = client_id
                 self.connection_id = connection_id
             else:
-                self.raw_trans = True
                 self.recv_buf = b''
                 logging.info('auth_sha1: auth fail, data %s' % (binascii.hexlify(out_buf),))
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             self.recv_buf = self.recv_buf[length:]
             self.has_recv_header = True
 
@@ -418,6 +419,7 @@ class auth_sha1_v2(verify_base):
         self.client_id = 0
         self.connection_id = 0
         self.salt = b"auth_sha1_v2"
+        self.no_compatible_method = 'auth_sha1_v2'
 
     def init_data(self):
         return obfs_auth_v2_data()
@@ -534,29 +536,24 @@ class auth_sha1_v2(verify_base):
                 return (b'', False)
             crc = struct.pack('<I', binascii.crc32(self.salt + self.server_info.key) & 0xFFFFFFFF)
             if crc != self.recv_buf[:4]:
-                if self.method == 'auth_sha1_v2':
-                    return (b'E', False)
-                else:
-                    self.raw_trans = True
-                    return (self.recv_buf, False)
+                return self.not_match_return(self.recv_buf)
             length = struct.unpack('>H', self.recv_buf[4:6])[0]
             if length > len(self.recv_buf):
                 return (b'', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:length - 10], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[length - 10:length]:
                 logging.error('auth_sha1_v2 data uncorrect auth HMAC-SHA1')
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             pos = common.ord(self.recv_buf[6])
             if pos < 255:
                 pos += 6
             else:
                 pos = struct.unpack('>H', self.recv_buf[7:9])[0] + 6
             out_buf = self.recv_buf[pos:length - 10]
-            if len(out_buf) < 8:
-                self.raw_trans = True
+            if len(out_buf) < 12:
                 self.recv_buf = b''
-                logging.info('auth_sha1_v2: too short')
-                return (b'E', False)
+                logging.info('auth_sha1_v2: too short, data %s' % (binascii.hexlify(out_buf),))
+                return self.not_match_return(self.recv_buf)
             client_id = struct.unpack('<Q', out_buf[:8])[0]
             connection_id = struct.unpack('<I', out_buf[8:12])[0]
             if self.server_info.data.insert(client_id, connection_id):
@@ -565,10 +562,9 @@ class auth_sha1_v2(verify_base):
                 self.client_id = client_id
                 self.connection_id = connection_id
             else:
-                self.raw_trans = True
                 self.recv_buf = b''
                 logging.info('auth_sha1_v2: auth fail, data %s' % (binascii.hexlify(out_buf),))
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             self.recv_buf = self.recv_buf[length:]
             self.has_recv_header = True
 
