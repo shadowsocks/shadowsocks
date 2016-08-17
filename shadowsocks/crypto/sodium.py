@@ -52,10 +52,12 @@ def load_libsodium():
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
     libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
-    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p, c_char_p,
-                                                        c_ulonglong,
-                                                        c_char_p, c_ulong,
-                                                        c_char_p)
+    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p,
+                                                             c_char_p,
+                                                             c_ulonglong,
+                                                             c_char_p,
+                                                             c_ulong,
+                                                             c_char_p)
 
     buf = create_string_buffer(buf_size)
     loaded = True
@@ -135,4 +137,3 @@ if __name__ == '__main__':
     test_chacha20()
     test_salsa20()
     test_chacha20_ietf()
-    
