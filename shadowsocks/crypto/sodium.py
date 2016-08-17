@@ -17,7 +17,7 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-from ctypes import c_char_p, c_int, c_ulonglong, byref, \
+from ctypes import c_char_p, c_int, c_ulonglong, byref, c_ulong, \
     create_string_buffer, c_void_p
 
 from shadowsocks.crypto import util
@@ -29,7 +29,7 @@ loaded = False
 
 buf_size = 2048
 
-# for salsa20 and chacha20
+# for salsa20 and chacha20 and chacha20-ietf
 BLOCK_SIZE = 64
 
 
@@ -51,6 +51,13 @@ def load_libsodium():
                                                         c_ulonglong,
                                                         c_char_p, c_ulonglong,
                                                         c_char_p)
+    libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
+    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p,
+                                                             c_char_p,
+                                                             c_ulonglong,
+                                                             c_char_p,
+                                                             c_ulong,
+                                                             c_char_p)
 
     buf = create_string_buffer(buf_size)
     loaded = True
@@ -68,6 +75,8 @@ class SodiumCrypto(object):
             self.cipher = libsodium.crypto_stream_salsa20_xor_ic
         elif cipher_name == 'chacha20':
             self.cipher = libsodium.crypto_stream_chacha20_xor_ic
+        elif cipher_name == 'chacha20-ietf':
+            self.cipher = libsodium.crypto_stream_chacha20_ietf_xor_ic
         else:
             raise Exception('Unknown cipher')
         # byte counter, not block counter
@@ -97,6 +106,7 @@ class SodiumCrypto(object):
 ciphers = {
     'salsa20': (32, 8, SodiumCrypto),
     'chacha20': (32, 8, SodiumCrypto),
+    'chacha20-ietf': (32, 12, SodiumCrypto),
 }
 
 
@@ -115,6 +125,15 @@ def test_chacha20():
     util.run_cipher(cipher, decipher)
 
 
+def test_chacha20_ietf():
+
+    cipher = SodiumCrypto('chacha20-ietf', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('chacha20-ietf', b'k' * 32, b'i' * 16, 0)
+
+    util.run_cipher(cipher, decipher)
+
+
 if __name__ == '__main__':
     test_chacha20()
     test_salsa20()
+    test_chacha20_ietf()
