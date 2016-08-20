@@ -188,7 +188,7 @@ class auth_sha1(verify_base):
     def __init__(self, method):
         super(auth_sha1, self).__init__(method)
         self.recv_buf = b''
-        self.unit_len = 8100
+        self.unit_len = 8000
         self.decrypt_packet_num = 0
         self.raw_trans = False
         self.has_sent_header = False
