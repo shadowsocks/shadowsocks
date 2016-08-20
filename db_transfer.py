@@ -311,6 +311,8 @@ class DbTransfer(TransferBase):
 
 		rows = self.pull_db_users(conn)
 		conn.close()
+		if len(rows) == 0:
+			logging.warn('no user in db')
 		return rows
 
 	def pull_db_users(self, conn):
@@ -517,5 +519,7 @@ class MuJsonTransfer(TransferBase):
 				except Exception as e:
 					logging.error(e)
 
+		if len(rows) == 0:
+			logging.warn('no user in json file')
 		return rows
 

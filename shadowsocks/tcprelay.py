@@ -114,7 +114,7 @@ class TCPRelayHandler(object):
                                                 config['method'])
         except Exception:
             self._stage = STAGE_DESTROYED
-            logging.error('creater encryptor fail at port %d', server._listen_port)
+            logging.error('create encryptor fail at port %d', server._listen_port)
             return
         self._encrypt_correct = True
         self._obfs = obfs.obfs(config['obfs'])
