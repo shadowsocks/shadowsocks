@@ -311,7 +311,7 @@ class DbTransfer(TransferBase):
 
 		rows = self.pull_db_users(conn)
 		conn.close()
-		if len(rows) == 0:
+		if not rows:
 			logging.warn('no user in db')
 		return rows
 
@@ -439,6 +439,7 @@ class Dbv3Transfer(DbTransfer):
 			rows = []
 			cur.close()
 			conn.commit()
+			logging.warn('None result when select node info from ss_node in db, maybe you set the incorrect node id')
 			return rows
 		cur.close()
 
@@ -519,7 +520,7 @@ class MuJsonTransfer(TransferBase):
 				except Exception as e:
 					logging.error(e)
 
-		if len(rows) == 0:
+		if not rows:
 			logging.warn('no user in json file')
 		return rows
 
