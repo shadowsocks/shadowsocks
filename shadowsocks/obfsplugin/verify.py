@@ -316,9 +316,9 @@ class verify_sha1(verify_base):
                 else:
                     self.raw_trans = True
                     return (self.recv_buf, False)
-            head_size = self.get_head_size(self.recv_buf, 30)
+            head_size = self.get_head_size(self.recv_buf, 65536)
             if len(self.recv_buf) < head_size + 10:
-                return (b'', False)
+                return (b'E', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:head_size], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[head_size:head_size + 10]:
                 logging.error('server_post_decrype data uncorrect auth HMAC-SHA1')
