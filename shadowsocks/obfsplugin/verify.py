@@ -301,6 +301,12 @@ class verify_sha1(verify_base):
     def server_pre_encrypt(self, buf):
         return buf
 
+    def not_match_return(self, buf):
+        self.raw_trans = True
+        if self.method == 'verify_sha1':
+            return (b'E'*64, False)
+        return (buf, False)
+
     def server_post_decrypt(self, buf):
         if self.raw_trans:
             return (buf, False)
@@ -310,19 +316,14 @@ class verify_sha1(verify_base):
             if len(self.recv_buf) < 2:
                 return (b'', False)
             if (ord(self.recv_buf[0]) & 0x10) != 0x10:
-                if self.method == 'verify_sha1':
-                    logging.error('Not One-time authentication header')
-                    return (b'E', False)
-                else:
-                    self.raw_trans = True
-                    return (self.recv_buf, False)
+                return self.not_match_return(self.recv_buf)
             head_size = self.get_head_size(self.recv_buf, 65536)
             if len(self.recv_buf) < head_size + 10:
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:head_size], hashlib.sha1).digest()[:10]
             if sha1data != self.recv_buf[head_size:head_size + 10]:
                 logging.error('server_post_decrype data uncorrect auth HMAC-SHA1')
-                return (b'E', False)
+                return self.not_match_return(self.recv_buf)
             out_buf = to_bytes(chr(ord(self.recv_buf[0]) & 0xEF)) + self.recv_buf[1:head_size]
             self.recv_buf = self.recv_buf[head_size + 10:]
             self.has_recv_header = True
