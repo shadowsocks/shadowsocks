@@ -167,7 +167,7 @@ class http_simple(plain.plain):
         self.recv_buffer += buf
         buf = self.recv_buffer
         if len(buf) > 10:
-            if match_begin(buf, b'GET /') or match_begin(buf, b'POST /'):
+            if match_begin(buf, b'GET ') or match_begin(buf, b'POST '):
                 if len(buf) > 65536:
                     self.recv_buffer = None
                     logging.warn('http_simple: over size')
@@ -237,37 +237,6 @@ class http_post(http_simple):
         if self.method == 'http_post':
             return (b'E'*64, False, False)
         return (buf, True, False)
-
-    def server_decode(self, buf):
-        if self.has_recv_header:
-            return (buf, True, False)
-
-        self.recv_buffer += buf
-        buf = self.recv_buffer
-        if len(buf) > 10:
-            if match_begin(buf, b'GET ') or match_begin(buf, b'POST '):
-                if len(buf) > 65536:
-                    self.recv_buffer = None
-                    logging.warn('http_post: over size')
-                    return self.not_match_return(buf)
-            else: #not http header, run on original protocol
-                self.recv_buffer = None
-                logging.debug('http_post: not match begin')
-                return self.not_match_return(buf)
-        else:
-            return (b'', True, False)
-
-        if b'\r\n\r\n' in buf:
-            datas = buf.split(b'\r\n\r\n', 1)
-            ret_buf = self.get_data_from_http_header(buf)
-            if len(datas) > 1:
-                ret_buf += datas[1]
-            if len(ret_buf) >= 7:
-                self.has_recv_header = True
-                return (ret_buf, True, False)
-            return self.not_match_return(buf)
-        else:
-            return (b'', True, False)
 
 class random_head(plain.plain):
     def __init__(self, method):

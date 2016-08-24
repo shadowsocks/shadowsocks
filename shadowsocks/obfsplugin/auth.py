@@ -298,12 +298,14 @@ class auth_sha1(verify_base):
         self.recv_buf += buf
         out_buf = b''
         if not self.has_recv_header:
-            if len(self.recv_buf) < 4:
+            if len(self.recv_buf) < 6:
                 return (b'', False)
             crc = struct.pack('<I', binascii.crc32(self.server_info.key) & 0xFFFFFFFF)
             if crc != self.recv_buf[:4]:
                 return self.not_match_return(self.recv_buf)
             length = struct.unpack('>H', self.recv_buf[4:6])[0]
+            if length > 2048:
+                return self.not_match_return(self.recv_buf)
             if length > len(self.recv_buf):
                 return (b'', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:length - 10], hashlib.sha1).digest()[:10]
@@ -529,12 +531,14 @@ class auth_sha1_v2(verify_base):
         self.recv_buf += buf
         out_buf = b''
         if not self.has_recv_header:
-            if len(self.recv_buf) < 4:
+            if len(self.recv_buf) < 6:
                 return (b'', False)
             crc = struct.pack('<I', binascii.crc32(self.salt + self.server_info.key) & 0xFFFFFFFF)
             if crc != self.recv_buf[:4]:
                 return self.not_match_return(self.recv_buf)
             length = struct.unpack('>H', self.recv_buf[4:6])[0]
+            if length > 2048:
+                return self.not_match_return(self.recv_buf)
             if length > len(self.recv_buf):
                 return (b'', False)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:length - 10], hashlib.sha1).digest()[:10]
