@@ -19,5 +19,5 @@ SYNCTIME = 600
 #LOG CONFIG
 LOG_ENABLE = False
 LOG_LEVEL = logging.INFO
-LOG_FILE = '/val/log/shadowsocks.log'
+LOG_FILE = '/var/log/shadowsocks.log'
 
