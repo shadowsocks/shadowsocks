@@ -67,7 +67,7 @@ class Manager(object):
             exit(1)
         self._loop.add(self._control_socket,
                        eventloop.POLL_IN, self)
-        self._loop.add_periodic(self.handle_periodic)
+        # self._loop.add_periodic(self.handle_periodic)
 
         port_password = config['port_password']
         del config['port_password']
@@ -106,6 +106,14 @@ class Manager(object):
             logging.error("server not exist at %s:%d" % (config['server'],
                                                          port))
 
+    def stat_port(self, config):
+        port = int(config['server_port'])
+        servers = self._relays.get(port, None)
+        if servers:
+            self._send_control_data(b'{"stat":"ok", "password":"%s"}' % servers[0]._config['password'])
+        else:
+            self._send_control_data(b'{"stat":"ko"}')
+
     def handle_event(self, sock, fd, event):
         if sock == self._control_socket and event == eventloop.POLL_IN:
             data, self._control_client_addr = sock.recvfrom(BUF_SIZE)
@@ -113,22 +121,27 @@ class Manager(object):
             if parsed:
                 command, config = parsed
                 a_config = self._config.copy()
-                if config:
-                    # let the command override the configuration file
-                    a_config.update(config)
-                if 'server_port' not in a_config:
-                    logging.error('can not find server_port in config')
+                if command == 'transfer':
+                    self.handle_periodic()
                 else:
-                    if command == 'add':
-                        self.add_port(a_config)
-                        self._send_control_data(b'ok')
-                    elif command == 'remove':
-                        self.remove_port(a_config)
-                        self._send_control_data(b'ok')
-                    elif command == 'ping':
-                        self._send_control_data(b'pong')
+                    if config:
+                        # let the command override the configuration file
+                        a_config.update(config)
+                    if 'server_port' not in a_config:
+                        logging.error('can not find server_port in config')
                     else:
-                        logging.error('unknown command %s', command)
+                        if command == 'add':
+                            self.add_port(a_config)
+                            self._send_control_data(b'ok')
+                        elif command == 'remove':
+                            self.remove_port(a_config)
+                            self._send_control_data(b'ok')
+                        elif command == 'stat':
+                            self.stat_port(a_config)
+                        elif command == 'ping':
+                            self._send_control_data(b'pong')
+                        else:
+                            logging.error('unknown command %s', command)
 
     def _parse_command(self, data):
         # commands:
@@ -158,7 +171,7 @@ class Manager(object):
                 # use compact JSON format (without space)
                 data = common.to_bytes(json.dumps(data_dict,
                                                   separators=(',', ':')))
-                self._send_control_data(b'stat: ' + data)
+                self._send_control_data(data)
 
         for k, v in self._statistics.items():
             r[k] = v
@@ -170,6 +183,7 @@ class Manager(object):
                 i = 0
         if len(r) > 0:
             send_data(r)
+        self._send_control_data('e')
         self._statistics.clear()
 
     def _send_control_data(self, data):
