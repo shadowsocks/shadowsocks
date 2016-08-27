@@ -13,7 +13,7 @@ CREATE TABLE `bandwidth_log` (
   `data` bigint(20) NOT NULL,
   `time` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 --  Table structure for `user`
@@ -23,6 +23,7 @@ CREATE TABLE `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `u_email` varchar(32) NOT NULL COMMENT '邮件',
   `u_pwd` varchar(32) NOT NULL COMMENT '密码',
+  `u_nickname` varchar(255) NOT NULL COMMENT '昵称',
   `u_status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '用户状态',
   `ss_port` int(11) NOT NULL COMMENT 'ss端口',
   `ss_pwd` varchar(32) NOT NULL COMMENT 'ss密码',
@@ -30,8 +31,8 @@ CREATE TABLE `user` (
   `b_max` bigint(20) NOT NULL COMMENT '可使用最大流量',
   `update_time` int(11) NOT NULL DEFAULT '0' COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `pk_ss_port` (`ss_port`) USING HASH,
-  UNIQUE KEY `pk_u_email` (`u_email`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=422 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `pk_ss_port` (`ss_port`),
+  UNIQUE KEY `pk_u_email` (`u_email`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
 
 SET FOREIGN_KEY_CHECKS = 1;
