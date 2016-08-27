@@ -65,7 +65,7 @@ class DbTransfer(object):
             update_sql='UPDATE user '+\
                        'set b_usage=b_usage+'+str(dt_transfer[port])+\
                        ' where ss_port = '+str(port)
-            insert_sql='insert bandwidth_log value(null,"node1",'+str(port)+','+str(dt_transfer[port])+','+str(int(last_time))+')'
+            insert_sql='insert bandwidth_log value(null,"'+config.NODE+'",'+str(port)+','+str(dt_transfer[port])+','+str(int(last_time))+')'
             logging.info(update_sql)
             cur.execute(update_sql)
             cur.execute(insert_sql)
