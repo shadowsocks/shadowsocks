@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>SS查询系统</title>
+    <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/0.4.3/weui.min.css"/>
+</head>
+<body>
+    <div class="container" id="container">
+      <div class="cell">
+        <form id="loginfrom" action="/login" method="post">
+          <div class="hd">
+            <div style="height: 120px;"></div>
+            <div class="weui_cells_title">SS查询系统</div>
+            <div class="weui_cells weui_cells_form">
+              <div class="weui_cell">
+                  <div class="weui_cell_hd"><label class="weui_label">邮件</label></div>
+                  <div class="weui_cell_bd weui_cell_primary">
+                      <input class="weui_input" name="username" type="text" placeholder="请输入邮件">
+                  </div>
+              </div>
+              <div class="weui_cell">
+                  <div class="weui_cell_hd"><label class="weui_label">邮件</label></div>
+                  <div class="weui_cell_bd weui_cell_primary">
+                      <input class="weui_input" name="password" type="password" placeholder="请输入邮件">
+                  </div>
+              </div>
+            </div>
+          </div>
+          <div class="weui_btn_area">
+              <a class="weui_btn weui_btn_primary" onclick="javascript:formsubmit()">登录</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script type="text/javascript">
+        function formsubmit() {
+            document.getElementById("loginfrom").submit()
+        }
+        function close_error_dialog() {
+            document.getElementById("error_dialog").style.display="none"
+        }
+    </script>
+    {% if errormsg %}
+    <div class="weui_dialog_alert" id="error_dialog">
+        <div class="weui_mask"></div>
+        <div class="weui_dialog">
+            <div class="weui_dialog_hd"><strong class="weui_dialog_title">错误信息</strong></div>
+            <div class="weui_dialog_bd">{{ errormsg }}</div>
+            <div class="weui_dialog_ft">
+                <a href='javascript:close_error_dialog();' class="weui_btn_dialog primary">确定</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

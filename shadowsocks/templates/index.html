@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>SS查询系统</title>
+    <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/0.4.3/weui.min.css"/>
+</head>
+<body>
+    <script type="text/javascript">
+        function show_b(b) {
+           if(b/1024/1024/1024>1){
+              document.write((b/1024/1024/1024).toFixed(2)+"GB")
+           }else if(b/1024/1024>1){
+              document.write((b/1024/1024).toFixed(2)+"MB")
+           }else{
+              document.write((b/1024).toFixed(2)+"KB")
+           }
+        }
+    </script>
+    <div class="container" id="container">
+      <div class="hd">
+        <h1 class="page_title">Welcome {{ user.u_nickname }}</h1>
+        <h3> IP:107.182.191.61</h3>
+        <h3> 加密方式:rc4-md5</h3>
+        <h3> 端口:{{ user.ss_port }}</h3>
+        <h3> 密码:{{ user.ss_pwd }}</h3>
+        <h3> 已用流量:<script>show_b('{{ user.b_usage}}')</script></h3>
+        <h3> 总流量:<script>show_b('{{ user.b_max}}')</script></h3>
+      </div>
+    </div>
+</body>
+</html>
