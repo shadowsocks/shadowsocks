@@ -17,7 +17,7 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-from ctypes import c_char_p, c_int, c_ulonglong, byref, \
+from ctypes import c_char_p, c_int, c_ulong, c_ulonglong, byref, \
     create_string_buffer, c_void_p
 
 from shadowsocks.crypto import util
