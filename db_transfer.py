@@ -286,7 +286,7 @@ class DbTransfer(TransferBase):
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8',
-					ssl={'ca':self.cfg["ssl_enable"],'cert':self.cfg["ssl_enable"],'key':self.cfg["ssl_enable"]})
+					ssl={'ca':self.cfg["ssl_ca"],'cert':self.cfg["ssl_cert"],'key':self.cfg["ssl_key"]})
 		else:
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
@@ -306,7 +306,7 @@ class DbTransfer(TransferBase):
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8',
-					ssl={'ca':self.cfg["ssl_enable"],'cert':self.cfg["ssl_enable"],'key':self.cfg["ssl_enable"]})
+					ssl={'ca':self.cfg["ssl_ca"],'cert':self.cfg["ssl_cert"],'key':self.cfg["ssl_key"]})
 		else:
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
@@ -361,7 +361,7 @@ class Dbv3Transfer(DbTransfer):
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8',
-					ssl={'ca':self.cfg["ssl_enable"],'cert':self.cfg["ssl_enable"],'key':self.cfg["ssl_enable"]})
+					ssl={'ca':self.cfg["ssl_ca"],'cert':self.cfg["ssl_cert"],'key':self.cfg["ssl_key"]})
 		else:
 			conn = cymysql.connect(host=self.cfg["host"], port=self.cfg["port"],
 					user=self.cfg["user"], passwd=self.cfg["password"],
