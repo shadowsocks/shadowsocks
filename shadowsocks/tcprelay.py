@@ -449,6 +449,7 @@ class TCPRelayHandler(object):
 
     def _ota_chunk_data(self, data, data_cb):
         # spec https://shadowsocks.org/en/spec/one-time-auth.html
+        unchunk_data = b''
         while len(data) > 0:
             if self._ota_len == 0:
                 # get DATA.LEN + HMAC-SHA1
@@ -472,11 +473,12 @@ class TCPRelayHandler(object):
                 if onetimeauth_verify(_hash, _data, key) is False:
                     logging.warn('one time auth fail, drop chunk !')
                 else:
-                    data_cb(self._ota_buff_data)
+                    unchunk_data += _data
                     self._ota_chunk_idx += 1
                 self._ota_buff_head = b''
                 self._ota_buff_data = b''
                 self._ota_len = 0
+        data_cb(unchunk_data)
         return
 
     def _ota_chunk_data_gen(self, data):
