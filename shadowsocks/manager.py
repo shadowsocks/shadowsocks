@@ -141,6 +141,8 @@ class Manager(object):
         command, config_json = parts
         try:
             config = shell.parse_json_in_str(config_json)
+            if 'method' in config:
+                config['method'] = common.to_str(config['method'])
             return command, config
         except Exception as e:
             logging.error(e)
