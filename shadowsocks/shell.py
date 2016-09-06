@@ -61,7 +61,7 @@ def exception_handle(self_, err_msg=None, exit_code=None,
                      destroy=False, conn_err=False):
     # self_: if function passes self as first arg
 
-    def process_exception(self, e):
+    def process_exception(e, self=None):
         print_exception(e)
         if err_msg:
             logging.error(err_msg)
@@ -72,8 +72,9 @@ def exception_handle(self_, err_msg=None, exit_code=None,
             return
 
         if conn_err:
+            addr, port = self._client_address[0], self._client_address[1]
             logging.error('%s when handling connection from %s:%d' %
-                          (e, self._client_address[0], self._client_address[1]))
+                          (e, addr, port))
         if self._config['verbose']:
             traceback.print_exc()
         if destroy:
@@ -86,14 +87,14 @@ def exception_handle(self_, err_msg=None, exit_code=None,
                 try:
                     func(self, *args, **kwargs)
                 except Exception as e:
-                    process_exception(self, e)
+                    process_exception(e, self)
         else:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 try:
                     func(*args, **kwargs)
                 except Exception as e:
-                    process_exception(self, e)
+                    process_exception(e)
 
         return wrapper
     return decorator

@@ -399,8 +399,9 @@ class TCPRelayHandler(object):
     @shell.exception_handle(self_=True)
     def _handle_dns_resolved(self, result, error):
         if error:
+            addr, port = self._client_address[0], self._client_address[1]
             logging.error('%s when handling connection from %s:%d' %
-                          (error, self._client_address[0], self._client_address[1]))
+                          (error, addr, port))
             self.destroy()
             return
         if not (result and result[1]):
