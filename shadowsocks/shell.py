@@ -23,6 +23,7 @@ import json
 import sys
 import getopt
 import logging
+import traceback
 
 from functools import wraps
 
@@ -56,19 +57,27 @@ def print_exception(e):
         traceback.print_exc()
 
 
-def exception_handle(self_, err_msg=None, exit_code=None):
-    """
-    :param self_: if function passes self as first arg
-    :param err_msg:
-    :param exit_code:
-    :return:
-    """
-    def process_exception(e):
+def exception_handle(self_, err_msg=None, exit_code=None,
+                     destroy=False, conn_err=False):
+    # self_: if function passes self as first arg
+
+    def process_exception(self, e):
         print_exception(e)
         if err_msg:
             logging.error(err_msg)
         if exit_code:
             sys.exit(1)
+
+        if not self_:
+            return
+
+        if conn_err:
+            logging.error('%s when handling connection from %s:%d' %
+                          (e, self._client_address[0], self._client_address[1]))
+        if self._config['verbose']:
+            traceback.print_exc()
+        if destroy:
+            self.destroy()
 
     def decorator(func):
         if self_:
@@ -77,14 +86,14 @@ def exception_handle(self_, err_msg=None, exit_code=None):
                 try:
                     func(self, *args, **kwargs)
                 except Exception as e:
-                    process_exception(e)
+                    process_exception(self, e)
         else:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 try:
                     func(*args, **kwargs)
                 except Exception as e:
-                    process_exception(e)
+                    process_exception(self, e)
 
         return wrapper
     return decorator
