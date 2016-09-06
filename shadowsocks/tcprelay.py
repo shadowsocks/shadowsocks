@@ -190,21 +190,23 @@ class TCPRelayHandler(object):
             if self._upstream_status != status:
                 self._upstream_status = status
                 dirty = True
-        if dirty:
-            if self._local_sock:
-                event = eventloop.POLL_ERR
-                if self._downstream_status & WAIT_STATUS_WRITING:
-                    event |= eventloop.POLL_OUT
-                if self._upstream_status & WAIT_STATUS_READING:
-                    event |= eventloop.POLL_IN
-                self._loop.modify(self._local_sock, event)
-            if self._remote_sock:
-                event = eventloop.POLL_ERR
-                if self._downstream_status & WAIT_STATUS_READING:
-                    event |= eventloop.POLL_IN
-                if self._upstream_status & WAIT_STATUS_WRITING:
-                    event |= eventloop.POLL_OUT
-                self._loop.modify(self._remote_sock, event)
+        if not dirty:
+            return
+
+        if self._local_sock:
+            event = eventloop.POLL_ERR
+            if self._downstream_status & WAIT_STATUS_WRITING:
+                event |= eventloop.POLL_OUT
+            if self._upstream_status & WAIT_STATUS_READING:
+                event |= eventloop.POLL_IN
+            self._loop.modify(self._local_sock, event)
+        if self._remote_sock:
+            event = eventloop.POLL_ERR
+            if self._downstream_status & WAIT_STATUS_READING:
+                event |= eventloop.POLL_IN
+            if self._upstream_status & WAIT_STATUS_WRITING:
+                event |= eventloop.POLL_OUT
+            self._loop.modify(self._remote_sock, event)
 
     def _write_to_sock(self, data, sock):
         # write data to sock
@@ -247,19 +249,20 @@ class TCPRelayHandler(object):
         return True
 
     def _handle_stage_connecting(self, data):
-        if self._is_local:
-            if self._ota_enable_session:
-                data = self._ota_chunk_data_gen(data)
-            data = self._encryptor.encrypt(data)
-            self._data_to_write_to_remote.append(data)
-        else:
+        if not self._is_local:
             if self._ota_enable_session:
                 self._ota_chunk_data(data,
                                      self._data_to_write_to_remote.append)
             else:
                 self._data_to_write_to_remote.append(data)
-        if self._is_local and not self._fastopen_connected and \
-                self._config['fast_open']:
+            return
+
+        if self._ota_enable_session:
+            data = self._ota_chunk_data_gen(data)
+        data = self._encryptor.encrypt(data)
+        self._data_to_write_to_remote.append(data)
+
+        if self._config['fast_open'] and not self._fastopen_connected:
             # for sslocal and fastopen, we basically wait for data and use
             # sendto to connect
             try:
@@ -403,46 +406,48 @@ class TCPRelayHandler(object):
             self._log_error(error)
             self.destroy()
             return
-        if result and result[1]:
-            ip = result[1]
-            try:
-                self._stage = STAGE_CONNECTING
-                remote_addr = ip
-                if self._is_local:
-                    remote_port = self._chosen_server[1]
-                else:
-                    remote_port = self._remote_address[1]
+        if not (result and result[1]):
+            self.destroy()
+            return
 
-                if self._is_local and self._config['fast_open']:
-                    # for fastopen:
-                    # wait for more data arrive and send them in one SYN
-                    self._stage = STAGE_CONNECTING
-                    # we don't have to wait for remote since it's not
-                    # created
-                    self._update_stream(STREAM_UP, WAIT_STATUS_READING)
-                    # TODO when there is already data in this packet
-                else:
-                    # else do connect
-                    remote_sock = self._create_remote_socket(remote_addr,
-                                                             remote_port)
-                    try:
-                        remote_sock.connect((remote_addr, remote_port))
-                    except (OSError, IOError) as e:
-                        if eventloop.errno_from_exception(e) == \
-                                errno.EINPROGRESS:
-                            pass
-                    self._loop.add(remote_sock,
-                                   eventloop.POLL_ERR | eventloop.POLL_OUT,
-                                   self._server)
-                    self._stage = STAGE_CONNECTING
-                    self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
-                    self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
-                return
-            except Exception as e:
-                shell.print_exception(e)
-                if self._config['verbose']:
-                    traceback.print_exc()
-        self.destroy()
+        ip = result[1]
+        try:
+            self._stage = STAGE_CONNECTING
+            remote_addr = ip
+            if self._is_local:
+                remote_port = self._chosen_server[1]
+            else:
+                remote_port = self._remote_address[1]
+
+            if self._is_local and self._config['fast_open']:
+                # for fastopen:
+                # wait for more data arrive and send them in one SYN
+                self._stage = STAGE_CONNECTING
+                # we don't have to wait for remote since it's not
+                # created
+                self._update_stream(STREAM_UP, WAIT_STATUS_READING)
+                # TODO when there is already data in this packet
+            else:
+                # else do connect
+                remote_sock = self._create_remote_socket(remote_addr,
+                                                         remote_port)
+                try:
+                    remote_sock.connect((remote_addr, remote_port))
+                except (OSError, IOError) as e:
+                    if eventloop.errno_from_exception(e) == \
+                            errno.EINPROGRESS:
+                        pass
+                self._loop.add(remote_sock,
+                               eventloop.POLL_ERR | eventloop.POLL_OUT,
+                               self._server)
+                self._stage = STAGE_CONNECTING
+                self._update_stream(STREAM_UP, WAIT_STATUS_READWRITING)
+                self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
+            return
+        except Exception as e:
+            shell.print_exception(e)
+            if self._config['verbose']:
+                traceback.print_exc()
 
     def _write_to_sock_remote(self, data):
         self._write_to_sock(data, self._remote_sock)
