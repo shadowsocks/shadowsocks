@@ -276,7 +276,7 @@ class DNSResolver(object):
                 content = f.readlines()
                 for line in content:
                     line = line.strip()
-                    if not line and line.startswith(b'nameserver'):
+                    if not (line and line.startswith(b'nameserver')):
                         continue
 
                     parts = line.split()
