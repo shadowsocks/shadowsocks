@@ -23,6 +23,9 @@ import json
 import sys
 import getopt
 import logging
+
+from functools import wraps
+
 from shadowsocks.common import to_bytes, to_str, IPNetwork
 from shadowsocks import encrypt
 
@@ -51,6 +54,40 @@ def print_exception(e):
     if verbose > 0:
         import traceback
         traceback.print_exc()
+
+
+def exception_handle(self_, err_msg=None, exit_code=None):
+    """
+    :param self_: if function passes self as first arg
+    :param err_msg:
+    :param exit_code:
+    :return:
+    """
+    def process_exception(e):
+        print_exception(e)
+        if err_msg:
+            logging.error(err_msg)
+        if exit_code:
+            sys.exit(1)
+
+    def decorator(func):
+        if self_:
+            @wraps(func)
+            def wrapper(self, *args, **kwargs):
+                try:
+                    func(self, *args, **kwargs)
+                except Exception as e:
+                    process_exception(e)
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    func(*args, **kwargs)
+                except Exception as e:
+                    process_exception(e)
+
+        return wrapper
+    return decorator
 
 
 def print_shadowsocks():
