@@ -104,6 +104,8 @@ class TCPRelayHandler(object):
         self._remote_udp = False
         self._config = config
         self._dns_resolver = dns_resolver
+        self._client_address = local_sock.getpeername()[:2]
+        self._accept_address = local_sock.getsockname()[:2]
 
         # TCP Relay works as either sslocal or ssserver
         # if is_local, this is sslocal
@@ -121,26 +123,30 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
+        server_info.client = self._client_address[0]
+        server_info.client_port = self._client_address[1]
         server_info.protocol_param = ''
         server_info.obfs_param = config['obfs_param']
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1440
+        server_info.tcp_mss = 1460
         self._obfs.set_server_info(server_info)
 
         self._protocol = obfs.obfs(config['protocol'])
         server_info = obfs.server_info(server.protocol_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
+        server_info.client = self._client_address[0]
+        server_info.client_port = self._client_address[1]
         server_info.protocol_param = config['protocol_param']
         server_info.obfs_param = ''
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1440
+        server_info.tcp_mss = 1460
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["0.0.0.0:0"])
@@ -154,8 +160,6 @@ class TCPRelayHandler(object):
         self._udp_data_send_buffer = b''
         self._upstream_status = WAIT_STATUS_READING
         self._downstream_status = WAIT_STATUS_INIT
-        self._client_address = local_sock.getpeername()[:2]
-        self._accept_address = local_sock.getsockname()[:2]
         self._remote_address = None
         if 'forbidden_ip' in config:
             self._forbidden_iplist = config['forbidden_ip']

@@ -32,7 +32,7 @@ import hmac
 import hashlib
 
 import shadowsocks
-from shadowsocks import common, lru_cache
+from shadowsocks import common, lru_cache, encrypt
 from shadowsocks.obfsplugin import plain
 from shadowsocks.common import to_bytes, to_str, ord, chr
 
@@ -48,6 +48,9 @@ def create_auth_sha1_v3(method):
 def create_auth_sha1_v4(method):
     return auth_sha1_v4(method)
 
+def create_auth_aes128(method):
+    return auth_aes128(method)
+
 obfs_map = {
         'auth_sha1': (create_auth_sha1,),
         'auth_sha1_compatible': (create_auth_sha1,),
@@ -57,6 +60,7 @@ obfs_map = {
         'auth_sha1_v3_compatible': (create_auth_sha1_v3,),
         'auth_sha1_v4': (create_auth_sha1_v4,),
         'auth_sha1_v4_compatible': (create_auth_sha1_v4,),
+        'auth_aes128': (create_auth_aes128,),
 }
 
 def match_begin(str1, str2):
@@ -1048,3 +1052,257 @@ class auth_sha1_v4(verify_base):
             self.decrypt_packet_num += 1
         return (out_buf, sendback)
 
+class auth_aes128(verify_base):
+    def __init__(self, method):
+        super(auth_aes128, self).__init__(method)
+        self.recv_buf = b''
+        self.unit_len = 8100
+        self.raw_trans = False
+        self.has_sent_header = False
+        self.has_recv_header = False
+        self.client_id = 0
+        self.connection_id = 0
+        self.max_time_dif = 60 * 60 * 24 # time dif (second) setting
+        self.salt = b"auth_aes128"
+        self.no_compatible_method = 'auth_aes128'
+        self.extra_wait_size = struct.unpack('>H', os.urandom(2))[0] % 1024
+        self.pack_id = 0
+        self.recv_id = 0
+
+    def init_data(self):
+        return obfs_auth_v2_data()
+
+    def set_server_info(self, server_info):
+        self.server_info = server_info
+        try:
+            max_client = int(server_info.protocol_param)
+        except:
+            max_client = 64
+        self.server_info.data.set_max_client(max_client)
+
+    def rnd_data(self, buf_size):
+        if buf_size > 1200:
+            return b'\x01'
+
+        if self.pack_id > 4:
+            rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 32)
+        elif buf_size > 400:
+            rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 128)
+        else:
+            rnd_data = os.urandom(struct.unpack('>H', os.urandom(2))[0] % 512)
+
+        if len(rnd_data) < 128:
+            return common.chr(len(rnd_data) + 1) + rnd_data
+        else:
+            return common.chr(255) + struct.pack('<H', len(rnd_data) + 3) + rnd_data
+
+    def pack_data(self, buf):
+        data = self.rnd_data(len(buf)) + buf
+        data_len = len(data) + 8
+        crc = binascii.crc32(struct.pack('<H', data_len)) & 0xFFFF
+        data = struct.pack('<H', crc) + data
+        data = struct.pack('<H', data_len) + data
+        adler32 = (zlib.adler32(data) & 0xFFFFFFFF) ^ self.pack_id
+        self.pack_id = (self.pack_id + 1) & 0xFFFFFFFF
+        data += struct.pack('<I', adler32)
+        return data
+
+    def pack_auth_data(self, auth_data, buf):
+        if len(buf) == 0:
+            return b''
+        if len(buf) > 400:
+            rnd_len = common.ord(os.urandom(1)[0]) % 512
+        else:
+            rnd_len = struct.unpack('<H', os.urandom(2))[0] % 1024
+        data = auth_data
+        data_len = len(buf) + rnd_len + 16 + 10 + 4
+        data = data + struct.pack('<H', data_len) + struct.pack('<H', rnd_len)
+        uid = '\x00' * 4
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(uid + self.server_info.key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
+        data = uid + encryptor.encrypt(data)[16:]
+        data += hmac.new(self.server_info.iv + self.server_info.key, data, hashlib.sha1).digest()[:10]
+        data += os.urandom(rnd_len) + buf
+        crc = binascii.crc32(struct.pack('<H', data_len)) & 0xFFFF
+        data = struct.pack('<H', crc) + data
+        return data
+
+    def auth_data(self):
+        utc_time = int(time.time()) & 0xFFFFFFFF
+        if self.server_info.data.connection_id > 0xFF000000:
+            self.server_info.data.local_client_id = b''
+        if not self.server_info.data.local_client_id:
+            self.server_info.data.local_client_id = os.urandom(4)
+            logging.debug("local_client_id %s" % (binascii.hexlify(self.server_info.data.local_client_id),))
+            self.server_info.data.connection_id = struct.unpack('<I', os.urandom(4))[0] & 0xFFFFFF
+        self.server_info.data.connection_id += 1
+        return b''.join([struct.pack('<I', utc_time),
+                self.server_info.data.local_client_id,
+                struct.pack('<I', self.server_info.data.connection_id)])
+
+    def client_pre_encrypt(self, buf):
+        ret = b''
+        if not self.has_sent_header:
+            head_size = self.get_head_size(buf, 30)
+            datalen = min(len(buf), random.randint(0, 31) + head_size)
+            ret += self.pack_auth_data(self.auth_data(), buf[:datalen])
+            buf = buf[datalen:]
+            self.has_sent_header = True
+        while len(buf) > self.unit_len:
+            ret += self.pack_data(buf[:self.unit_len])
+            buf = buf[self.unit_len:]
+        ret += self.pack_data(buf)
+        return ret
+
+    def client_post_decrypt(self, buf):
+        if self.raw_trans:
+            return buf
+        self.recv_buf += buf
+        out_buf = b''
+        while len(self.recv_buf) > 4:
+            crc = struct.pack('<H', binascii.crc32(self.recv_buf[:2]) & 0xFFFF)
+            if crc != self.recv_buf[2:4]:
+                raise Exception('client_post_decrypt data uncorrect crc')
+            length = struct.unpack('<H', self.recv_buf[:2])[0]
+            if length >= 8192 or length < 7:
+                self.raw_trans = True
+                self.recv_buf = b''
+                raise Exception('client_post_decrypt data error')
+            if length > len(self.recv_buf):
+                break
+
+            if struct.pack('<I', (zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) ^ self.recv_id) != self.recv_buf[length - 4:length]:
+                self.raw_trans = True
+                self.recv_buf = b''
+                raise Exception('client_post_decrypt data uncorrect checksum')
+
+            self.recv_id = (self.recv_id + 1) & 0xFFFFFFFF
+            pos = common.ord(self.recv_buf[4])
+            if pos < 255:
+                pos += 4
+            else:
+                pos = struct.unpack('<H', self.recv_buf[5:7])[0] + 4
+            out_buf += self.recv_buf[pos:length - 4]
+            self.recv_buf = self.recv_buf[length:]
+
+        return out_buf
+
+    def server_pre_encrypt(self, buf):
+        if self.raw_trans:
+            return buf
+        ret = b''
+        while len(buf) > self.unit_len:
+            ret += self.pack_data(buf[:self.unit_len])
+            buf = buf[self.unit_len:]
+        ret += self.pack_data(buf)
+        return ret
+
+    def server_post_decrypt(self, buf):
+        if self.raw_trans:
+            return (buf, False)
+        self.recv_buf += buf
+        out_buf = b''
+        if not self.has_recv_header:
+            if len(self.recv_buf) < 30:
+                return (b'', False)
+            sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, self.recv_buf[:20], hashlib.sha1).digest()[:10]
+            if sha1data != self.recv_buf[20:30]:
+                logging.error('auth_aes128 data uncorrect auth HMAC-SHA1 from %s:%d, data %s' % (self.server_info.client, self.server_info.client_port, binascii.hexlify(self.recv_buf)))
+                if len(self.recv_buf) < 30 + self.extra_wait_size:
+                    return (b'', False)
+                return self.not_match_return(self.recv_buf)
+
+            user_key = self.recv_buf[:4]
+            encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(user_key + self.server_info.key)) + self.salt, 'aes-128-cbc')
+            head = encryptor.decrypt(b'\x00' * 16 + self.recv_buf[4:20] + b'\x00') # need an extra byte or recv empty
+            length = struct.unpack('<H', head[12:14])[0]
+            if len(self.recv_buf) < length:
+                return (b'', False)
+
+            utc_time = struct.unpack('<I', head[:4])[0]
+            client_id = struct.unpack('<I', head[4:8])[0]
+            connection_id = struct.unpack('<I', head[8:12])[0]
+            rnd_len = struct.unpack('<H', head[14:16])[0]
+            if struct.pack('<I', zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) != self.recv_buf[length - 4:length]:
+                logging.info('auth_aes128: checksum error, data %s' % (binascii.hexlify(self.recv_buf[:length]),))
+                return self.not_match_return(self.recv_buf)
+            time_dif = common.int32(utc_time - (int(time.time()) & 0xffffffff))
+            if time_dif < -self.max_time_dif or time_dif > self.max_time_dif:
+                logging.info('auth_aes128: wrong timestamp, time_dif %d, data %s' % (time_dif, binascii.hexlify(head),))
+                return self.not_match_return(self.recv_buf)
+            elif self.server_info.data.insert(client_id, connection_id):
+                self.has_recv_header = True
+                out_buf = self.recv_buf[30 + rnd_len:length - 4]
+                self.client_id = client_id
+                self.connection_id = connection_id
+            else:
+                logging.info('auth_aes128: auth fail, data %s' % (binascii.hexlify(out_buf),))
+                return self.not_match_return(self.recv_buf)
+            self.recv_buf = self.recv_buf[length:]
+            self.has_recv_header = True
+
+        sendback = False
+        while len(self.recv_buf) > 4:
+            crc = struct.pack('<H', binascii.crc32(self.recv_buf[:2]) & 0xFFFF)
+            if crc != self.recv_buf[2:4]:
+                self.raw_trans = True
+                logging.info('auth_aes128: wrong crc')
+                if self.recv_id == 0:
+                    logging.info('auth_aes128: wrong crc')
+                    return (b'E', False)
+                else:
+                    raise Exception('server_post_decrype data error')
+            length = struct.unpack('<H', self.recv_buf[:2])[0]
+            if length >= 8192 or length < 7:
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.recv_id == 0:
+                    logging.info('auth_aes128: over size')
+                    return (b'E', False)
+                else:
+                    raise Exception('server_post_decrype data error')
+            if length > len(self.recv_buf):
+                break
+
+            if struct.pack('<I', (zlib.adler32(self.recv_buf[:length - 4]) & 0xFFFFFFFF) ^ self.recv_id) != self.recv_buf[length - 4:length]:
+                logging.info('auth_aes128: checksum error, data %s' % (binascii.hexlify(self.recv_buf[:length]),))
+                self.raw_trans = True
+                self.recv_buf = b''
+                if self.recv_id == 0:
+                    return (b'E', False)
+                else:
+                    raise Exception('server_post_decrype data uncorrect checksum')
+
+            self.recv_id = (self.recv_id + 1) & 0xFFFFFFFF
+            pos = common.ord(self.recv_buf[4])
+            if pos < 255:
+                pos += 4
+            else:
+                pos = struct.unpack('<H', self.recv_buf[5:7])[0] + 4
+            out_buf += self.recv_buf[pos:length - 4]
+            self.recv_buf = self.recv_buf[length:]
+            if pos == length - 4:
+                sendback = True
+
+        if out_buf:
+            self.server_info.data.update(self.client_id, self.connection_id)
+        return (out_buf, sendback)
+
+    def client_udp_pre_encrypt(self, buf):
+        return buf + struct.pack('<I', zlib.adler32(buf) & 0xFFFFFFFF)
+
+    def client_udp_post_decrypt(self, buf):
+        length = len(buf)
+        data = buf[:-4]
+        if struct.pack('<I', zlib.adler32(data) & 0xFFFFFFFF) != buf[length - 4:]:
+            return b''
+        return data
+
+    def server_udp_pre_encrypt(self, buf):
+        return buf + struct.pack('<I', zlib.adler32(buf) & 0xFFFFFFFF)
+
+    def server_udp_post_decrypt(self, buf):
+        length = len(buf)
+        data = buf[:-4]
+        if struct.pack('<I', zlib.adler32(data) & 0xFFFFFFFF) != buf[length - 4:]:
+            return b''
+        return data

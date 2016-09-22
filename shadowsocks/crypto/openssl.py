@@ -125,6 +125,9 @@ class OpenSSLCrypto(object):
 
 
 ciphers = {
+    'aes-128-cbc': (16, 16, OpenSSLCrypto),
+    'aes-192-cbc': (24, 16, OpenSSLCrypto),
+    'aes-256-cbc': (32, 16, OpenSSLCrypto),
     'aes-128-cfb': (16, 16, OpenSSLCrypto),
     'aes-192-cfb': (24, 16, OpenSSLCrypto),
     'aes-256-cfb': (32, 16, OpenSSLCrypto),
