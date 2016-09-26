@@ -92,7 +92,7 @@ class MuMgr(object):
 
 	def add(self, user):
 		up = {'enable': True, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
-		'protocol': "auth_sha1_v3_compatible",
+		'protocol': "auth_sha1_v4_compatible",
 		'obfs': "tls1.2_ticket_auth_compatible",
 		'transfer_enable': 1125899906842624}
 		up['passwd'] = self.rand_pass()
