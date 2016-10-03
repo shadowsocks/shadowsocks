@@ -1485,6 +1485,9 @@ class auth_aes128_sha1(auth_base):
             mac_key = self.server_info.recv_iv + self.server_info.key
             sha1data = hmac.new(mac_key, self.recv_buf[:3], self.hashfunc).digest()[:4]
             if sha1data != self.recv_buf[3:7]:
+                if self.method == self.no_compatible_method:
+                    if len(self.recv_buf) < 31 + self.extra_wait_size:
+                        return (b'', False)
                 return self.not_match_return(self.recv_buf)
 
             if len(self.recv_buf) < 31:
