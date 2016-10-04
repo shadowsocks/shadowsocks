@@ -153,6 +153,14 @@ class http_simple(plain.plain):
                 return ret_buf
         return b''
 
+    def get_host_from_http_header(self, buf):
+        ret_buf = b''
+        lines = buf.split(b'\r\n')
+        if lines and len(lines) > 4:
+            for line in lines:
+                if match_begin(line, b"Host: "):
+                    return line[6:]
+
     def not_match_return(self, buf):
         self.has_sent_header = True
         self.has_recv_header = True
@@ -182,6 +190,14 @@ class http_simple(plain.plain):
         if b'\r\n\r\n' in buf:
             datas = buf.split(b'\r\n\r\n', 1)
             ret_buf = self.get_data_from_http_header(buf)
+            host = self.get_host_from_http_header(buf)
+            if host and self.server_info.obfs_param:
+                pos = host.find(":")
+                if pos >= 0:
+                    host = host[:pos]
+                hosts = self.server_info.obfs_param.split(',')
+                if host not in hosts:
+                    return self.not_match_return(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
             if len(ret_buf) >= 7:
