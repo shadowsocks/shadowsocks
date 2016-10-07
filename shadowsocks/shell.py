@@ -23,6 +23,10 @@ import json
 import sys
 import getopt
 import logging
+import traceback
+
+from functools import wraps
+
 from shadowsocks.common import to_bytes, to_str, IPNetwork
 from shadowsocks import encrypt
 
@@ -51,6 +55,49 @@ def print_exception(e):
     if verbose > 0:
         import traceback
         traceback.print_exc()
+
+
+def exception_handle(self_, err_msg=None, exit_code=None,
+                     destroy=False, conn_err=False):
+    # self_: if function passes self as first arg
+
+    def process_exception(e, self=None):
+        print_exception(e)
+        if err_msg:
+            logging.error(err_msg)
+        if exit_code:
+            sys.exit(1)
+
+        if not self_:
+            return
+
+        if conn_err:
+            addr, port = self._client_address[0], self._client_address[1]
+            logging.error('%s when handling connection from %s:%d' %
+                          (e, addr, port))
+        if self._config['verbose']:
+            traceback.print_exc()
+        if destroy:
+            self.destroy()
+
+    def decorator(func):
+        if self_:
+            @wraps(func)
+            def wrapper(self, *args, **kwargs):
+                try:
+                    func(self, *args, **kwargs)
+                except Exception as e:
+                    process_exception(e, self)
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    func(*args, **kwargs)
+                except Exception as e:
+                    process_exception(e)
+
+        return wrapper
+    return decorator
 
 
 def print_shadowsocks():
