@@ -136,11 +136,11 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hd:s:b:p:k:l:m:P:o:G:g:c:t:vq'
+        shortopts = 'hd:s:b:p:k:l:m:O:o:G:g:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
                     'version']
     else:
-        shortopts = 'hd:s:p:k:m:P:o:G:g:c:t:vq'
+        shortopts = 'hd:s:p:k:m:O:o:G:g:c:t:vq'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version']
     try:
@@ -174,7 +174,7 @@ def get_config(is_local):
                 config['server'] = to_str(value)
             elif key == '-m':
                 config['method'] = to_str(value)
-            elif key == '-P':
+            elif key == '-O':
                 config['protocol'] = to_str(value)
             elif key == '-o':
                 config['obfs'] = to_str(value)
