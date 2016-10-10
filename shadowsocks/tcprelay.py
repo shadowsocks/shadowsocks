@@ -358,7 +358,7 @@ class TCPRelayHandler(object):
                                  b'\x00\x00\x00\x00\x10\x10'),
                                 self._local_sock)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
-            # ATYP & 0x10 == 1, then OTA is enabled.
+            # ATYP & 0x10 == 0x10, then OTA is enabled.
             if self._ota_enable_session:
                 data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
                 key = self._encryptor.cipher_iv + self._encryptor.key
@@ -458,7 +458,7 @@ class TCPRelayHandler(object):
                     return
                 data_len = self._ota_buff_head[:ONETIMEAUTH_CHUNK_DATA_LEN]
                 self._ota_len = struct.unpack('>H', data_len)[0]
-            length = min(self._ota_len, len(data))
+            length = min(self._ota_len - len(self._ota_buff_data), len(data))
             self._ota_buff_data += data[:length]
             data = data[length:]
             if len(self._ota_buff_data) == self._ota_len:
