@@ -458,7 +458,7 @@ class TCPRelayHandler(object):
                     return
                 data_len = self._ota_buff_head[:ONETIMEAUTH_CHUNK_DATA_LEN]
                 self._ota_len = struct.unpack('>H', data_len)[0]
-            length = min(self._ota_len, len(data))
+            length = min(self._ota_len - len(self._ota_buff_data), len(data))
             self._ota_buff_data += data[:length]
             data = data[length:]
             if len(self._ota_buff_data) == self._ota_len:
