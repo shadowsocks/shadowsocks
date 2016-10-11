@@ -362,7 +362,9 @@ class TCPRelayHandler(object):
             if self._ota_enable_session:
                 data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
                 key = self._encryptor.cipher_iv + self._encryptor.key
-                data += onetimeauth_gen(data, key)
+                _header = data[:header_length]
+                sha110 = onetimeauth_gen(data, key)
+                data = _header + sha110 + data[header_length:]
             data_to_send = self._encryptor.encrypt(data)
             self._data_to_write_to_remote.append(data_to_send)
             # notice here may go into _handle_dns_resolved directly
