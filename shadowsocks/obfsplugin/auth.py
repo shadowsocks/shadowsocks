@@ -141,13 +141,13 @@ class client_queue(object):
             self.re_enable(connection_id)
         self.update()
         if connection_id < self.front:
-            logging.warn('obfs auth: duplicate id')
+            logging.warn('obfs auth: deprecated id, someone replay attack')
             return False
         if connection_id > self.front + 0x4000:
             logging.warn('obfs auth: wrong id')
             return False
         if connection_id in self.alloc:
-            logging.warn('obfs auth: duplicate id 2')
+            logging.warn('obfs auth: duplicate id, someone replay attack')
             return False
         if self.back <= connection_id:
             self.back = connection_id + 1

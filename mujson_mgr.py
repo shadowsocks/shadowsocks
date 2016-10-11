@@ -64,7 +64,7 @@ class MuMgr(object):
 
 	def userinfo(self, user):
 		ret = ""
-		for key in user.keys():
+		for key in sorted(user):
 			if key in ['enable']:
 				continue
 			ret += '\n'
