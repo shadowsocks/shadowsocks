@@ -29,3 +29,6 @@ htmlcov
 
 .DS_Store
 .idea
+
+#Emacs
+.#*
