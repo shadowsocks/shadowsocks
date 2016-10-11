@@ -37,6 +37,8 @@ def main():
 
     config = shell.get_config(False)
 
+    shell.log_shadowsocks_version()
+
     daemon.daemon_exec(config)
 
     if config['port_password']:

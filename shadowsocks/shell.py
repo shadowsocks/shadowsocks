@@ -54,13 +54,30 @@ def print_exception(e):
 
 
 def print_shadowsocks():
-    version = ''
+    version_str = ''
     try:
         import pkg_resources
-        version = pkg_resources.get_distribution('shadowsocks').version
+        version_str = pkg_resources.get_distribution('shadowsocks').version
     except Exception:
-        pass
-    print('Shadowsocks %s' % version)
+        try:
+            from shadowsocks import version
+            version_str = version.version()
+        except Exception:
+            pass
+    print('ShadowsocksR %s' % version_str)
+
+def log_shadowsocks_version():
+    version_str = ''
+    try:
+        import pkg_resources
+        version_str = pkg_resources.get_distribution('shadowsocks').version
+    except Exception:
+        try:
+            from shadowsocks import version
+            version_str = version.version()
+        except Exception:
+            pass
+    logging.info('ShadowsocksR %s' % version_str)
 
 def find_config():
     config_path = 'user-config.json'

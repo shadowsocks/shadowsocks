@@ -197,6 +197,7 @@ class TransferBase(object):
 		last_rows = []
 		db_instance = obj()
 		ServerPool.get_instance()
+		shell.log_shadowsocks_version()
 		import resource
 		logging.info('current process RLIMIT_NOFILE resource: soft %d hard %d'  % resource.getrlimit(resource.RLIMIT_NOFILE))
 		try:
