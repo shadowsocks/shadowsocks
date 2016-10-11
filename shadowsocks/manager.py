@@ -81,10 +81,10 @@ class Manager(object):
         port = int(config['server_port'])
         servers = self._relays.get(port, None)
         if servers:
-            logging.error("server already exists at %s:%d" % (config['server'],
+            logging.error('server already exists at %s:%d' % (config['server'],
                                                               port))
             return
-        logging.info("adding server at %s:%d" % (config['server'], port))
+        logging.info('adding server at %s:%d' % (config['server'], port))
         t = tcprelay.TCPRelay(config, self._dns_resolver, False,
                               self.stat_callback)
         u = udprelay.UDPRelay(config, self._dns_resolver, False,
@@ -97,13 +97,13 @@ class Manager(object):
         port = int(config['server_port'])
         servers = self._relays.get(port, None)
         if servers:
-            logging.info("removing server at %s:%d" % (config['server'], port))
+            logging.info('removing server at %s:%d' % (config['server'], port))
             t, u = servers
             t.close(next_tick=False)
             u.close(next_tick=False)
             del self._relays[port]
         else:
-            logging.error("server not exist at %s:%d" % (config['server'],
+            logging.error('server not exist at %s:%d' % (config['server'],
                                                          port))
 
     def handle_event(self, sock, fd, event):
@@ -132,8 +132,8 @@ class Manager(object):
 
     def _parse_command(self, data):
         # commands:
-        # add: {"server_port": 8000, "password": "foobar"}
-        # remove: {"server_port": 8000"}
+        # add: {'server_port': 8000, 'password': 'foobar'}
+        # remove: {'server_port': 8000'}
         data = common.to_str(data)
         parts = data.split(':', 1)
         if len(parts) < 2:

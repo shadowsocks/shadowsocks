@@ -111,7 +111,7 @@ def inet_pton(family, addr):
                 break
         return b''.join((chr(i // 256) + chr(i % 256)) for i in dbyts)
     else:
-        raise RuntimeError("What family?")
+        raise RuntimeError('What family?')
 
 
 def is_ip(address):
@@ -210,30 +210,30 @@ class IPNetwork(object):
         list(map(self.add_network, addrs))
 
     def add_network(self, addr):
-        if addr is "":
+        if addr is '':
             return
         block = addr.split('/')
         addr_family = is_ip(block[0])
         addr_len = IPNetwork.ADDRLENGTH[addr_family]
         if addr_family is socket.AF_INET:
-            ip, = struct.unpack("!I", socket.inet_aton(block[0]))
+            ip, = struct.unpack('!I', socket.inet_aton(block[0]))
         elif addr_family is socket.AF_INET6:
-            hi, lo = struct.unpack("!QQ", inet_pton(addr_family, block[0]))
+            hi, lo = struct.unpack('!QQ', inet_pton(addr_family, block[0]))
             ip = (hi << 64) | lo
         else:
-            raise Exception("Not a valid CIDR notation: %s" % addr)
+            raise Exception('Not a valid CIDR notation: %s' % addr)
         if len(block) is 1:
             prefix_size = 0
             while (ip & 1) == 0 and ip is not 0:
                 ip >>= 1
                 prefix_size += 1
-            logging.warn("You did't specify CIDR routing prefix size for %s, "
-                         "implicit treated as %s/%d" % (addr, addr, addr_len))
+            logging.warn('You did\'t specify CIDR routing prefix size for %s, '
+                         'implicit treated as %s/%d' % (addr, addr, addr_len))
         elif block[1].isdigit() and int(block[1]) <= addr_len:
             prefix_size = addr_len - int(block[1])
             ip >>= prefix_size
         else:
-            raise Exception("Not a valid CIDR notation: %s" % addr)
+            raise Exception('Not a valid CIDR notation: %s' % addr)
         if addr_family is socket.AF_INET:
             self._network_list_v4.append((ip, prefix_size))
         else:
@@ -242,11 +242,11 @@ class IPNetwork(object):
     def __contains__(self, addr):
         addr_family = is_ip(addr)
         if addr_family is socket.AF_INET:
-            ip, = struct.unpack("!I", socket.inet_aton(addr))
+            ip, = struct.unpack('!I', socket.inet_aton(addr))
             return any(map(lambda n_ps: n_ps[0] == ip >> n_ps[1],
                            self._network_list_v4))
         elif addr_family is socket.AF_INET6:
-            hi, lo = struct.unpack("!QQ", inet_pton(addr_family, addr))
+            hi, lo = struct.unpack('!QQ', inet_pton(addr_family, addr))
             ip = (hi << 64) | lo
             return any(map(lambda n_ps: n_ps[0] == ip >> n_ps[1],
                            self._network_list_v6))

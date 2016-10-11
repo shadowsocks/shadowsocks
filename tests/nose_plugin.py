@@ -20,7 +20,7 @@ from nose.plugins.base import Plugin
 
 class ExtensionPlugin(Plugin):
 
-    name = "ExtensionPlugin"
+    name = 'ExtensionPlugin'
 
     def options(self, parser, env):
         Plugin.options(self, parser, env)

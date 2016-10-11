@@ -6,10 +6,10 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="shadowsocks",
-    version="2.8.2",
+    name='shadowsocks',
+    version='2.8.2',
     license='http://www.apache.org/licenses/LICENSE-2.0',
-    description="A fast tunnel proxy that help you get through firewalls",
+    description='A fast tunnel proxy that help you get through firewalls',
     author='clowwindy',
     author_email='clowwindy42@gmail.com',
     url='https://github.com/shadowsocks/shadowsocks',
@@ -18,11 +18,11 @@ setup(
         'shadowsocks': ['README.rst', 'LICENSE']
     },
     install_requires=[],
-    entry_points="""
+    entry_points='''
     [console_scripts]
     sslocal = shadowsocks.local:main
     ssserver = shadowsocks.server:main
-    """,
+    ''',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',

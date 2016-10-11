@@ -119,7 +119,7 @@ class UDPRelay(object):
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
         if len(addrs) == 0:
-            raise Exception("UDP can't get addrinfo for %s:%d" %
+            raise Exception('UDP can\'t get addrinfo for %s:%d' %
                             (self._listen_addr, self._listen_port))
         af, socktype, proto, canonname, sa = addrs[0]
         server_socket = socket.socket(af, socktype, proto)

@@ -366,7 +366,7 @@ class TCPRelayHandler(object):
         addrs = socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM,
                                    socket.SOL_TCP)
         if len(addrs) == 0:
-            raise Exception("getaddrinfo failed for %s:%d" % (ip, port))
+            raise Exception('getaddrinfo failed for %s:%d' % (ip, port))
         af, socktype, proto, canonname, sa = addrs[0]
         if self._forbidden_iplist:
             if common.to_str(sa[0]) in self._forbidden_iplist:
@@ -461,7 +461,7 @@ class TCPRelayHandler(object):
         return
 
     def _ota_chunk_data_gen(self, data):
-        data_len = struct.pack(">H", len(data))
+        data_len = struct.pack('>H', len(data))
         index = struct.pack('>I', self._ota_chunk_idx)
         key = self._encryptor.cipher_iv + index
         sha110 = onetimeauth_gen(data, key)
@@ -669,7 +669,7 @@ class TCPRelay(object):
         addrs = socket.getaddrinfo(listen_addr, listen_port, 0,
                                    socket.SOCK_STREAM, socket.SOL_TCP)
         if len(addrs) == 0:
-            raise Exception("can't get addrinfo for %s:%d" %
+            raise Exception('can\'t get addrinfo for %s:%d' %
                             (listen_addr, listen_port))
         af, socktype, proto, canonname, sa = addrs[0]
         server_socket = socket.socket(af, socktype, proto)

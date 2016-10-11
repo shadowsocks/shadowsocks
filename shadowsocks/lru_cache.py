@@ -32,7 +32,7 @@ import time
 
 
 class LRUCache(collections.MutableMapping):
-    """This class is not thread safe"""
+    '''This class is not thread safe'''
 
     def __init__(self, timeout=60, close_callback=None, *args, **kwargs):
         self.timeout = timeout

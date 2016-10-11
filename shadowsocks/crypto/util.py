@@ -31,9 +31,9 @@ def find_library_nt(name):
         fname = os.path.join(directory, name)
         if os.path.isfile(fname):
             results.append(fname)
-        if fname.lower().endswith(".dll"):
+        if fname.lower().endswith('.dll'):
             continue
-        fname = fname + ".dll"
+        fname = fname + '.dll'
         if os.path.isfile(fname):
             results.append(fname)
     return results
@@ -54,7 +54,7 @@ def find_library(possible_lib_names, search_symbol, library_name):
         lib_names.append('lib' + lib_name)
 
     for name in lib_names:
-        if os.name == "nt":
+        if os.name == 'nt':
             paths.extend(find_library_nt(name))
         else:
             path = ctypes.util.find_library(name)
