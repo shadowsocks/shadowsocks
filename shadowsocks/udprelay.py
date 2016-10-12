@@ -907,6 +907,7 @@ class UDPRelay(object):
         server_info.obfs_param = ''
         server_info.iv = b''
         server_info.recv_iv = b''
+        server_info.key_str = common.to_bytes(config['password'])
         server_info.key = encrypt.encrypt_key(self._password, self._method)
         server_info.head_len = 30
         server_info.tcp_mss = 1440

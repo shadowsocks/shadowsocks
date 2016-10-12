@@ -1395,8 +1395,8 @@ class auth_aes128_sha1(auth_base):
         encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.server_info.key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
         data = uid + encryptor.encrypt(data)[16:]
         data += hmac.new(mac_key, data, self.hashfunc).digest()[:4]
-        check_head = os.urandom(3)
-        check_head += hmac.new(mac_key, check_head, self.hashfunc).digest()[:4]
+        check_head = os.urandom(1)
+        check_head += hmac.new(mac_key, check_head, self.hashfunc).digest()[:6]
         data = check_head + data + os.urandom(rnd_len) + buf
         data += hmac.new(self.user_key, data, self.hashfunc).digest()[:4]
         return data
@@ -1483,8 +1483,8 @@ class auth_aes128_sha1(auth_base):
             if len(self.recv_buf) < 7:
                 return (b'', False)
             mac_key = self.server_info.recv_iv + self.server_info.key
-            sha1data = hmac.new(mac_key, self.recv_buf[:3], self.hashfunc).digest()[:4]
-            if sha1data != self.recv_buf[3:7]:
+            sha1data = hmac.new(mac_key, self.recv_buf[:1], self.hashfunc).digest()[:6]
+            if sha1data != self.recv_buf[1:7]:
                 if self.method == self.no_compatible_method:
                     if len(self.recv_buf) < 31 + self.extra_wait_size:
                         return (b'', False)

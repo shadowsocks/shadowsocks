@@ -129,6 +129,7 @@ class TCPRelayHandler(object):
         server_info.obfs_param = config['obfs_param']
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
+        server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
         server_info.tcp_mss = 1460
@@ -144,6 +145,7 @@ class TCPRelayHandler(object):
         server_info.obfs_param = ''
         server_info.iv = self._encryptor.cipher_iv
         server_info.recv_iv = b''
+        server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
         server_info.tcp_mss = 1460
