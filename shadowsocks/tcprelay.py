@@ -532,6 +532,24 @@ class TCPRelayHandler(object):
                 traceback.print_exc()
             self.destroy()
 
+    def _socket_bind_addr(self, sock, af):
+        bind_addr = ''
+        if self._bind and af == socket.AF_INET:
+            bind_addr = self._bind
+        elif self._bindv6 and af == socket.AF_INET6:
+            bind_addr = self._bindv6
+        else:
+            bind_addr = self._accept_address[0]
+
+        bind_addr = bind_addr.replace("::ffff:", "")
+        if bind_addr in self._ignore_bind_list:
+            bind_addr = None
+        if bind_addr:
+            local_addrs = socket.getaddrinfo(bind_addr, 0, 0, socket.SOCK_STREAM, socket.SOL_TCP)
+            if local_addrs[0][0] == af:
+                logging.debug("bind %s" % (bind_addr,))
+                sock.bind((bind_addr, 0))
+
     def _create_remote_socket(self, ip, port):
         if self._remote_udp:
             addrs_v6 = socket.getaddrinfo("::", 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -568,26 +586,14 @@ class TCPRelayHandler(object):
         remote_sock.setblocking(False)
         if self._remote_udp:
             remote_sock_v6.setblocking(False)
-        else:
-            remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 
             if not self._is_local:
-                bind_addr = ''
-                if self._bind and af == socket.AF_INET:
-                    bind_addr = self._bind
-                elif self._bindv6 and af == socket.AF_INET6:
-                    bind_addr = self._bindv6
-                else:
-                    bind_addr = self._accept_address[0]
-
-                bind_addr = bind_addr.replace("::ffff:", "")
-                if bind_addr in self._ignore_bind_list:
-                    bind_addr = None
-                if bind_addr:
-                    local_addrs = socket.getaddrinfo(bind_addr, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
-                    if local_addrs[0][0] == af:
-                        logging.debug("bind %s" % (bind_addr,))
-                        remote_sock.bind((bind_addr, 0))
+                self._socket_bind_addr(remote_sock, af)
+                self._socket_bind_addr(remote_sock_v6, af)
+        else:
+            remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+            if not self._is_local:
+                self._socket_bind_addr(remote_sock, af)
         return remote_sock
 
     def _handle_dns_resolved(self, result, error):

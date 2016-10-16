@@ -923,6 +923,10 @@ class UDPRelay(object):
         self._timeout_offset = 0   # last checked position for timeout
         self._handler_to_timeouts = {}  # key: handler value: index in timeouts
 
+        self._bind = config.get('out_bind', '')
+        self._bindv6 = config.get('out_bindv6', '')
+        self._ignore_bind_list = config.get('ignore_bind', [])
+
         if 'forbidden_ip' in config:
             self._forbidden_iplist = config['forbidden_ip']
         else:
@@ -1010,6 +1014,22 @@ class UDPRelay(object):
         #raise Exception('can not parse header')
         logging.warn("Protocol ERROR, UDP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
 
+    def _socket_bind_addr(self, sock, af):
+        bind_addr = ''
+        if self._bind and af == socket.AF_INET:
+            bind_addr = self._bind
+        elif self._bindv6 and af == socket.AF_INET6:
+            bind_addr = self._bindv6
+
+        bind_addr = bind_addr.replace("::ffff:", "")
+        if bind_addr in self._ignore_bind_list:
+            bind_addr = None
+        if bind_addr:
+            local_addrs = socket.getaddrinfo(bind_addr, 0, 0, socket.SOCK_STREAM, socket.SOL_TCP)
+            if local_addrs[0][0] == af:
+                logging.debug("bind %s" % (bind_addr,))
+                sock.bind((bind_addr, 0))
+
     def _handle_server(self):
         server = self._server_socket
         data, r_addr = server.recvfrom(BUF_SIZE)
@@ -1045,7 +1065,7 @@ class UDPRelay(object):
 
             if type(data) is tuple:
                 return
-                return self._handle_tcp_over_udp(data, r_addr)
+                #return self._handle_tcp_over_udp(data, r_addr)
 
         try:
             header_result = parse_header(data)
@@ -1094,6 +1114,7 @@ class UDPRelay(object):
                     return
             client = socket.socket(af, socktype, proto)
             client.setblocking(False)
+            self._socket_bind_addr(client, af)
             is_dns = False
             if len(data) > 20 and data[11:19] == b"\x00\x01\x00\x00\x00\x00\x00\x00":
                 is_dns = True

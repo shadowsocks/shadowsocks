@@ -165,7 +165,7 @@ class http_simple(plain.plain):
         self.has_sent_header = True
         self.has_recv_header = True
         if self.method == 'http_simple':
-            return (b'E'*64, False, False)
+            return (b'E'*2048, False, False)
         return (buf, True, False)
 
     def server_decode(self, buf):
@@ -251,7 +251,7 @@ class http_post(http_simple):
         self.has_sent_header = True
         self.has_recv_header = True
         if self.method == 'http_post':
-            return (b'E'*64, False, False)
+            return (b'E'*2048, False, False)
         return (buf, True, False)
 
 class random_head(plain.plain):
@@ -300,7 +300,7 @@ class random_head(plain.plain):
         if crc != 0xffffffff:
             self.has_sent_header = True
             if self.method == 'random_head':
-                return (b'E'*64, False, False)
+                return (b'E'*2048, False, False)
             return (buf, True, False)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)

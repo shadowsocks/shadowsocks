@@ -160,7 +160,7 @@ class verify_simple(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -170,7 +170,7 @@ class verify_simple(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect CRC32')
 
@@ -245,7 +245,7 @@ class verify_deflate(verify_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E'*64, False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -304,7 +304,7 @@ class verify_sha1(verify_base):
     def not_match_return(self, buf):
         self.raw_trans = True
         if self.method == 'verify_sha1':
-            return (b'E'*64, False)
+            return (b'E'*2048, False)
         return (buf, False)
 
     def server_post_decrypt(self, buf):

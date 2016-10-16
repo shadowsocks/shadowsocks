@@ -110,7 +110,7 @@ class auth_base(plain.plain):
     def not_match_return(self, buf):
         self.raw_trans = True
         if self.method == self.no_compatible_method:
-            return (b'E'*64, False)
+            return (b'E'*2048, False)
         return (buf, False)
 
 class client_queue(object):
@@ -367,7 +367,7 @@ class auth_sha1(auth_base):
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
                     logging.info('auth_sha1: over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -378,7 +378,7 @@ class auth_sha1(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
@@ -601,7 +601,7 @@ class auth_sha1_v2(auth_base):
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
                     logging.info('auth_sha1_v2: over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -612,7 +612,7 @@ class auth_sha1_v2(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
@@ -810,7 +810,7 @@ class auth_sha1_v3(auth_base):
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
                     logging.info('auth_sha1_v3: over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -821,7 +821,7 @@ class auth_sha1_v3(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
@@ -1027,7 +1027,7 @@ class auth_sha1_v4(auth_base):
                 logging.info('auth_sha1_v4: wrong crc')
                 if self.decrypt_packet_num == 0:
                     logging.info('auth_sha1_v4: wrong crc')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             length = struct.unpack('>H', self.recv_buf[:2])[0]
@@ -1036,7 +1036,7 @@ class auth_sha1_v4(auth_base):
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
                     logging.info('auth_sha1_v4: over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -1047,7 +1047,7 @@ class auth_sha1_v4(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.decrypt_packet_num == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
@@ -1263,7 +1263,7 @@ class auth_aes128(auth_base):
                 logging.info('auth_aes128: wrong crc')
                 if self.recv_id == 0:
                     logging.info('auth_aes128: wrong crc')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             length = struct.unpack('<H', self.recv_buf[:2])[0]
@@ -1272,7 +1272,7 @@ class auth_aes128(auth_base):
                 self.recv_buf = b''
                 if self.recv_id == 0:
                     logging.info('auth_aes128: over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -1283,7 +1283,7 @@ class auth_aes128(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.recv_id == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
@@ -1539,7 +1539,7 @@ class auth_aes128_sha1(auth_base):
                 logging.info(self.no_compatible_method + ': wrong crc')
                 if self.recv_id == 0:
                     logging.info(self.no_compatible_method + ': wrong crc')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             length = struct.unpack('<H', self.recv_buf[:2])[0]
@@ -1548,7 +1548,7 @@ class auth_aes128_sha1(auth_base):
                 self.recv_buf = b''
                 if self.recv_id == 0:
                     logging.info(self.no_compatible_method + ': over size')
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
             if length > len(self.recv_buf):
@@ -1559,7 +1559,7 @@ class auth_aes128_sha1(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.recv_id == 0:
-                    return (b'E', False)
+                    return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data uncorrect checksum')
 
