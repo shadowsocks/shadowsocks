@@ -149,9 +149,10 @@ class tls_ticket_auth(plain.plain):
             return buf
         if self.handshake_status == 8:
             ret = b''
-            while len(buf) > 8192:
-                ret += b"\x17" + self.tls_version + struct.pack('>H', 8192) + buf[:8192]
-                buf = buf[8192:]
+            while len(buf) > 4096:
+                size = struct.unpack('>H', os.urandom(2))[0] % 4096 + 100
+                ret += b"\x17" + self.tls_version + struct.pack('>H', size) + buf[:size]
+                buf = buf[size:]
             if len(buf) > 0:
                 ret += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
             return ret
@@ -178,7 +179,7 @@ class tls_ticket_auth(plain.plain):
             ret = b''
             self.recv_buffer += buf
             while len(self.recv_buffer) > 5:
-                if ord(self.recv_buffer[0]) != 0x17:
+                if ord(self.recv_buffer[0]) != 0x17 or ord(self.recv_buffer[1]) != 0x3 or ord(self.recv_buffer[2]) != 0x3:
                     logging.info("data = %s" % (binascii.hexlify(self.recv_buffer)))
                     raise Exception('server_decode appdata error')
                 size = struct.unpack('>H', self.recv_buffer[3:5])[0]

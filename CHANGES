@@ -1,3 +1,9 @@
+2.9.5.1 2016-10-17
+- tls1.2_ticket_auth random packet size
+
+2.9.5.1 2016-10-16
+- UDP bind address
+
 2.9.5 2016-10-13
 - add auth_aes128_md5 and auth_aes128_sha1
 
