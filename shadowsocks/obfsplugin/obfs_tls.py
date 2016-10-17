@@ -149,7 +149,7 @@ class tls_ticket_auth(plain.plain):
             return buf
         if self.handshake_status == 8:
             ret = b''
-            while len(buf) > 4096:
+            while len(buf) > 4196:
                 size = struct.unpack('>H', os.urandom(2))[0] % 4096 + 100
                 ret += b"\x17" + self.tls_version + struct.pack('>H', size) + buf[:size]
                 buf = buf[size:]
