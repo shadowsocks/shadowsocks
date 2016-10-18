@@ -84,7 +84,14 @@ class tls_ticket_auth(plain.plain):
         if self.handshake_status == -1:
             return buf
         if self.handshake_status == 8:
-            return b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
+            ret = b''
+            while len(buf) > 2048:
+                size = min(struct.unpack('>H', os.urandom(2))[0] % 4096 + 100, len(buf))
+                ret += b"\x17" + self.tls_version + struct.pack('>H', size) + buf[:size]
+                buf = buf[size:]
+            if len(buf) > 0:
+                ret += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
+            return ret
         self.send_buffer += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
         if self.handshake_status == 0:
             self.handshake_status = 1
@@ -149,8 +156,8 @@ class tls_ticket_auth(plain.plain):
             return buf
         if self.handshake_status == 8:
             ret = b''
-            while len(buf) > 4196:
-                size = struct.unpack('>H', os.urandom(2))[0] % 4096 + 100
+            while len(buf) > 2048:
+                size = min(struct.unpack('>H', os.urandom(2))[0] % 4096 + 100, len(buf))
                 ret += b"\x17" + self.tls_version + struct.pack('>H', size) + buf[:size]
                 buf = buf[size:]
             if len(buf) > 0:
