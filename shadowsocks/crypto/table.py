@@ -73,7 +73,7 @@ class NoneCipher(object):
         return data
 
 ciphers = {
-    'none': (0, 0, NoneCipher),
+    'none': (16, 0, NoneCipher),
     'table': (0, 0, TableCipher)
 }
 
