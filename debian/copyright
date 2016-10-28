@@ -2,12 +2,12 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: shadowsocks
 Source: https://github.com/shadowsocks/shadowsocks
 
-Files: debian/*
-Copyright: 2016 Shell.Xu <shell909090@gmail.com>
-License: Apache-2.0
-
 Files: *
 Copyright: 2014 clowwindy <clowwindy42@gmail.com>
+License: Apache-2.0
+
+Files: debian/*
+Copyright: 2016 Shell.Xu <shell909090@gmail.com>
 License: Apache-2.0
 
 License: Apache-2.0
