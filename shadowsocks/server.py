@@ -41,6 +41,9 @@ def main():
 
     daemon.daemon_exec(config)
 
+    import resource
+    logging.info('current process RLIMIT_NOFILE resource: soft %d hard %d'  % resource.getrlimit(resource.RLIMIT_NOFILE))
+
     if config['port_password']:
         pass
     else:

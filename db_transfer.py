@@ -301,10 +301,20 @@ class DbTransfer(TransferBase):
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8')
 
-		cur = conn.cursor()
-		cur.execute(query_sql)
-		cur.close()
-		conn.commit()
+		try:
+			cur = conn.cursor()
+			try:
+				cur.execute(query_sql)
+			except Exception as e:
+				logging.error(e)
+				update_transfer = {}
+
+			cur.close()
+			conn.commit()
+		except Exception as e:
+			logging.error(e)
+			update_transfer = {}
+
 		conn.close()
 		return update_transfer
 
@@ -321,8 +331,13 @@ class DbTransfer(TransferBase):
 					user=self.cfg["user"], passwd=self.cfg["password"],
 					db=self.cfg["db"], charset='utf8')
 
-		rows = self.pull_db_users(conn)
+		try:
+			rows = self.pull_db_users(conn)
+		except Exception as e:
+			logging.error(e)
+			rows = []
 		conn.close()
+
 		if not rows:
 			logging.warn('no user in db')
 		return rows
@@ -414,19 +429,28 @@ class Dbv3Transfer(DbTransfer):
 						' END, t = ' + str(int(last_time)) + \
 						' WHERE port IN (%s)' % query_sub_in
 			cur = conn.cursor()
-			cur.execute(query_sql)
+			try:
+				cur.execute(query_sql)
+			except Exception as e:
+				logging.error(e)
 			cur.close()
 
 		try:
 			cur = conn.cursor()
-			cur.execute("INSERT INTO `ss_node_online_log` (`id`, `node_id`, `online_user`, `log_time`) VALUES (NULL, '" + \
+			try:
+				cur.execute("INSERT INTO `ss_node_online_log` (`id`, `node_id`, `online_user`, `log_time`) VALUES (NULL, '" + \
 					str(self.cfg["node_id"]) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
+			except Exception as e:
+				logging.error(e)
 			cur.close()
 
 			cur = conn.cursor()
-			cur.execute("INSERT INTO `ss_node_info_log` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
+			try:
+				cur.execute("INSERT INTO `ss_node_info_log` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
 					str(self.cfg["node_id"]) + "', '" + str(self.uptime()) + "', '" + \
 					str(self.load()) + "', unix_timestamp()); ")
+			except Exception as e:
+				logging.error(e)
 			cur.close()
 		except:
 			logging.warn('no `ss_node_online_log` or `ss_node_info_log` in db')
@@ -444,8 +468,12 @@ class Dbv3Transfer(DbTransfer):
 		cur = conn.cursor()
 
 		node_info_keys = ['traffic_rate']
-		cur.execute("SELECT " + ','.join(node_info_keys) +" FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
-		nodeinfo = cur.fetchone()
+		try:
+			cur.execute("SELECT " + ','.join(node_info_keys) +" FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
+			nodeinfo = cur.fetchone()
+		except Exception as e:
+			logging.error(e)
+			nodeinfo = None
 
 		if nodeinfo == None:
 			rows = []
@@ -461,13 +489,16 @@ class Dbv3Transfer(DbTransfer):
 		self.cfg['transfer_mul'] = float(node_info_dict['traffic_rate'])
 
 		cur = conn.cursor()
-		cur.execute("SELECT " + ','.join(keys) + " FROM user")
-		rows = []
-		for r in cur.fetchall():
-			d = {}
-			for column in range(len(keys)):
-				d[keys[column]] = r[column]
-			rows.append(d)
+		try:
+			cur.execute("SELECT " + ','.join(keys) + " FROM user")
+			rows = []
+			for r in cur.fetchall():
+				d = {}
+				for column in range(len(keys)):
+					d[keys[column]] = r[column]
+				rows.append(d)
+		except Exception as e:
+			logging.error(e)
 		cur.close()
 		return rows
 
