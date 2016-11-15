@@ -122,10 +122,7 @@ class TCPRelayHandler(object):
         self._stage = STAGE_INIT
         self._encryptor = encrypt.Encryptor(config['password'],
                                             config['method'])
-        if 'one_time_auth' in config and config['one_time_auth']:
-            self._ota_enable = True
-        else:
-            self._ota_enable = False
+        self._ota_enable = config.get('one_time_auth', False)
         self._ota_enable_session = self._ota_enable
         self._ota_buff_head = b''
         self._ota_buff_data = b''
@@ -138,10 +135,7 @@ class TCPRelayHandler(object):
         self._downstream_status = WAIT_STATUS_INIT
         self._client_address = local_sock.getpeername()[:2]
         self._remote_address = None
-        if 'forbidden_ip' in config:
-            self._forbidden_iplist = config['forbidden_ip']
-        else:
-            self._forbidden_iplist = None
+        self._forbidden_iplist = config.get('forbidden_ip')
         if is_local:
             self._chosen_server = self._get_a_server()
         fd_to_handlers[local_sock.fileno()] = self
