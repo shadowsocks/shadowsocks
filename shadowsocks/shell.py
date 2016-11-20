@@ -125,6 +125,22 @@ def check_config(config, is_local):
         # no need to specify configuration for daemon stop
         return
 
+    if is_local:
+        if config.get('server', None) is None:
+            logging.error('server addr not specified')
+            print_local_help()
+            sys.exit(2)
+        else:
+            config['server'] = to_str(config['server'])
+    else:
+        config['server'] = to_str(config.get('server', '0.0.0.0'))
+        try:
+            config['forbidden_ip'] = \
+                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
+        except Exception as e:
+            logging.error(e)
+            sys.exit(2)
+
     if is_local and not config.get('password', None):
         logging.error('password not specified')
         print_help(is_local)
@@ -280,21 +296,6 @@ def get_config(is_local):
     config['local_port'] = config.get('local_port', 1080)
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
-    if is_local:
-        if config.get('server', None) is None:
-            logging.error('server addr not specified')
-            print_local_help()
-            sys.exit(2)
-        else:
-            config['server'] = to_str(config['server'])
-    else:
-        config['server'] = to_str(config.get('server', '0.0.0.0'))
-        try:
-            config['forbidden_ip'] = \
-                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
-        except Exception as e:
-            logging.error(e)
-            sys.exit(2)
     config['server_port'] = config.get('server_port', 8388)
 
     logging.getLogger('').handlers = []
