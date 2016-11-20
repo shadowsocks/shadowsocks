@@ -52,6 +52,15 @@ To check the log:
 Check all the options via `-h`. You can also use a [Configuration] file
 instead.
 
+### Usage with Config File
+
+[Create configeration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
+
+To start:
+
+    ssserver -c /etc/shadowsocks.json
+
+
 Documentation
 -------------
 
