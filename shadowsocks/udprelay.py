@@ -98,10 +98,7 @@ class UDPRelay(object):
         self._password = common.to_bytes(config['password'])
         self._method = config['method']
         self._timeout = config['timeout']
-        if 'one_time_auth' in config and config['one_time_auth']:
-            self._ota_enable = True
-        else:
-            self._ota_enable = False
+        self._ota_enable = config.get('one_time_auth', False)
         self._ota_enable_session = self._ota_enable
         self._is_local = is_local
         self._cache = lru_cache.LRUCache(timeout=config['timeout'],
@@ -112,11 +109,7 @@ class UDPRelay(object):
         self._eventloop = None
         self._closed = False
         self._sockets = set()
-        if 'forbidden_ip' in config:
-            self._forbidden_iplist = config['forbidden_ip']
-        else:
-            self._forbidden_iplist = None
-
+        self._forbidden_iplist = config.get('forbidden_ip')
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
         if len(addrs) == 0:
