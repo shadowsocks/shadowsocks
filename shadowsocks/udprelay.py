@@ -1025,10 +1025,13 @@ class UDPRelay(object):
         if bind_addr in self._ignore_bind_list:
             bind_addr = None
         if bind_addr:
-            local_addrs = socket.getaddrinfo(bind_addr, 0, 0, socket.SOCK_STREAM, socket.SOL_TCP)
+            local_addrs = socket.getaddrinfo(bind_addr, 0, 0, socket.SOCK_DGRAM, socket.SOL_UDP)
             if local_addrs[0][0] == af:
                 logging.debug("bind %s" % (bind_addr,))
-                sock.bind((bind_addr, 0))
+                try:
+                    sock.bind((bind_addr, 0))
+                except Exception as e:
+                    logging.warn("bind %s fail" % (bind_addr,))
 
     def _handle_server(self):
         server = self._server_socket

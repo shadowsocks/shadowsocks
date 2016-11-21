@@ -548,7 +548,10 @@ class TCPRelayHandler(object):
             local_addrs = socket.getaddrinfo(bind_addr, 0, 0, socket.SOCK_STREAM, socket.SOL_TCP)
             if local_addrs[0][0] == af:
                 logging.debug("bind %s" % (bind_addr,))
-                sock.bind((bind_addr, 0))
+                try:
+                    sock.bind((bind_addr, 0))
+                except Exception as e:
+                    logging.warn("bind %s fail" % (bind_addr,))
 
     def _create_remote_socket(self, ip, port):
         if self._remote_udp:
