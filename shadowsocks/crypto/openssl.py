@@ -49,7 +49,10 @@ def load_openssl():
     libcrypto.EVP_CipherUpdate.argtypes = (c_void_p, c_void_p, c_void_p,
                                            c_char_p, c_int)
 
-    libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
+    if hasattr(libcrypto, "EVP_CIPHER_CTX_cleanup"):
+        libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
+    else:
+        libcrypto.EVP_CIPHER_CTX_reset.argtypes = (c_void_p,)
     libcrypto.EVP_CIPHER_CTX_free.argtypes = (c_void_p,)
 
     libcrypto.RAND_bytes.restype = c_int
@@ -120,7 +123,10 @@ class OpenSSLCrypto(object):
 
     def clean(self):
         if self._ctx:
-            libcrypto.EVP_CIPHER_CTX_cleanup(self._ctx)
+            if hasattr(libcrypto, "EVP_CIPHER_CTX_cleanup"):
+                libcrypto.EVP_CIPHER_CTX_cleanup(self._ctx)
+            else:
+                libcrypto.EVP_CIPHER_CTX_reset(self._ctx)
             libcrypto.EVP_CIPHER_CTX_free(self._ctx)
 
 
