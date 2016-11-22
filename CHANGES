@@ -1,3 +1,11 @@
+2.9.7 2016-11-22
+- manage client with LRUCache
+- catch bind error
+- fix import error of resource on windows
+- print RLIMIT_NOFILE
+- always close cymysql objects
+- add init script
+
 2.9.6 2016-10-17
 - tls1.2_ticket_auth random packet size
 

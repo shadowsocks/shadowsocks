@@ -918,10 +918,8 @@ class UDPRelay(object):
         self._reqid_to_hd = {}
         self._data_to_write_to_server_socket = []
 
-        self._timeouts = []  # a list for all the handlers
-        # we trim the timeouts once a while
-        self._timeout_offset = 0   # last checked position for timeout
-        self._handler_to_timeouts = {}  # key: handler value: index in timeouts
+        self._timeout_cache = lru_cache.LRUCache(timeout=self._timeout,
+                                         close_callback=self._close_tcp_client)
 
         self._bind = config.get('out_bind', '')
         self._bindv6 = config.get('out_bindv6', '')
@@ -1317,62 +1315,24 @@ class UDPRelay(object):
                             eventloop.POLL_IN | eventloop.POLL_ERR, self)
         loop.add_periodic(self.handle_periodic)
 
-    def remove_handler(self, handler):
-        index = self._handler_to_timeouts.get(hash(handler), -1)
-        if index >= 0:
-            # delete is O(n), so we just set it to None
-            self._timeouts[index] = None
-            del self._handler_to_timeouts[hash(handler)]
+    def remove_handler(self, client):
+        if hash(client) in self._timeout_cache:
+            del self._timeout_cache[hash(client)]
 
-    def update_activity(self, handler):
-        # set handler to active
-        now = int(time.time())
-        if now - handler.last_activity < eventloop.TIMEOUT_PRECISION:
-            # thus we can lower timeout modification frequency
-            return
-        handler.last_activity = now
-        index = self._handler_to_timeouts.get(hash(handler), -1)
-        if index >= 0:
-            # delete is O(n), so we just set it to None
-            self._timeouts[index] = None
-        length = len(self._timeouts)
-        self._timeouts.append(handler)
-        self._handler_to_timeouts[hash(handler)] = length
+    def update_activity(self, client):
+        self._timeout_cache[hash(client)] = client
 
     def _sweep_timeout(self):
-        # tornado's timeout memory management is more flexible than we need
-        # we just need a sorted last_activity queue and it's faster than heapq
-        # in fact we can do O(1) insertion/remove so we invent our own
-        if self._timeouts:
-            logging.log(shell.VERBOSE_LEVEL, 'sweeping timeouts')
-            now = time.time()
-            length = len(self._timeouts)
-            pos = self._timeout_offset
-            while pos < length:
-                handler = self._timeouts[pos]
-                if handler:
-                    if now - handler.last_activity < self._timeout:
-                        break
-                    else:
-                        if handler.remote_address:
-                            logging.debug('timed out: %s:%d' %
-                                         handler.remote_address)
-                        else:
-                            logging.debug('timed out')
-                        handler.destroy()
-                        handler.destroy_local()
-                        self._timeouts[pos] = None  # free memory
-                        pos += 1
-                else:
-                    pos += 1
-            if pos > TIMEOUTS_CLEAN_SIZE and pos > length >> 1:
-                # clean up the timeout queue when it gets larger than half
-                # of the queue
-                self._timeouts = self._timeouts[pos:]
-                for key in self._handler_to_timeouts:
-                    self._handler_to_timeouts[key] -= pos
-                pos = 0
-            self._timeout_offset = pos
+        self._timeout_cache.sweep()
+
+    def _close_tcp_client(self, client):
+        if client.remote_address:
+            logging.debug('timed out: %s:%d' %
+                         client.remote_address)
+        else:
+            logging.debug('timed out')
+        client.destroy()
+        client.destroy_local()
 
     def handle_event(self, sock, fd, event):
         if sock == self._server_socket:

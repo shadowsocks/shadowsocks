@@ -74,6 +74,9 @@ class LRUCache(collections.MutableMapping):
         del self._store[key]
         del self._keys_to_last_time[key]
 
+    def __contains__(self, key):
+        return key in self._store
+
     def __iter__(self):
         return iter(self._store)
 
@@ -98,10 +101,10 @@ class LRUCache(collections.MutableMapping):
             if now - last_t <= self.timeout:
                 break
             value = self._store[key]
-            if self.close_callback is not None:
-                self.close_callback(value)
             del self._store[key]
             del self._keys_to_last_time[key]
+            if self.close_callback is not None:
+                self.close_callback(value)
             c += 1
         if c:
             logging.debug('%d keys swept' % c)
