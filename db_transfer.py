@@ -314,8 +314,9 @@ class DbTransfer(TransferBase):
 		except Exception as e:
 			logging.error(e)
 			update_transfer = {}
+		finally:
+			conn.close()
 
-		conn.close()
 		return update_transfer
 
 	def pull_db_all_user(self):
@@ -333,10 +334,8 @@ class DbTransfer(TransferBase):
 
 		try:
 			rows = self.pull_db_users(conn)
-		except Exception as e:
-			logging.error(e)
-			rows = []
-		conn.close()
+		finally:
+			conn.close()
 
 		if not rows:
 			logging.warn('no user in db')
