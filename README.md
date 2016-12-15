@@ -31,7 +31,7 @@ CentOS:
 
 Windows:
 
-See [Install Server on Windows]
+See [Install Shadowsocks Server on Windows](https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows).
 
 ### Usage
 
@@ -64,7 +64,7 @@ To start:
 Documentation
 -------------
 
-You can find all the documentation in the [Wiki].
+You can find all the documentation in the [Wiki](https://github.com/shadowsocks/shadowsocks/wiki).
 
 License
 -------
