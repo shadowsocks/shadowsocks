@@ -1,3 +1,7 @@
+3.0.0 2016-12-23
+- http_simple fix bugs
+- tls1.2_ticket_auth fix bug & defaule time diff set to 86400s
+
 2.9.7 2016-11-22
 - manage client with LRUCache
 - catch bind error
