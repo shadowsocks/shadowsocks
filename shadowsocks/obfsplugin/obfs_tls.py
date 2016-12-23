@@ -197,6 +197,8 @@ class tls_ticket_auth(plain.plain):
             return (ret, True, False)
 
         if self.handshake_status == 3:
+            self.recv_buffer += buf
+            buf = self.recv_buffer
             verify = buf
             verify_len = 43 - 10
             if len(buf) < 43:
@@ -226,6 +228,7 @@ class tls_ticket_auth(plain.plain):
         if struct.unpack('>H', buf[:2])[0] > len(buf) - 2:
             return (b'', False, False)
 
+        self.recv_buffer = self.recv_buffer[struct.unpack('>H', buf[:2])[0] + 5:]
         self.handshake_status = 2
         buf = buf[2:]
         if not match_begin(buf, b'\x01\x00'): #client hello
