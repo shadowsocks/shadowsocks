@@ -91,7 +91,7 @@ class MuMgr(object):
 		return ''.join([random.choice('''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-_=+(){}[]^&%$@''') for i in range(8)])
 
 	def add(self, user):
-		up = {'enable': True, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
+		up = {'enable': 1, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
 		'protocol': "auth_sha1_v4_compatible",
 		'obfs': "tls1.2_ticket_auth_compatible",
 		'transfer_enable': 1125899906842624}
@@ -217,7 +217,11 @@ def main():
 			'3': 'auth_sha1_v2',
 			'+4': 'auth_sha1_v4_compatible',
 			'4': 'auth_sha1_v4',
-			'a1': 'auth_aes128'}
+			'am': 'auth_aes128_md5',
+			'as': 'auth_aes128_sha1',
+			'+am': 'auth_aes128_md5_compatible',
+			'+as': 'auth_aes128_sha1_compatible'
+			}
 	fast_set_method = {'a0': 'aes-128-cfb',
 			'a1': 'aes-192-cfb',
 			'a2': 'aes-256-cfb',

@@ -138,7 +138,7 @@ class http_simple(plain.plain):
     def get_data_from_http_header(self, buf):
         ret_buf = b''
         lines = buf.split(b'\r\n')
-        if lines and len(lines) > 4:
+        if lines and len(lines) > 1:
             hex_items = lines[0].split(b'%')
             if hex_items and len(hex_items) > 1:
                 for index in range(1, len(hex_items)):
@@ -156,7 +156,7 @@ class http_simple(plain.plain):
     def get_host_from_http_header(self, buf):
         ret_buf = b''
         lines = buf.split(b'\r\n')
-        if lines and len(lines) > 4:
+        if lines and len(lines) > 1:
             for line in lines:
                 if match_begin(line, b"Host: "):
                     return line[6:]

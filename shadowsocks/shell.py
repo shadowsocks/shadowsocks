@@ -171,7 +171,7 @@ def get_config(is_local):
             logging.info('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
-                    config = parse_json_in_str(f.read().decode('utf8'))
+                    config = parse_json_in_str(remove_comment(f.read().decode('utf8')))
                 except ValueError as e:
                     logging.error('found an error in config.json: %s',
                                   e.message)
@@ -409,6 +409,47 @@ def _decode_dict(data):
             value = _decode_dict(value)
         rv[key] = value
     return rv
+
+class JSFormat:
+    def __init__(self):
+        self.state = 0
+
+    def push(self, ch):
+        ch = ord(ch)
+        if self.state == 0:
+            if ch == ord('"'):
+                self.state = 1
+                return to_str(chr(ch))
+            elif ch == ord('/'):
+                self.state = 3
+            else:
+                return to_str(chr(ch))
+        elif self.state == 1:
+            if ch == ord('"'):
+                self.state = 0
+                return to_str(chr(ch))
+            elif ch == ord('\\'):
+                self.state = 2
+            return to_str(chr(ch))
+        elif self.state == 2:
+            self.state = 1
+            if ch == ord('"'):
+                return to_str(chr(ch))
+            return "\\" + to_str(chr(ch))
+        elif self.state == 3:
+            if ch == ord('/'):
+                self.state = 4
+            else:
+                return "/" + to_str(chr(ch))
+        elif self.state == 4:
+            if ch == ord('\n'):
+                self.state = 0
+                return "\n"
+        return ""
+
+def remove_comment(json):
+    fmt = JSFormat()
+    return "".join([fmt.push(c) for c in json])
 
 
 def parse_json_in_str(data):
