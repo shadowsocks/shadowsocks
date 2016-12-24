@@ -22,6 +22,7 @@ import socket
 import struct
 import logging
 import binascii
+import re
 
 def compat_ord(s):
     if type(s) == int:
@@ -115,6 +116,13 @@ def is_ip(address):
             return family
         except (TypeError, ValueError, OSError, IOError):
             pass
+    return False
+
+
+def match_regex(regex, text):
+    regex = re.compile(regex)
+    for item in regex.findall(text):
+        return True
     return False
 
 
