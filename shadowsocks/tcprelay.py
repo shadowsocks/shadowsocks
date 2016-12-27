@@ -152,6 +152,7 @@ class TCPRelayHandler(object):
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["*#0.0.0.0:0"])
+        self._is_redirect = False
         self._bind = config.get('out_bind', '')
         self._bindv6 = config.get('out_bindv6', '')
         self._ignore_bind_list = config.get('ignore_bind', [])
@@ -427,6 +428,7 @@ class TCPRelayHandler(object):
         if port == 0:
             raise Exception('can not parse header')
         data = b"\x03" + common.to_bytes(common.chr(len(host))) + common.to_bytes(host) + struct.pack('>H', port)
+        self._is_redirect = True
         logging.warn("TCP data redir %s:%d %s" % (host, port, binascii.hexlify(data)))
         return data + ogn_data
 
@@ -596,7 +598,7 @@ class TCPRelayHandler(object):
         if len(addrs) == 0:
             raise Exception("getaddrinfo failed for %s:%d" % (ip, port))
         af, socktype, proto, canonname, sa = addrs[0]
-        if not self._remote_udp:
+        if not self._remote_udp and not self._is_redirect:
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
                     if self._remote_address:
