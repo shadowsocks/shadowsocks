@@ -198,6 +198,8 @@ class http_simple(plain.plain):
                 hosts = self.server_info.obfs_param.split(',')
                 if host not in hosts:
                     return self.not_match_return(buf)
+            if len(ret_buf) < 4:
+                return self.not_match_return(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
             if len(ret_buf) >= 7:
