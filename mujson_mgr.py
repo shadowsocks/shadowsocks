@@ -92,7 +92,7 @@ class MuMgr(object):
 
 	def add(self, user):
 		up = {'enable': 1, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
-		'protocol': "auth_sha1_v4_compatible",
+		'protocol': "auth_sha1_v4",
 		'obfs': "tls1.2_ticket_auth_compatible",
 		'transfer_enable': 1125899906842624}
 		up['passwd'] = self.rand_pass()
@@ -187,7 +187,7 @@ Options:
   -p PORT                server port
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-128-cfb
-  -O PROTOCOL            protocol plugin, default: auth_sha1_v2_compatible
+  -O PROTOCOL            protocol plugin, default: auth_sha1_v4
   -o OBFS                obfs plugin, default: tls1.2_ticket_auth_compatible
   -G PROTOCOL_PARAM      protocol plugin param
   -g OBFS_PARAM          obfs plugin param
@@ -211,16 +211,11 @@ def main():
 	fast_set_protocol = {'0': 'origin',
 			'+1': 'verify_sha1_compatible',
 			'1': 'verify_sha1',
-			'+2': 'auth_sha1_compatible',
 			'2': 'auth_sha1',
-			'+3': 'auth_sha1_v2_compatible',
 			'3': 'auth_sha1_v2',
-			'+4': 'auth_sha1_v4_compatible',
 			'4': 'auth_sha1_v4',
 			'am': 'auth_aes128_md5',
 			'as': 'auth_aes128_sha1',
-			'+am': 'auth_aes128_md5_compatible',
-			'+as': 'auth_aes128_sha1_compatible'
 			}
 	fast_set_method = {'a0': 'aes-128-cfb',
 			'a1': 'aes-192-cfb',

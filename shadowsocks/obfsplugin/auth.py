@@ -81,7 +81,6 @@ class auth_base(plain.plain):
     def __init__(self, method):
         super(auth_base, self).__init__(method)
         self.method = method
-        self.no_compatible_method = ''
 
     def init_data(self):
         return ''
@@ -103,9 +102,7 @@ class auth_base(plain.plain):
 
     def not_match_return(self, buf):
         self.raw_trans = True
-        if self.method == self.no_compatible_method:
-            return (b'E'*2048, False)
-        return (buf, False)
+        return (b'E'*2048, False)
 
 class client_queue(object):
     def __init__(self, begin_id):
@@ -214,7 +211,6 @@ class auth_sha1(auth_base):
         self.client_id = 0
         self.connection_id = 0
         self.max_time_dif = 60 * 60 # time dif (second) setting
-        self.no_compatible_method = 'auth_sha1'
 
     def init_data(self):
         return obfs_auth_data()
@@ -436,7 +432,6 @@ class auth_sha1_v2(auth_base):
         self.client_id = 0
         self.connection_id = 0
         self.salt = b"auth_sha1_v2"
-        self.no_compatible_method = 'auth_sha1_v2'
 
     def init_data(self):
         return obfs_auth_v2_data()
@@ -638,7 +633,6 @@ class auth_sha1_v3(auth_base):
         self.connection_id = 0
         self.max_time_dif = 60 * 60 * 24 # time dif (second) setting
         self.salt = b"auth_sha1_v3"
-        self.no_compatible_method = 'auth_sha1_v3'
 
     def init_data(self):
         return obfs_auth_v2_data()
@@ -847,7 +841,6 @@ class auth_sha1_v4(auth_base):
         self.connection_id = 0
         self.max_time_dif = 60 * 60 * 24 # time dif (second) setting
         self.salt = b"auth_sha1_v4"
-        self.no_compatible_method = 'auth_sha1_v4'
 
     def init_data(self):
         return obfs_auth_v2_data()
@@ -1072,7 +1065,6 @@ class auth_aes128(auth_base):
         self.connection_id = 0
         self.max_time_dif = 60 * 60 * 24 # time dif (second) setting
         self.salt = b"auth_aes128"
-        self.no_compatible_method = 'auth_aes128'
         self.extra_wait_size = struct.unpack('>H', os.urandom(2))[0] % 1024
         self.pack_id = 0
         self.recv_id = 0
@@ -1479,9 +1471,6 @@ class auth_aes128_sha1(auth_base):
             mac_key = self.server_info.recv_iv + self.server_info.key
             sha1data = hmac.new(mac_key, self.recv_buf[:1], self.hashfunc).digest()[:6]
             if sha1data != self.recv_buf[1:7]:
-                if self.method == self.no_compatible_method:
-                    if len(self.recv_buf) < 31 + self.extra_wait_size:
-                        return (b'', False)
                 return self.not_match_return(self.recv_buf)
 
             if len(self.recv_buf) < 31:
