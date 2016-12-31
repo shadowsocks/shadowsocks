@@ -42,9 +42,6 @@ def create_auth_sha1(method):
 def create_auth_sha1_v2(method):
     return auth_sha1_v2(method)
 
-def create_auth_sha1_v3(method):
-    return auth_sha1_v3(method)
-
 def create_auth_sha1_v4(method):
     return auth_sha1_v4(method)
 
@@ -62,7 +59,6 @@ obfs_map = {
         'auth_sha1_compatible': (create_auth_sha1,),
         'auth_sha1_v2': (create_auth_sha1_v2,),
         'auth_sha1_v2_compatible': (create_auth_sha1_v2,),
-        'auth_sha1_v3': (create_auth_sha1_v3,),
         'auth_sha1_v4': (create_auth_sha1_v4,),
         'auth_aes128': (create_auth_aes128,),
         'auth_aes128_md5': (create_auth_aes128_md5,),
