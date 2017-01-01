@@ -60,6 +60,7 @@ obfs_map = {
         'auth_sha1_v2': (create_auth_sha1_v2,),
         'auth_sha1_v2_compatible': (create_auth_sha1_v2,),
         'auth_sha1_v4': (create_auth_sha1_v4,),
+        'auth_sha1_v4_compatible': (create_auth_sha1_v4,),
         'auth_aes128': (create_auth_aes128,),
         'auth_aes128_md5': (create_auth_aes128_md5,),
         'auth_aes128_sha1': (create_auth_aes128_sha1,),
