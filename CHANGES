@@ -1,3 +1,6 @@
+3.0.1 2017-01-03
+- remove auth_aes128_*_compatible
+
 3.0.0 2016-12-23
 - http_simple fix bugs
 - tls1.2_ticket_auth fix bug & defaule time diff set to 86400s
