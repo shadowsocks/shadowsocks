@@ -26,18 +26,18 @@ Windows:
 
 ### Usage for single user on linux platform
 
-If you clone it into "~/shadowsocks"  
-move to "~/shadowsocks", then run:
+If you clone it into "~/shadowsocksr"  
+move to "~/shadowsocksr", then run:
 
     bash initcfg.sh
 
-move to "~/shadowsocks/shadowsocks", then run:
+move to "~/shadowsocksr/shadowsocks", then run:
 
     python server.py -p 443 -k password -m aes-128-cfb -O auth_aes128_md5_compatible -o tls1.2_ticket_auth_compatible
 
 Check all the options via `-h`.
 
-You can also use a configuration file instead (recommand), move to "~/shadowsocks" and edit the file "user-config.json", then move to "~/shadowsocks/shadowsocks" again, just run:
+You can also use a configuration file instead (recommand), move to "~/shadowsocksr" and edit the file "user-config.json", then move to "~/shadowsocksr/shadowsocks" again, just run:
 
     python server.py
 
@@ -93,7 +93,7 @@ Bugs and Issues
 
 
 
-[Android]:           https://github.com/shadowsocks/shadowsocks-android
+[Android]:           https://github.com/shadowsocksr/shadowsocksr-android
 [Build Status]:      https://travis-ci.org/shadowsocksr/shadowsocksr.svg?branch=manyuser
 [Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
@@ -101,5 +101,5 @@ Bugs and Issues
 [OpenWRT]:           https://github.com/shadowsocks/openwrt-shadowsocks
 [OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
 [Travis CI]:         https://travis-ci.org/shadowsocksr/shadowsocksr
-[Windows]:           https://github.com/breakwa11/shadowsocks-csharp
+[Windows]:           https://github.com/shadowsocksr/shadowsocksr-csharp
 [Wiki]:              https://github.com/breakwa11/shadowsocks-rss/wiki
