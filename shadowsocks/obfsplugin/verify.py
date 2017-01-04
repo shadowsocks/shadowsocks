@@ -350,11 +350,11 @@ class verify_sha1(verify_base):
     def server_udp_post_decrypt(self, buf):
         if buf and ((ord(buf[0]) & 0x10) == 0x10):
             if len(buf) <= 11:
-                return b''
+                return (b'', None)
             sha1data = hmac.new(self.server_info.recv_iv + self.server_info.key, buf[:-10], hashlib.sha1).digest()[:10]
             if sha1data != buf[-10:]:
-                return b''
-            return to_bytes(chr(ord(buf[0]) & 0xEF)) + buf[1:-10]
+                return (b'', None)
+            return (to_bytes(chr(ord(buf[0]) & 0xEF)) + buf[1:-10], None)
         else:
-            return buf
+            return (buf, None)
 

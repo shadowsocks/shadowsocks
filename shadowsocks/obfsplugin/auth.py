@@ -1103,8 +1103,8 @@ class auth_aes128(auth_base):
         length = len(buf)
         data = buf[:-4]
         if struct.pack('<I', zlib.adler32(data) & 0xFFFFFFFF) != buf[length - 4:]:
-            return b''
-        return data
+            return (b'', None)
+        return (data, None)
 
 class auth_aes128_sha1(auth_base):
     def __init__(self, method, hashfunc):
@@ -1280,9 +1280,15 @@ class auth_aes128_sha1(auth_base):
                     return (b'', False)
                 return self.not_match_return(self.recv_buf)
 
-            user_key = self.recv_buf[7:11]
-            #if user_key in user_map: self.user_key[user_key] else: # TODO
-            self.user_key = self.server_info.key
+            uid = self.recv_buf[7:11]
+            if uid in self.server_info.users:
+                self.user_key = self.server_info.users[uid]
+                self.server_info.update_user_func(uid)
+            else:
+                if not self.server_info.users:
+                    self.user_key = self.server_info.key
+                else:
+                    self.user_key = self.server_info.recv_iv
             encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + self.salt, 'aes-128-cbc')
             head = encryptor.decrypt(b'\x00' * 16 + self.recv_buf[11:27] + b'\x00') # need an extra byte or recv empty
             length = struct.unpack('<H', head[12:14])[0]
@@ -1377,8 +1383,15 @@ class auth_aes128_sha1(auth_base):
 
     def server_udp_post_decrypt(self, buf):
         uid = buf[-8:-4]
-        user_key = self.server_info.key
-        if hmac.new(user_key, buf[:-4], self.hashfunc).digest()[:4] != buf[-4:]:
-            return b''
-        return buf[:-8]
+        if uid in self.server_info.users:
+            self.user_key = self.server_info.users[uid]
+        else:
+            uid = None
+            if not self.server_info.users:
+                self.user_key = self.server_info.key
+            else:
+                self.user_key = self.server_info.recv_iv
+        if hmac.new(self.user_key, buf[:-4], self.hashfunc).digest()[:4] != buf[-4:]:
+            return (b'', None)
+        return (buf[:-8], uid)
 

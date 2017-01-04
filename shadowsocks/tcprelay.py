@@ -106,6 +106,7 @@ class TCPRelayHandler(object):
         self._dns_resolver = dns_resolver
         self._client_address = local_sock.getpeername()[:2]
         self._accept_address = local_sock.getsockname()[:2]
+        self._user = None
 
         # TCP Relay works as either sslocal or ssserver
         # if is_local, this is sslocal
@@ -123,6 +124,8 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
+        #server_info.users = server.server_users
+        #server_info.update_user_func = self._update_user
         server_info.client = self._client_address[0]
         server_info.client_port = self._client_address[1]
         server_info.protocol_param = ''
@@ -139,6 +142,8 @@ class TCPRelayHandler(object):
         server_info = obfs.server_info(server.protocol_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
+        server_info.users = server.server_users
+        server_info.update_user_func = self._update_user
         server_info.client = self._client_address[0]
         server_info.client_port = self._client_address[1]
         server_info.protocol_param = config['protocol_param']
@@ -202,6 +207,9 @@ class TCPRelayHandler(object):
             server = random.choice(server)
         logging.debug('chosen server: %s:%d', server, server_port)
         return server, server_port
+
+    def _update_user(self, user):
+        self._user = user
 
     def _update_activity(self, data_len=0):
         # tell the TCP Relay we have activities recently
@@ -303,7 +311,7 @@ class TCPRelayHandler(object):
             try:
                 if self._encrypt_correct:
                     if sock == self._remote_sock:
-                        self._server.server_transfer_ul += len(data)
+                        self._server.add_transfer_u(self._user, len(data))
                         self._update_activity(len(data))
                 if data:
                     l = len(data)
@@ -839,7 +847,7 @@ class TCPRelayHandler(object):
                     data = self._encryptor.encrypt(data)
                     data = self._obfs.server_encode(data)
             self._update_activity(len(data))
-            self._server.server_transfer_dl += len(data)
+            self._server.add_transfer_d(self._user, len(data))
         else:
             return
         try:
@@ -989,6 +997,9 @@ class TCPRelay(object):
         self._fd_to_handlers = {}
         self.server_transfer_ul = 0
         self.server_transfer_dl = 0
+        self.server_users = {}
+        self.server_user_transfer_ul = {}
+        self.server_user_transfer_dl = {}
         self.server_connections = 0
         self.protocol_data = obfs.obfs(config['protocol']).init_data()
         self.obfs_data = obfs.obfs(config['obfs']).init_data()
@@ -1007,6 +1018,16 @@ class TCPRelay(object):
             listen_addr = config['server']
             listen_port = config['server_port']
         self._listen_port = listen_port
+
+        if config['protocol'] in ["auth_aes128_md5", "auth_aes128_sha1"]:
+            user_list = config['protocol_param'].split(',')
+            if user_list:
+                for user in user_list:
+                    items = user.split(':')
+                    if len(items) == 2:
+                        uid = struct.pack('<I', int(items[0]))
+                        passwd = items[1]
+                        self.add_user(uid, passwd)
 
         addrs = socket.getaddrinfo(listen_addr, listen_port, 0,
                                    socket.SOCK_STREAM, socket.SOL_TCP)
@@ -1046,6 +1067,29 @@ class TCPRelay(object):
     def add_connection(self, val):
         self.server_connections += val
         logging.debug('server port %5d connections = %d' % (self._listen_port, self.server_connections,))
+
+    def add_user(self, user, passwd): # user: binstr[4], passwd: str
+        self.server_users[user] = common.to_bytes(passwd)
+
+    def del_user(self, user, passwd):
+        if user in self.server_users:
+            del self.server_users[user]
+
+    def add_transfer_u(self, user, transfer):
+        if user is None:
+            self.server_transfer_ul += transfer
+        else:
+            if user not in self.server_user_transfer_ul:
+                self.server_user_transfer_ul[user] = 0
+            self.server_user_transfer_ul[user] += transfer
+
+    def add_transfer_d(self, user, transfer):
+        if user is None:
+            self.server_transfer_dl += transfer
+        else:
+            if user not in self.server_user_transfer_dl:
+                self.server_user_transfer_dl[user] = 0
+            self.server_user_transfer_dl[user] += transfer
 
     def update_stat(self, port, stat_dict, val):
         newval = stat_dict.get(0, 0) + val

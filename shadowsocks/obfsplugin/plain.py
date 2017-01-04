@@ -40,6 +40,9 @@ class plain(object):
     def init_data(self):
         return b''
 
+    def get_server_info(self):
+        return self.server_info
+
     def set_server_info(self, server_info):
         self.server_info = server_info
 
@@ -79,7 +82,7 @@ class plain(object):
         return buf
 
     def server_udp_post_decrypt(self, buf):
-        return buf
+        return (buf, None)
 
     def dispose(self):
         pass
