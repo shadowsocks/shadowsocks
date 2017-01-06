@@ -1020,14 +1020,16 @@ class TCPRelay(object):
         self._listen_port = listen_port
 
         if config['protocol'] in ["auth_aes128_md5", "auth_aes128_sha1"]:
-            user_list = config['protocol_param'].split(',')
-            if user_list:
-                for user in user_list:
-                    items = user.split(':')
-                    if len(items) == 2:
-                        uid = struct.pack('<I', int(items[0]))
-                        passwd = items[1]
-                        self.add_user(uid, passwd)
+            param = config['protocol_param'].split('#')
+            if len(param) == 2:
+                user_list = param[1].split(',')
+                if user_list:
+                    for user in user_list:
+                        items = user.split(':')
+                        if len(items) == 2:
+                            uid = struct.pack('<I', int(items[0]))
+                            passwd = items[1]
+                            self.add_user(uid, passwd)
 
         addrs = socket.getaddrinfo(listen_addr, listen_port, 0,
                                    socket.SOCK_STREAM, socket.SOL_TCP)

@@ -1131,7 +1131,7 @@ class auth_aes128_sha1(auth_base):
     def set_server_info(self, server_info):
         self.server_info = server_info
         try:
-            max_client = int(server_info.protocol_param)
+            max_client = int(server_info.protocol_param.split('#')[0])
         except:
             max_client = 64
         self.server_info.data.set_max_client(max_client)

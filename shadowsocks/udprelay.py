@@ -902,14 +902,16 @@ class UDPRelay(object):
         self.server_user_transfer_dl = {}
 
         if config['protocol'] in ["auth_aes128_md5", "auth_aes128_sha1"]:
-            user_list = config['protocol_param'].split(',')
-            if user_list:
-                for user in user_list:
-                    items = user.split(':')
-                    if len(items) == 2:
-                        uid = struct.pack('<I', int(items[0]))
-                        passwd = items[1]
-                        self.add_user(uid, passwd)
+            param = config['protocol_param'].split('#')
+            if len(param) == 2:
+                user_list = param[1].split(',')
+                if user_list:
+                    for user in user_list:
+                        items = user.split(':')
+                        if len(items) == 2:
+                            uid = struct.pack('<I', int(items[0]))
+                            passwd = items[1]
+                            self.add_user(uid, passwd)
 
         self.protocol_data = obfs.obfs(config['protocol']).init_data()
         self._protocol = obfs.obfs(config['protocol'])
