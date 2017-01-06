@@ -1282,7 +1282,7 @@ class auth_aes128_sha1(auth_base):
 
             uid = self.recv_buf[7:11]
             if uid in self.server_info.users:
-                self.user_key = self.server_info.users[uid]
+                self.user_key = self.hashfunc(self.server_info.users[uid]).digest()
                 self.server_info.update_user_func(uid)
             else:
                 if not self.server_info.users:
@@ -1384,7 +1384,7 @@ class auth_aes128_sha1(auth_base):
     def server_udp_post_decrypt(self, buf):
         uid = buf[-8:-4]
         if uid in self.server_info.users:
-            self.user_key = self.server_info.users[uid]
+            self.user_key = self.hashfunc(self.server_info.users[uid]).digest()
         else:
             uid = None
             if not self.server_info.users:
