@@ -1019,7 +1019,7 @@ class TCPRelay(object):
             listen_port = config['server_port']
         self._listen_port = listen_port
 
-        if common.to_bytes(config['protocol']) in ["auth_aes128_md5", "auth_aes128_sha1"]:
+        if common.to_bytes(config['protocol']) in [b"auth_aes128_md5", b"auth_aes128_sha1"]:
             param = common.to_bytes(config['protocol_param']).split(b'#')
             if len(param) == 2:
                 user_list = param[1].split(b',')
