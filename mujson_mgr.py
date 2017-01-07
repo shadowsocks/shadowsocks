@@ -27,8 +27,8 @@ class MuJsonLoader(object):
     def save(self, path):
         if self.json:
             output = json.dumps(self.json, sort_keys=True, indent=4, separators=(',', ': '))
-            with open(path, 'w') as f:
-                f.write(output)
+            with open(path, 'wb') as f:
+                f.write(output.encode('utf8'))
 
 
 class MuMgr(object):
