@@ -901,13 +901,13 @@ class UDPRelay(object):
         self.server_user_transfer_ul = {}
         self.server_user_transfer_dl = {}
 
-        if config['protocol'] in ["auth_aes128_md5", "auth_aes128_sha1"]:
-            param = config['protocol_param'].split('#')
+        if common.to_bytes(config['protocol']) in [b"auth_aes128_md5", b"auth_aes128_sha1"]:
+            param = common.to_bytes(config['protocol_param']).split(b'#')
             if len(param) == 2:
-                user_list = param[1].split(',')
+                user_list = param[1].split(b',')
                 if user_list:
                     for user in user_list:
-                        items = user.split(':')
+                        items = user.split(b':')
                         if len(items) == 2:
                             uid = struct.pack('<I', int(items[0]))
                             passwd = items[1]
