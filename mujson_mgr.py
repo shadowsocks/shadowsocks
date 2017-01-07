@@ -42,7 +42,6 @@ class MuMgr(object):
     def getipaddr(self, ifname='eth0'):
         import socket
         import struct
-        import fcntl
         ret = '127.0.0.1'
         try:
             ret = socket.gethostbyname(socket.getfqdn(socket.gethostname()))
@@ -50,6 +49,7 @@ class MuMgr(object):
             pass
         if ret == '127.0.0.1':
             try:
+                import fcntl
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ret = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', ifname[:15]))[20:24])
             except:
