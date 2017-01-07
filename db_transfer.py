@@ -198,8 +198,13 @@ class TransferBase(object):
 		db_instance = obj()
 		ServerPool.get_instance()
 		shell.log_shadowsocks_version()
-		import resource
-		logging.info('current process RLIMIT_NOFILE resource: soft %d hard %d'  % resource.getrlimit(resource.RLIMIT_NOFILE))
+
+		try:
+			import resource
+			logging.info('current process RLIMIT_NOFILE resource: soft %d hard %d'  % resource.getrlimit(resource.RLIMIT_NOFILE))
+		except:
+			pass
+
 		try:
 			while True:
 				load_config()
