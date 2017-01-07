@@ -29,3 +29,8 @@ htmlcov
 
 .DS_Store
 .idea
+
+# Ignore user config
+user-config.json
+userapiconfig.py
+usermysql.json
