@@ -16,15 +16,19 @@ class MuJsonLoader(object):
         self.json = None
 
     def load(self, path):
-        with open(path, 'rb+') as f:
-            self.json = json.loads(f.read().decode('utf8'))
+        l = "[]"
+        try:
+            with open(path, 'rb+') as f:
+                l = f.read().decode('utf8')
+        except:
+            pass
+        self.json = json.loads(l)
 
     def save(self, path):
         if self.json:
             output = json.dumps(self.json, sort_keys=True, indent=4, separators=(',', ': '))
-            with open(path, 'r+') as f:
+            with open(path, 'w') as f:
                 f.write(output)
-                f.truncate()
 
 
 class MuMgr(object):
