@@ -32,7 +32,7 @@ from configloader import load_config, get_config
 
 class MainThread(threading.Thread):
 	def __init__(self, params):
-		threading.Thread.__init__(self)
+		super(MainThread, self).__init__()
 		self.params = params
 
 	def run(self):

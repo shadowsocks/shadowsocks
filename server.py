@@ -31,7 +31,7 @@ from configloader import load_config, get_config
 
 class MainThread(threading.Thread):
 	def __init__(self, obj):
-		threading.Thread.__init__(self)
+		super(MainThread, self).__init__()
 		self.daemon = True
 		self.obj = obj
 
