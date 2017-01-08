@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016 breakwa11
+# Copyright 2017 breakwa11
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -16,5 +16,5 @@
 # under the License.
 
 def version():
-    return '3.0.1 2017-01-03'
+    return '3.0.2 2017-01-08'
 
