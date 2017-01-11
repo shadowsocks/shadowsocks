@@ -73,8 +73,12 @@ class MuMgr(object):
 
 	def userinfo(self, user):
 		ret = ""
+		key_list = ['user', 'port', 'method', 'passwd', 'protocol', 'protocol_param', 'obfs', 'obfs_param', 'transfer_enable', 'u', 'd']
 		for key in sorted(user):
-			if key in ['enable']:
+			if key not in key_list:
+				key_list.append(key)
+		for key in key_list:
+			if key in ['enable'] or key not in user:
 				continue
 			ret += '\n'
 			if key in ['transfer_enable', 'u', 'd']:

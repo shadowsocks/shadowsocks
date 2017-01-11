@@ -85,6 +85,8 @@ class TransferBase(object):
 			logging.error('load switchrule.py fail')
 		cur_servers = {}
 		new_servers = {}
+		allow_users = {}
+		mu_servers  = {}
 		for row in rows:
 			try:
 				allow = switchrule.isTurnOn(row) and row['enable'] == 1 and row['u'] + row['d'] < row['transfer_enable']
@@ -113,34 +115,50 @@ class TransferBase(object):
 				logging.error('more than one user use the same port [%s]' % (port,))
 				continue
 
-			if ServerPool.get_instance().server_is_run(port) > 0:
-				if not allow:
-					logging.info('db stop server at port [%s]' % (port,))
-					ServerPool.get_instance().cb_del_server(port)
-					self.force_update_transfer.add(port)
-				else:
-					cfgchange = False
-					if port in ServerPool.get_instance().tcp_servers_pool:
-						relay = ServerPool.get_instance().tcp_servers_pool[port]
-						for name in merge_config_keys:
-							if name in cfg and not self.cmp(cfg[name], relay._config[name]):
-								cfgchange = True
-								break;
-					if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
-						relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
-						for name in merge_config_keys:
-							if name in cfg and not self.cmp(cfg[name], relay._config[name]):
-								cfgchange = True
-								break;
-					#config changed
+			if allow:
+				allow_users[port] = 1
+				if 'protocol' in cfg and 'protocol_param' in cfg and common.to_str(cfg['protocol']) in ['auth_aes128_md5', 'auth_aes128_sha1']:
+					if '#' in common.to_str(cfg['protocol_param']):
+						mu_servers[port] = 1
+
+				cfgchange = False
+				if port in ServerPool.get_instance().tcp_servers_pool:
+					relay = ServerPool.get_instance().tcp_servers_pool[port]
+					for name in merge_config_keys:
+						if name in cfg and not self.cmp(cfg[name], relay._config[name]):
+							cfgchange = True
+							break
+				if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
+					relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
+					for name in merge_config_keys:
+						if name in cfg and not self.cmp(cfg[name], relay._config[name]):
+							cfgchange = True
+							break
+
+			if port in mu_servers:
+				if ServerPool.get_instance().server_is_run(port) > 0:
 					if cfgchange:
 						logging.info('db stop server at port [%s] reason: config changed: %s' % (port, cfg))
 						ServerPool.get_instance().cb_del_server(port)
 						self.force_update_transfer.add(port)
 						new_servers[port] = (passwd, cfg)
+				else:
+					self.new_server(port, passwd, cfg)
+			else:
+				if ServerPool.get_instance().server_is_run(port) > 0:
+					if not allow:
+						logging.info('db stop server at port [%s]' % (port,))
+						ServerPool.get_instance().cb_del_server(port)
+						self.force_update_transfer.add(port)
+					else:
+						if cfgchange:
+							logging.info('db stop server at port [%s] reason: config changed: %s' % (port, cfg))
+							ServerPool.get_instance().cb_del_server(port)
+							self.force_update_transfer.add(port)
+							new_servers[port] = (passwd, cfg)
 
-			elif allow and ServerPool.get_instance().server_run_status(port) is False:
-				self.new_server(port, passwd, cfg)
+				elif allow and port > 0 and port < 65536 and ServerPool.get_instance().server_run_status(port) is False:
+					self.new_server(port, passwd, cfg)
 
 		for row in last_rows:
 			if row['port'] in cur_servers:
@@ -158,6 +176,11 @@ class TransferBase(object):
 			for port in new_servers.keys():
 				passwd, cfg = new_servers[port]
 				self.new_server(port, passwd, cfg)
+
+		if isinstance(self, MuJsonTransfer): # works in MuJsonTransfer only
+			logging.debug('db allow users %s \nmu_servers %s' % (allow_users, mu_servers))
+			for port in mu_servers:
+				ServerPool.get_instance().update_mu_server(port, None, allow_users)
 
 	def clear_cache(self, port):
 		if port in self.force_update_transfer: del self.force_update_transfer[port]

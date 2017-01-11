@@ -70,6 +70,7 @@ import errno
 import random
 import binascii
 import traceback
+import threading
 
 from shadowsocks import encrypt, obfs, eventloop, lru_cache, common, shell
 from shadowsocks.common import pre_parse_header, parse_header, pack_addr
@@ -900,18 +901,11 @@ class UDPRelay(object):
         self.server_users = {}
         self.server_user_transfer_ul = {}
         self.server_user_transfer_dl = {}
+        self.update_users_protocol_param = None
+        self.update_users_acl = None
 
         if common.to_bytes(config['protocol']) in [b"auth_aes128_md5", b"auth_aes128_sha1"]:
-            param = common.to_bytes(config['protocol_param']).split(b'#')
-            if len(param) == 2:
-                user_list = param[1].split(b',')
-                if user_list:
-                    for user in user_list:
-                        items = user.split(b':')
-                        if len(items) == 2:
-                            uid = struct.pack('<I', int(items[0]))
-                            passwd = items[1]
-                            self.add_user(uid, passwd)
+            self._update_users(None, None)
 
         self.protocol_data = obfs.obfs(config['protocol']).init_data()
         self._protocol = obfs.obfs(config['protocol'])
@@ -972,10 +966,39 @@ class UDPRelay(object):
         logging.debug('chosen server: %s:%d', server, server_port)
         return server, server_port
 
+    def get_ud(self):
+        return (self.server_transfer_ul, self.server_transfer_dl)
+
+    def get_users_ud(self):
+        ret = (self.server_user_transfer_ul.copy(), self.server_user_transfer_dl.copy())
+        return ret
+
+    def _update_users(self, protocol_param, acl):
+        if protocol_param is None:
+            protocol_param = self._config['protocol_param']
+        param = common.to_bytes(protocol_param).split(b'#')
+        if len(param) == 2:
+            user_list = param[1].split(b',')
+            if user_list:
+                for user in user_list:
+                    items = user.split(b':')
+                    if len(items) == 2:
+                        user_int_id = int(items[0])
+                        uid = struct.pack('<I', user_int_id)
+                        if acl is not None and user_int_id not in acl:
+                            self.del_user(uid)
+                        else:
+                            passwd = items[1]
+                            self.add_user(uid, passwd)
+
+    def update_users(self, protocol_param, acl):
+        self.update_users_protocol_param = protocol_param
+        self.update_users_acl = acl
+
     def add_user(self, user, passwd): # user: binstr[4], passwd: str
         self.server_users[user] = common.to_bytes(passwd)
 
-    def del_user(self, user, passwd):
+    def del_user(self, user):
         if user in self.server_users:
             del self.server_users[user]
 
@@ -1434,6 +1457,10 @@ class UDPRelay(object):
             self._dns_cache.sweep()
             if before_sweep_size != len(self._sockets):
                 logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
+            if self.update_users_protocol_param is not None or self.update_users_acl is not None:
+                self._update_users(self.update_users_protocol_param, self.update_users_acl)
+                self.update_users_protocol_param = None
+                self.update_users_acl = None
             self._sweep_timeout()
 
     def close(self, next_tick=False):

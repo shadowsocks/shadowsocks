@@ -23,6 +23,7 @@
 
 import os
 import logging
+import struct
 import time
 from shadowsocks import shell, eventloop, tcprelay, udprelay, asyncdns, common
 import threading
@@ -213,22 +214,61 @@ class ServerPool(object):
 
 		return True
 
+	def update_mu_server(self, port, protocol_param, acl):
+		port = int(port)
+		if port in self.tcp_servers_pool:
+			try:
+				self.tcp_servers_pool[port].update_users(protocol_param, acl)
+			except Exception as e:
+				logging.warn(e)
+			try:
+				self.udp_servers_pool[port].update_users(protocol_param, acl)
+			except Exception as e:
+				logging.warn(e)
+		if port in self.tcp_ipv6_servers_pool:
+			try:
+				self.tcp_ipv6_servers_pool[port].update_users(protocol_param, acl)
+			except Exception as e:
+				logging.warn(e)
+			try:
+				self.udp_ipv6_servers_pool[port].update_users(protocol_param, acl)
+			except Exception as e:
+				logging.warn(e)
+
 	def get_server_transfer(self, port):
 		port = int(port)
+		uid = struct.pack('<I', port)
 		ret = [0, 0]
 		if port in self.tcp_servers_pool:
-			ret[0] = self.tcp_servers_pool[port].server_transfer_ul
-			ret[1] = self.tcp_servers_pool[port].server_transfer_dl
+			ret[0], ret[1] = self.tcp_servers_pool[port].get_ud()
 		if port in self.udp_servers_pool:
-			ret[0] += self.udp_servers_pool[port].server_transfer_ul
-			ret[1] += self.udp_servers_pool[port].server_transfer_dl
+			u, d = self.udp_servers_pool[port].get_ud()
+			ret[0] += u
+			ret[1] += d
 		if port in self.tcp_ipv6_servers_pool:
-			ret[0] += self.tcp_ipv6_servers_pool[port].server_transfer_ul
-			ret[1] += self.tcp_ipv6_servers_pool[port].server_transfer_dl
+			u, d = self.tcp_ipv6_servers_pool[port].get_ud()
+			ret[0] += u
+			ret[1] += d
 		if port in self.udp_ipv6_servers_pool:
-			ret[0] += self.udp_ipv6_servers_pool[port].server_transfer_ul
-			ret[1] += self.udp_ipv6_servers_pool[port].server_transfer_dl
+			u, d = self.udp_ipv6_servers_pool[port].get_ud()
+			ret[0] += u
+			ret[1] += d
 		return ret
+
+	def get_server_mu_transfer(self, server):
+		return server.get_users_ud()
+
+	def update_mu_transfer(self, user_dict, u, d):
+		for uid in u:
+			port = struct.unpack('<I', uid)[0]
+			if port not in user_dict:
+				user_dict[port] = [0, 0]
+			user_dict[port][0] += u[uid]
+		for uid in d:
+			port = struct.unpack('<I', uid)[0]
+			if port not in user_dict:
+				user_dict[port] = [0, 0]
+			user_dict[port][1] += d[uid]
 
 	def get_servers_transfer(self):
 		servers = self.tcp_servers_pool.copy()
@@ -238,5 +278,17 @@ class ServerPool(object):
 		ret = {}
 		for port in servers.keys():
 			ret[port] = self.get_server_transfer(port)
+		for port in self.tcp_servers_pool:
+			u, d = self.get_server_mu_transfer(self.tcp_servers_pool[port])
+			self.update_mu_transfer(ret, u, d)
+		for port in self.tcp_ipv6_servers_pool:
+			u, d = self.get_server_mu_transfer(self.tcp_ipv6_servers_pool[port])
+			self.update_mu_transfer(ret, u, d)
+		for port in self.udp_servers_pool:
+			u, d = self.get_server_mu_transfer(self.udp_servers_pool[port])
+			self.update_mu_transfer(ret, u, d)
+		for port in self.udp_ipv6_servers_pool:
+			u, d = self.get_server_mu_transfer(self.udp_ipv6_servers_pool[port])
+			self.update_mu_transfer(ret, u, d)
 		return ret
 
