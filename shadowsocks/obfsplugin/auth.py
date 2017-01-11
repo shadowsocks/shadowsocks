@@ -1222,9 +1222,16 @@ class auth_aes128_sha1(auth_base):
         data = data + struct.pack('<H', data_len) + struct.pack('<H', rnd_len)
         mac_key = self.server_info.iv + self.server_info.key
         uid = os.urandom(4)
-        #if self.user_key: uid = self.uid else:
-        self.user_key = self.server_info.key
-        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.server_info.key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
+        if b':' in to_bytes(self.server_info.protocol_param):
+            try:
+                items = to_bytes(self.server_info.protocol_param).split(':')
+                self.user_key = self.hashfunc(items[1]).digest()
+                uid = struct.pack('<I', int(items[0]))
+            except:
+                pass
+        if self.user_key is None:
+            self.user_key = self.server_info.key
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
         data = uid + encryptor.encrypt(data)[16:]
         data += hmac.new(mac_key, data, self.hashfunc).digest()[:4]
         check_head = os.urandom(1)
@@ -1415,9 +1422,18 @@ class auth_aes128_sha1(auth_base):
         return (out_buf, sendback)
 
     def client_udp_pre_encrypt(self, buf):
-        uid = os.urandom(4)
-        user_key = self.server_info.key
-        buf += uid
+        if self.user_key is None:
+            if b':' in to_bytes(self.server_info.protocol_param):
+                try:
+                    items = to_bytes(self.server_info.protocol_param).split(':')
+                    self.user_key = self.hashfunc(items[1]).digest()
+                    self.user_id = struct.pack('<I', int(items[0]))
+                except:
+                    pass
+            if self.user_key is None:
+                self.user_id = os.urandom(4)
+                self.user_key = self.server_info.key
+        buf += self.user_id
         return buf + hmac.new(user_key, buf, self.hashfunc).digest()[:4]
 
     def client_udp_post_decrypt(self, buf):
