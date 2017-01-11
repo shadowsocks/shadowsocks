@@ -293,7 +293,7 @@ def main():
 					val = int(value)
 				except:
 					pass
-				user['transfer_enable'] = val * (1024 ** 3)
+				user['transfer_enable'] = int(val * 1024) * (1024 ** 2)
 			elif key in ('-h', '--help'):
 				print_server_help()
 				sys.exit(0)
