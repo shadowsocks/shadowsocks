@@ -1008,7 +1008,8 @@ class UDPRelay(object):
         else:
             if user not in self.server_user_transfer_ul:
                 self.server_user_transfer_ul[user] = 0
-            self.server_user_transfer_ul[user] += transfer
+            self.server_user_transfer_ul[user] += transfer + self.server_transfer_ul
+            self.server_transfer_ul = 0
 
     def add_transfer_d(self, user, transfer):
         if user is None:
@@ -1016,7 +1017,8 @@ class UDPRelay(object):
         else:
             if user not in self.server_user_transfer_dl:
                 self.server_user_transfer_dl[user] = 0
-            self.server_user_transfer_dl[user] += transfer
+            self.server_user_transfer_dl[user] += transfer + self.server_transfer_dl
+            self.server_transfer_dl = 0
 
     def _close_client_pair(self, client_pair):
         client, uid = client_pair

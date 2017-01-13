@@ -1108,7 +1108,8 @@ class TCPRelay(object):
         else:
             if user not in self.server_user_transfer_ul:
                 self.server_user_transfer_ul[user] = 0
-            self.server_user_transfer_ul[user] += transfer
+            self.server_user_transfer_ul[user] += transfer + self.server_transfer_ul
+            self.server_transfer_ul = 0
 
     def add_transfer_d(self, user, transfer):
         if user is None:
@@ -1116,7 +1117,8 @@ class TCPRelay(object):
         else:
             if user not in self.server_user_transfer_dl:
                 self.server_user_transfer_dl[user] = 0
-            self.server_user_transfer_dl[user] += transfer
+            self.server_user_transfer_dl[user] += transfer + self.server_transfer_dl
+            self.server_transfer_dl = 0
 
     def update_stat(self, port, stat_dict, val):
         newval = stat_dict.get(0, 0) + val
