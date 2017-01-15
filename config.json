@@ -7,7 +7,7 @@
     "password": "m",
     "timeout": 120,
     "udp_timeout": 60,
-    "method": "aes-256-cfb",
+    "method": "aes-128-ctr",
     "protocol": "auth_aes128_md5",
     "protocol_param": "",
     "obfs": "tls1.2_ticket_auth_compatible",

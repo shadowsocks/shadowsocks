@@ -104,8 +104,8 @@ class MuMgr(object):
 		return ''.join([random.choice('''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~-_=+(){}[]^&%$@''') for i in range(8)])
 
 	def add(self, user):
-		up = {'enable': 1, 'u': 0, 'd': 0, 'method': "aes-128-cfb",
-		'protocol': "auth_sha1_v4",
+		up = {'enable': 1, 'u': 0, 'd': 0, 'method': "aes-128-ctr",
+		'protocol': "auth_aes128_md5",
 		'obfs': "tls1.2_ticket_auth_compatible",
 		'transfer_enable': 1125899906842624}
 		up['passwd'] = self.rand_pass()
