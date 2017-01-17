@@ -25,7 +25,7 @@ class MuJsonLoader(object):
 		self.json = json.loads(l)
 
 	def save(self, path):
-		if self.json:
+		if self.json is not None:
 			output = json.dumps(self.json, sort_keys=True, indent=4, separators=(',', ': '))
 			with open(path, 'a'):
 				pass
@@ -107,7 +107,7 @@ class MuMgr(object):
 		up = {'enable': 1, 'u': 0, 'd': 0, 'method': "aes-128-ctr",
 		'protocol': "auth_aes128_md5",
 		'obfs': "tls1.2_ticket_auth_compatible",
-		'transfer_enable': 1125899906842624}
+		'transfer_enable': 9007199254740992}
 		up['passwd'] = self.rand_pass()
 		up.update(user)
 
@@ -190,26 +190,26 @@ def print_server_help():
 	print('''usage: python mujson_manage.py -a|-d|-e|-c|-l [OPTION]...
 
 Actions:
-  -a ADD                 add/edit a user
-  -d DELETE              delete a user
-  -e EDIT                edit a user
-  -c CLEAR               set u/d to zero
-  -l LIST                display a user infomation or all users infomation
+  -a ADD               add/edit a user
+  -d DELETE            delete a user
+  -e EDIT              edit a user
+  -c CLEAR             set u/d to zero
+  -l LIST              display a user infomation or all users infomation
 
 Options:
-  -u USER                the user name
-  -p PORT                server port
-  -k PASSWORD            password
-  -m METHOD              encryption method, default: aes-128-cfb
-  -O PROTOCOL            protocol plugin, default: auth_sha1_v4
-  -o OBFS                obfs plugin, default: tls1.2_ticket_auth_compatible
-  -G PROTOCOL_PARAM      protocol plugin param
-  -g OBFS_PARAM          obfs plugin param
-  -t TRANSFER            max transfer for G bytes, default: 1048576, can be float point number
-  -f FORBID              set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
+  -u USER              the user name
+  -p PORT              server port (only this option must be set if add a user)
+  -k PASSWORD          password
+  -m METHOD            encryption method, default: aes-128-ctr
+  -O PROTOCOL          protocol plugin, default: auth_aes128_md5
+  -o OBFS              obfs plugin, default: tls1.2_ticket_auth_compatible
+  -G PROTOCOL_PARAM    protocol plugin param
+  -g OBFS_PARAM        obfs plugin param
+  -t TRANSFER          max transfer for G bytes, default: 8388608 (8 PB or 8192 TB)
+  -f FORBID            set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
 
 General options:
-  -h, --help             show this help message and exit
+  -h, --help           show this help message and exit
 ''')
 
 
