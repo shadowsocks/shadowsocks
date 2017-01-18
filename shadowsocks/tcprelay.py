@@ -313,7 +313,7 @@ class TCPRelayHandler(object):
                 if self._encrypt_correct:
                     if sock == self._remote_sock:
                         self._server.add_transfer_u(self._user, len(data))
-                        self._update_activity(len(data))
+                self._update_activity(len(data))
                 if data:
                     l = len(data)
                     s = sock.send(data)
@@ -847,8 +847,8 @@ class TCPRelayHandler(object):
                     data = self._protocol.server_pre_encrypt(data)
                     data = self._encryptor.encrypt(data)
                     data = self._obfs.server_encode(data)
-            self._update_activity(len(data))
-            self._server.add_transfer_d(self._user, len(data))
+                    self._server.add_transfer_d(self._user, len(data))
+                self._update_activity(len(data))
         else:
             return
         try:
