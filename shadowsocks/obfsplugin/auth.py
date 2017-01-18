@@ -1224,7 +1224,7 @@ class auth_aes128_sha1(auth_base):
         uid = os.urandom(4)
         if b':' in to_bytes(self.server_info.protocol_param):
             try:
-                items = to_bytes(self.server_info.protocol_param).split(':')
+                items = to_bytes(self.server_info.protocol_param).split(b':')
                 self.user_key = self.hashfunc(items[1]).digest()
                 uid = struct.pack('<I', int(items[0]))
             except:
