@@ -278,7 +278,7 @@ class DbTransfer(TransferBase):
 		import json
 		config_path = get_config().MYSQL_CONFIG
 		cfg = None
-		with open(config_path, 'r+') as f:
+		with open(config_path, 'rb+') as f:
 			cfg = json.loads(f.read().decode('utf8'))
 
 		if cfg:
