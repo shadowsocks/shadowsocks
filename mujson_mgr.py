@@ -63,15 +63,32 @@ class MuMgr(object):
 				pass
 		return ret
 
-	def ssrlink(self, user, encode):
+	def ssrlink(self, user, encode, muid):
 		protocol = user.get('protocol', '')
 		obfs = user.get('obfs', '')
 		protocol = protocol.replace("_compatible", "")
 		obfs = obfs.replace("_compatible", "")
 		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))).replace("=", ""))
+		if muid is not None:
+			protocol_param = user.get('protocol_param', '')
+			param = protocol_param.split('#')
+			if len(param) == 2:
+				user_dict = {}
+				user_list = param[1].split(',')
+				if user_list:
+					for userinfo in user_list:
+						items = userinfo.split(':')
+						if len(items) == 2:
+							user_int_id = int(items[0])
+							passwd = items[1]
+							user_dict[user_int_id] = passwd
+					if muid in user_dict:
+						param = str(muid) + ':' + user_dict[muid]
+						protocol_param = '/?protoparam=' + base64.urlsafe_b64encode(common.to_bytes(param)).replace("=", "")
+						link += protocol_param
 		return "ssr://" + (encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))).replace("=", "") or link)
 
-	def userinfo(self, user):
+	def userinfo(self, user, muid = None):
 		ret = ""
 		key_list = ['user', 'port', 'method', 'passwd', 'protocol', 'protocol_param', 'obfs', 'obfs_param', 'transfer_enable', 'u', 'd']
 		for key in sorted(user):
@@ -96,8 +113,8 @@ class MuMgr(object):
 					ret += "    %s : %s  G Bytes" % (key, val)
 			else:
 				ret += "    %s : %s" % (key, user[key])
-		ret += "\n    " + self.ssrlink(user, False)
-		ret += "\n    " + self.ssrlink(user, True)
+		ret += "\n    " + self.ssrlink(user, False, muid)
+		ret += "\n    " + self.ssrlink(user, True, muid)
 		return ret
 
 	def rand_pass(self):
@@ -183,7 +200,10 @@ class MuMgr(object):
 			if 'port' in user and row['port'] != user['port']:
 				match = False
 			if match:
-				print("### user [%s] info %s" % (row['user'], self.userinfo(row)))
+				muid = None
+				if 'muid' in user:
+					muid = user['muid']
+				print("### user [%s] info %s" % (row['user'], self.userinfo(row, muid)))
 
 
 def print_server_help():
@@ -207,6 +227,7 @@ Options:
   -g OBFS_PARAM        obfs plugin param
   -t TRANSFER          max transfer for G bytes, default: 8388608 (8 PB or 8192 TB)
   -f FORBID            set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
+  -i MUID              set sub id to display (only work with -l)
 
 General options:
   -h, --help           show this help message and exit
@@ -214,7 +235,7 @@ General options:
 
 
 def main():
-	shortopts = 'adeclu:p:k:O:o:G:g:m:t:f:h'
+	shortopts = 'adeclu:i:p:k:O:o:G:g:m:t:f:h'
 	longopts = ['help']
 	action = None
 	user = {}
@@ -265,6 +286,8 @@ def main():
 				action = 0
 			elif key == '-u':
 				user['user'] = value
+			elif key == '-i':
+				user['muid'] = int(value)
 			elif key == '-p':
 				user['port'] = int(value)
 			elif key == '-k':
