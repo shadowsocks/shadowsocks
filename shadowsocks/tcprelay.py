@@ -882,7 +882,7 @@ class TCPRelayHandler(object):
     def _on_local_error(self):
         if self._local_sock:
             err = eventloop.get_sock_error(self._local_sock)
-            if err.errno not in [errno.ECONNRESET]:
+            if err.errno not in [errno.ECONNRESET, errno.EPIPE]:
                 logging.error(err)
                 logging.error("local error, exception from %s:%d" % (self._client_address[0], self._client_address[1]))
         self.destroy()
