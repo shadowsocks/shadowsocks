@@ -54,6 +54,7 @@ class obfs_auth_data(object):
         self.client_data = lru_cache.LRUCache(60 * 5)
         self.client_id = os.urandom(32)
         self.startup_time = int(time.time() - 60 * 30) & 0xFFFFFFFF
+        self.ticket_buf = {}
 
 class tls_ticket_auth(plain.plain):
     def __init__(self, method):
@@ -104,7 +105,9 @@ class tls_ticket_auth(plain.plain):
             host = random.choice(hosts)
             ext += self.sni(host)
             ext += b"\x00\x17\x00\x00"
-            ext += b"\x00\x23\x00\xd0" + os.urandom(208) # ticket
+            if host not in self.server_info.data.ticket_buf:
+                self.server_info.data.ticket_buf[host] = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 17 + 8) * 16)
+            ext += b"\x00\x23" + struct.pack('>H', len(self.ticket_size_buf[host])) + self.ticket_size_buf[host]
             ext += binascii.unhexlify(b"000d001600140601060305010503040104030301030302010203")
             ext += binascii.unhexlify(b"000500050100000000")
             ext += binascii.unhexlify(b"00120000")
