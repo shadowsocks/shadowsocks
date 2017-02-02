@@ -391,8 +391,11 @@ class Dbv3Transfer(DbTransfer):
 	def __init__(self):
 		super(Dbv3Transfer, self).__init__()
 		self.key_list += ['id', 'method']
+		self.ss_node_info_name = 'ss_node_info_log'
 		if get_config().API_INTERFACE == 'sspanelv3ssr':
 			self.key_list += ['obfs', 'protocol']
+		if get_config().API_INTERFACE == 'glzjinmod':
+			self.ss_node_info_name = 'ss_node_info'
 		self.start_time = time.time()
 
 	def update_all_user(self, dt_transfer):
@@ -473,14 +476,14 @@ class Dbv3Transfer(DbTransfer):
 
 			cur = conn.cursor()
 			try:
-				cur.execute("INSERT INTO `ss_node_info_log` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
+				cur.execute("INSERT INTO `" + self.ss_node_info_name + "` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
 					str(self.cfg["node_id"]) + "', '" + str(self.uptime()) + "', '" + \
 					str(self.load()) + "', unix_timestamp()); ")
 			except Exception as e:
 				logging.error(e)
 			cur.close()
 		except:
-			logging.warn('no `ss_node_online_log` or `ss_node_info_log` in db')
+			logging.warn('no `ss_node_online_log` or `" + self.ss_node_info_name + "` in db')
 
 		conn.close()
 		return update_transfer
