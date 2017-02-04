@@ -395,6 +395,7 @@ class Dbv3Transfer(DbTransfer):
 		if get_config().API_INTERFACE == 'sspanelv3ssr':
 			self.key_list += ['obfs', 'protocol']
 		if get_config().API_INTERFACE == 'glzjinmod':
+			self.key_list += ['obfs', 'protocol']
 			self.ss_node_info_name = 'ss_node_info'
 		self.start_time = time.time()
 
