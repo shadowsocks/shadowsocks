@@ -1434,7 +1434,7 @@ class auth_aes128_sha1(auth_base):
                 self.user_id = os.urandom(4)
                 self.user_key = self.server_info.key
         buf += self.user_id
-        return buf + hmac.new(user_key, buf, self.hashfunc).digest()[:4]
+        return buf + hmac.new(self.user_key, buf, self.hashfunc).digest()[:4]
 
     def client_udp_post_decrypt(self, buf):
         user_key = self.server_info.key
