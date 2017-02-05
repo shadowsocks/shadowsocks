@@ -33,11 +33,11 @@ move to "~/shadowsocksr", then run:
 
 move to "~/shadowsocksr/shadowsocks", then run:
 
-    python server.py -p 443 -k password -m aes-128-cfb -O auth_aes128_md5_compatible -o tls1.2_ticket_auth_compatible
+    python server.py -p 443 -k password -m aes-128-cfb -O auth_aes128_md5 -o tls1.2_ticket_auth_compatible
 
 Check all the options via `-h`.
 
-You can also use a configuration file instead (recommand), move to "~/shadowsocksr" and edit the file "user-config.json", then move to "~/shadowsocksr/shadowsocks" again, just run:
+You can also use a configuration file instead (recommend), move to "~/shadowsocksr" and edit the file "user-config.json", then move to "~/shadowsocksr/shadowsocks" again, just run:
 
     python server.py
 
@@ -57,7 +57,7 @@ To monitor the log:
 Client
 ------
 
-* [Windows] / [OS X]
+* [Windows] / [macOS]
 * [Android] / [iOS]
 * [OpenWRT]
 
@@ -99,7 +99,7 @@ Bugs and Issues
 [iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
 [Issue Tracker]:     https://github.com/shadowsocksr/shadowsocksr/issues?state=open
 [OpenWRT]:           https://github.com/shadowsocks/openwrt-shadowsocks
-[OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
+[macOS]:             https://github.com/shadowsocksr/ShadowsocksX-NG
 [Travis CI]:         https://travis-ci.org/shadowsocksr/shadowsocksr
 [Windows]:           https://github.com/shadowsocksr/shadowsocksr-csharp
 [Wiki]:              https://github.com/breakwa11/shadowsocks-rss/wiki
