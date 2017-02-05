@@ -107,7 +107,7 @@ class tls_ticket_auth(plain.plain):
             ext += b"\x00\x17\x00\x00"
             if host not in self.server_info.data.ticket_buf:
                 self.server_info.data.ticket_buf[host] = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 17 + 8) * 16)
-            ext += b"\x00\x23" + struct.pack('>H', len(self.ticket_size_buf[host])) + self.ticket_size_buf[host]
+            ext += b"\x00\x23" + struct.pack('>H', len(self.server_info.data.ticket_buf[host])) + self.server_info.data.ticket_buf[host]
             ext += binascii.unhexlify(b"000d001600140601060305010503040104030301030302010203")
             ext += binascii.unhexlify(b"000500050100000000")
             ext += binascii.unhexlify(b"00120000")
