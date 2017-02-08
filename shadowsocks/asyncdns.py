@@ -29,7 +29,7 @@ from shadowsocks import common, lru_cache, eventloop, shell
 
 CACHE_SWEEP_INTERVAL = 30
 
-VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d\-_]{1,63}(?<!-)$", re.IGNORECASE)
+VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
 
 common.patch_socket()
 
@@ -242,13 +242,13 @@ class DNSResponse(object):
         return '%s: %s' % (self.hostname, str(self.answers))
 
 
-STATUS_FIRST = 0
-STATUS_SECOND = 1
+STATUS_IPV4 = 0
+STATUS_IPV6 = 1
 
 
 class DNSResolver(object):
 
-    def __init__(self, server_list=None, prefer_ipv6=False):
+    def __init__(self):
         self._loop = None
         self._hosts = {}
         self._hostname_status = {}
@@ -256,15 +256,8 @@ class DNSResolver(object):
         self._cb_to_hostname = {}
         self._cache = lru_cache.LRUCache(timeout=300)
         self._sock = None
-        if server_list is None:
-            self._servers = None
-            self._parse_resolv()
-        else:
-            self._servers = server_list
-        if prefer_ipv6:
-            self._QTYPES = [QTYPE_AAAA, QTYPE_A]
-        else:
-            self._QTYPES = [QTYPE_A, QTYPE_AAAA]
+        self._servers = None
+        self._parse_resolv()
         self._parse_hosts()
         # TODO monitor hosts change and reload hosts
         # TODO parse /etc/gai.conf and follow its rules
@@ -276,18 +269,15 @@ class DNSResolver(object):
                 content = f.readlines()
                 for line in content:
                     line = line.strip()
-                    if not (line and line.startswith(b'nameserver')):
-                        continue
-
-                    parts = line.split()
-                    if len(parts) < 2:
-                        continue
-
-                    server = parts[1]
-                    if common.is_ip(server) == socket.AF_INET:
-                        if type(server) != str:
-                            server = server.decode('utf8')
-                        self._servers.append(server)
+                    if line:
+                        if line.startswith(b'nameserver'):
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                server = parts[1]
+                                if common.is_ip(server) == socket.AF_INET:
+                                    if type(server) != str:
+                                        server = server.decode('utf8')
+                                    self._servers.append(server)
         except IOError:
             pass
         if not self._servers:
@@ -302,17 +292,13 @@ class DNSResolver(object):
                 for line in f.readlines():
                     line = line.strip()
                     parts = line.split()
-                    if len(parts) < 2:
-                        continue
-
-                    ip = parts[0]
-                    if not common.is_ip(ip):
-                        continue
-
-                    for i in range(1, len(parts)):
-                        hostname = parts[i]
-                        if hostname:
-                            self._hosts[hostname] = ip
+                    if len(parts) >= 2:
+                        ip = parts[0]
+                        if common.is_ip(ip):
+                            for i in range(1, len(parts)):
+                                hostname = parts[i]
+                                if hostname:
+                                    self._hosts[hostname] = ip
         except IOError:
             self._hosts['localhost'] = '127.0.0.1'
 
@@ -352,22 +338,21 @@ class DNSResolver(object):
                         answer[2] == QCLASS_IN:
                     ip = answer[0]
                     break
-            if not ip and self._hostname_status.get(hostname, STATUS_SECOND) \
-                    == STATUS_FIRST:
-                self._hostname_status[hostname] = STATUS_SECOND
-                self._send_req(hostname, self._QTYPES[1])
+            if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
+                    == STATUS_IPV4:
+                self._hostname_status[hostname] = STATUS_IPV6
+                self._send_req(hostname, QTYPE_AAAA)
             else:
                 if ip:
                     self._cache[hostname] = ip
                     self._call_callback(hostname, ip)
-                elif self._hostname_status.get(hostname, None) \
-                        == STATUS_SECOND:
+                elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
                     for question in response.questions:
-                        if question[1] == self._QTYPES[1]:
+                        if question[1] == QTYPE_AAAA:
                             self._call_callback(hostname, None)
                             break
 
-    def handle_event(self, sock, fd, event):
+    def handle_event(self, sock, event):
         if sock != self._sock:
             return
         if event & eventloop.POLL_ERR:
@@ -429,14 +414,14 @@ class DNSResolver(object):
                 return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
-                self._hostname_status[hostname] = STATUS_FIRST
-                self._send_req(hostname, self._QTYPES[0])
+                self._hostname_status[hostname] = STATUS_IPV4
+                self._send_req(hostname, QTYPE_A)
                 self._hostname_to_cb[hostname] = [callback]
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
                 # TODO send again only if waited too long
-                self._send_req(hostname, self._QTYPES[0])
+                self._send_req(hostname, QTYPE_A)
 
     def close(self):
         if self._sock:
