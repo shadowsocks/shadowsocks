@@ -158,9 +158,9 @@ class UDPRelay(object):
             else:
                 data = data[3:]
         else:
-            data, key, iv = encrypt.dencrypt_all(self._password,
-                                                 self._method,
-                                                 data)
+            data, key, iv = encrypt.decrypt_all(self._password,
+                                                self._method,
+                                                data)
             # decrypt data
             if not data:
                 logging.debug(

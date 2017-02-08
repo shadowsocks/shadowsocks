@@ -153,7 +153,7 @@ def encrypt_all_m(key, iv, m, method, data):
     return b''.join(result)
 
 
-def dencrypt_all(password, method, data):
+def decrypt_all(password, method, data):
     result = []
     method = method.lower()
     (key_len, iv_len, m) = method_supported[method]
@@ -228,7 +228,7 @@ def test_encrypt_all_m():
         logging.warn(method)
         key, iv, m = gen_key_iv(b'key', method)
         cipher = encrypt_all_m(key, iv, m, method, plain)
-        plain2, key, iv = dencrypt_all(b'key', method, cipher)
+        plain2, key, iv = decrypt_all(b'key', method, cipher)
         assert plain == plain2
 
 
