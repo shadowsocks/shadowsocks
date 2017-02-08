@@ -1,1 +1,1 @@
-Removed according to regulations.
+Just for learn.
