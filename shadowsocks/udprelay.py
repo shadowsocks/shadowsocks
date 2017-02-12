@@ -782,34 +782,43 @@ class TCPRelayHandler(object):
 
     def handle_event(self, sock, event):
         # handle all events in this handler and dispatch them to methods
+        handle = False
         if self._stage == STAGE_DESTROYED:
             logging.debug('ignore handle_event: destroyed')
-            return
+            return True
         # order is important
         if sock == self._remote_sock:
             if event & eventloop.POLL_ERR:
+                handle = True
                 self._on_remote_error()
                 if self._stage == STAGE_DESTROYED:
-                    return
+                    return True
             if event & (eventloop.POLL_IN | eventloop.POLL_HUP):
+                handle = True
                 self._on_remote_read()
                 if self._stage == STAGE_DESTROYED:
-                    return
+                    return True
             if event & eventloop.POLL_OUT:
+                handle = True
                 self._on_remote_write()
         elif sock == self._local_sock:
             if event & eventloop.POLL_ERR:
+                handle = True
                 self._on_local_error()
                 if self._stage == STAGE_DESTROYED:
-                    return
+                    return True
             if event & (eventloop.POLL_IN | eventloop.POLL_HUP):
+                handle = True
                 self._on_local_read()
                 if self._stage == STAGE_DESTROYED:
-                    return
+                    return True
             if event & eventloop.POLL_OUT:
+                handle = True
                 self._on_local_write()
         else:
             logging.warn('unknown socket')
+
+        return handle
 
     def _log_error(self, e):
         logging.error('%s when handling connection from %s' %
