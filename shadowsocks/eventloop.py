@@ -222,8 +222,8 @@ class EventLoop(object):
                 for callback in self._periodic_callbacks:
                     callback()
                 self._last_time = now
-            if events and (handle is False):
-                time.sleep(0.01)
+            if events and not handle:
+                time.sleep(0.02)
 
     def __del__(self):
         self._impl.close()
