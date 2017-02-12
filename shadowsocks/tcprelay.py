@@ -96,7 +96,7 @@ UDP_MAX_BUF_SIZE = 65536
 
 class SpeedTester(object):
     def __init__(self, max_speed = 0):
-        self.max_speed = max_speed
+        self.max_speed = max_speed * 1024
         self.timeout = 3
         self._cache = deque()
         self.sum_len = 0
