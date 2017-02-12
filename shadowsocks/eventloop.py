@@ -223,7 +223,7 @@ class EventLoop(object):
                     callback()
                 self._last_time = now
             if events and not handle:
-                time.sleep(0.02)
+                time.sleep(0.001)
 
     def __del__(self):
         self._impl.close()
