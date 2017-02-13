@@ -902,7 +902,7 @@ class UDPRelay(object):
         self._cache_dns_client = lru_cache.LRUCache(timeout=10,
                                          close_callback=self._close_client_pair)
         self._client_fd_to_server_addr = {}
-        self._dns_cache = lru_cache.LRUCache(timeout=300)
+        self._dns_cache = lru_cache.LRUCache(timeout=1800)
         self._eventloop = None
         self._closed = False
         self.server_transfer_ul = 0
@@ -1158,20 +1158,28 @@ class UDPRelay(object):
         connecttype, dest_addr, dest_port, header_length = header_result
 
         if self._is_local:
+            connecttype = 3
             server_addr, server_port = self._get_a_server()
         else:
             server_addr, server_port = dest_addr, dest_port
 
-        addrs = self._dns_cache.get(server_addr, None)
-        if addrs is None:
-            # TODO async getaddrinfo
+        if (connecttype & 7) == 3:
+            addrs = self._dns_cache.get(server_addr, None)
+            if addrs is None:
+                # TODO async getaddrinfo
+                addrs = socket.getaddrinfo(server_addr, server_port, 0,
+                                           socket.SOCK_DGRAM, socket.SOL_UDP)
+                if not addrs:
+                    # drop
+                    return
+                else:
+                    self._dns_cache[server_addr] = addrs
+        else:
             addrs = socket.getaddrinfo(server_addr, server_port, 0,
                                        socket.SOCK_DGRAM, socket.SOL_UDP)
             if not addrs:
                 # drop
                 return
-            else:
-                self._dns_cache[server_addr] = addrs
 
         af, socktype, proto, canonname, sa = addrs[0]
         key = client_key(r_addr, af)
