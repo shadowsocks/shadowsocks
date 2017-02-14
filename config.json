@@ -14,6 +14,7 @@
     "obfs": "tls1.2_ticket_auth_compatible",
     "obfs_param": "",
     "speed_limit_per_con": 0,
+    "speed_limit_per_user": 0,
 
     "dns_ipv6": false,
     "connect_verbose_info": 0,
