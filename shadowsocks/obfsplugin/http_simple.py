@@ -168,6 +168,11 @@ class http_simple(plain.plain):
             return (b'E'*2048, False, False)
         return (buf, True, False)
 
+    def error_return(self, buf):
+        self.has_sent_header = True
+        self.has_recv_header = True
+        return (b'E'*2048, False, False)
+
     def server_decode(self, buf):
         if self.has_recv_header:
             return (buf, True, False)
@@ -199,10 +204,10 @@ class http_simple(plain.plain):
                 if host not in hosts:
                     return self.not_match_return(buf)
             if len(ret_buf) < 4:
-                return self.not_match_return(buf)
+                return self.error_return(buf)
             if len(datas) > 1:
                 ret_buf += datas[1]
-            if len(ret_buf) >= 7:
+            if len(ret_buf) >= 13:
                 self.has_recv_header = True
                 return (ret_buf, True, False)
             return self.not_match_return(buf)

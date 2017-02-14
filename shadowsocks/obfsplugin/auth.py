@@ -1319,12 +1319,12 @@ class auth_aes128_sha1(auth_base):
         sendback = False
 
         if not self.has_recv_header:
-            if len(self.recv_buf) < 7:
-                return (b'', False)
-            mac_key = self.server_info.recv_iv + self.server_info.key
-            sha1data = hmac.new(mac_key, self.recv_buf[:1], self.hashfunc).digest()[:6]
-            if sha1data != self.recv_buf[1:7]:
-                return self.not_match_return(self.recv_buf)
+            if len(self.recv_buf) >= 7 or len(self.recv_buf) in [2, 3]:
+                recv_len = min(len(self.recv_buf), 7)
+                mac_key = self.server_info.recv_iv + self.server_info.key
+                sha1data = hmac.new(mac_key, self.recv_buf[:1], self.hashfunc).digest()[:recv_len - 1]
+                if sha1data != self.recv_buf[1:recv_len]:
+                    return self.not_match_return(self.recv_buf)
 
             if len(self.recv_buf) < 31:
                 return (b'', False)
