@@ -7,8 +7,8 @@
     "method":"aes-256-cfb",
     "local_address":"127.0.0.1",
     "fast_open":false,
-    "dns_service":false,
-    "dns_server":"8.8.8.8",
-    "dns_server_port":53,
-    "dns_local_port":53
+    "tunnel_service":false,
+    "tunnel_dns_server":"8.8.8.8",
+    "tunnel_dns_server_port":53,
+    "tunnel_dns_local_port":53
 }

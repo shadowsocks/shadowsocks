@@ -94,10 +94,10 @@ class UDPRelay(object):
             self._listen_port = config['server_port']
             self._remote_addr = None
             self._remote_port = None
-        self.dns_service = config.get('dns_service', False)
-        self.dns_server = config.get('dns_server', "8.8.8.8")
-        self.dns_server_port = config.get('dns_server_port', 53)
-        self.dns_local_port = config.get('dns_local_port', 53)
+        self.tunnel_service = config.get('tunnel_service', False)
+        self.tunnel_dns_server = config.get('tunnel_dns_server', "8.8.8.8")
+        self.tunnel_dns_server_port = config.get('tunnel_dns_server_port', 53)
+        self.tunnel_dns_local_port = config.get('tunnel_dns_local_port', 53)
         self.is_tunnel = False
         self._dns_resolver = dns_resolver
         self._password = common.to_bytes(config['password'])
@@ -158,9 +158,9 @@ class UDPRelay(object):
         if self._is_local:
             if self.is_tunnel:
                 # add socks5 header to data
-                dns_server = self.dns_server
-                dns_server_port = self.dns_server_port
-                data = common.add_header(dns_server, dns_server_port, data)
+                tunnel_dns_server = self.tunnel_dns_server
+                tunnel_dns_server_port = self.tunnel_dns_server_port
+                data = common.add_header(tunnel_dns_server, tunnel_dns_server_port, data)
             else:
                 frag = common.ord(data[2])
                 if frag != 0:
