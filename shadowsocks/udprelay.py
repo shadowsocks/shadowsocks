@@ -94,6 +94,11 @@ class UDPRelay(object):
             self._listen_port = config['server_port']
             self._remote_addr = None
             self._remote_port = None
+        self.dns_service = config.get('dns_service', False)
+        self.dns_server = config.get('dns_server', "8.8.8.8")
+        self.dns_server_port = config.get('dns_server_port', 53)
+        self.dns_local_port = config.get('dns_local_port', 53)
+        self.is_tunnel = False
         self._dns_resolver = dns_resolver
         self._password = common.to_bytes(config['password'])
         self._method = config['method']
@@ -151,12 +156,18 @@ class UDPRelay(object):
         if self._stat_callback:
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
-            frag = common.ord(data[2])
-            if frag != 0:
-                logging.warn('UDP drop a message since frag is not 0')
-                return
+            if self.is_tunnel:
+                #add socks5 header to data
+                dns_server = self.dns_server
+                dns_server_port = self.dns_server_port
+                data = common.add_header(dns_server, dns_server_port, data)
             else:
-                data = data[3:]
+                frag = common.ord(data[2])
+                if frag != 0:
+                    logging.warn('UDP drop a message since frag is not 0')
+                    return
+                else:
+                    data = data[3:]
         else:
             data, key, iv = encrypt.dencrypt_all(self._password,
                                                  self._method,
@@ -171,7 +182,7 @@ class UDPRelay(object):
         if header_result is None:
             return
         addrtype, dest_addr, dest_port, header_length = header_result
-
+        logging.info("udp data to %s:%d from %s:%d" %(dest_addr, dest_port, r_addr[0], r_addr[1]))
         if self._is_local:
             server_addr, server_port = self._get_a_server()
         else:
@@ -267,9 +278,14 @@ class UDPRelay(object):
             if header_result is None:
                 return
             addrtype, dest_addr, dest_port, header_length = header_result
-            response = b'\x00\x00\x00' + data
+            if self.is_tunnel:
+                # remove socks5 header
+                response = data[7:]
+            else:
+                response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
+            logging.debug("send udp response to %s:%d" %(client_addr[0], client_addr[1]))
             self._server_socket.sendto(response, client_addr)
         else:
             # this packet is from somewhere else we know

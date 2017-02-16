@@ -159,6 +159,11 @@ def pack_addr(address):
         address = address[:255]  # TODO
     return b'\x03' + chr(len(address)) + address
 
+# add socks5 request header
+def add_header(address, port ,data):
+    header = b''
+    header = pack_addr(address) +  struct.pack('>H', port) + data
+    return header
 
 def parse_header(data):
     addrtype = ord(data[0])

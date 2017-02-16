@@ -159,6 +159,11 @@ def check_config(config, is_local):
     if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
 
+    if 'dns_server_port' in config:
+        config['dns_server_port'] = int(config['dns_server_port'])
+    if 'dns_local_port' in config:
+        config['dns_local_port'] = int(config['dns_local_port'])
+
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
@@ -297,6 +302,10 @@ def get_config(is_local):
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
+    config['dns_service'] = config.get('dns_service', False)
+    config['dns_server'] = to_str(config.get('dns_server', "8.8.8.8"))
+    config['dns_server_port'] = config.get('dns_server_port', 53)
+    config['dns_local_port'] = config.get('dns_local_port', 53)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
