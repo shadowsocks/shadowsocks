@@ -63,7 +63,7 @@ def main():
     def handler(signum, _):
         logging.warn('received SIGQUIT, doing graceful shutting down..')
         #tcp_server.close(next_tick=True)
-        udp_server.close(next_tick=True)
+        tunnel_udp_server.close(next_tick=True)
     signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
 
     def int_handler(signum, _):

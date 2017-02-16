@@ -51,14 +51,18 @@ def main():
     dns_resolver.add_to_loop(loop)
     tcp_server.add_to_loop(loop)
     udp_server.add_to_loop(loop)
+    has_tunnel = False
     if config["dns_service"]:
         tunnel_udp_server = get_tunnel_udp_server(config.copy(), dns_resolver)
         tunnel_udp_server.add_to_loop(loop)
+        has_tunnel = True
 
     def handler(signum, _):
         logging.warn('received SIGQUIT, doing graceful shutting down..')
         tcp_server.close(next_tick=True)
         udp_server.close(next_tick=True)
+        if has_tunnel:
+            tunnel_udp_server.close(next_tick=True)
     signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
 
     def int_handler(signum, _):
