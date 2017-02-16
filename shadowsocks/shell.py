@@ -160,7 +160,8 @@ def check_config(config, is_local):
         config['server_port'] = int(config['server_port'])
 
     if 'tunnel_dns_server_port' in config:
-        config['tunnel_dns_server_port'] = int(config['tunnel_dns_server_port'])
+        config['tunnel_dns_server_port'] = \
+            int(config['tunnel_dns_server_port'])
     if 'tunnel_dns_local_port' in config:
         config['tunnel_dns_local_port'] = int(config['tunnel_dns_local_port'])
 
@@ -303,7 +304,8 @@ def get_config(is_local):
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
     config['tunnel_service'] = config.get('tunnel_service', False)
-    config['tunnel_dns_server'] = to_str(config.get('tunnel_dns_server', "8.8.8.8"))
+    config['tunnel_dns_server'] = \
+        to_str(config.get('tunnel_dns_server', "8.8.8.8"))
     config['tunnel_dns_server_port'] = config.get('tunnel_dns_server_port', 53)
     config['tunnel_dns_local_port'] = config.get('tunnel_dns_local_port', 53)
 
