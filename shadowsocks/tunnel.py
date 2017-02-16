@@ -55,6 +55,8 @@ def main():
     config = shell.get_config(True)
     daemon.daemon_exec(config)
     dns_resolver = asyncdns.DNSResolver()
+    # if running tunnel then update tunnel_service to True
+    config["tunnel_service"] = True
     tunnel_udp_server = get_tunnel_udp_server(config, dns_resolver)
     loop = eventloop.EventLoop()
     dns_resolver.add_to_loop(loop)

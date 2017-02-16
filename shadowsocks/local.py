@@ -52,6 +52,7 @@ def main():
     tcp_server.add_to_loop(loop)
     udp_server.add_to_loop(loop)
     has_tunnel = False
+    # if tunnel_service is True then run tunnel_udp_server
     if config["tunnel_service"]:
         tunnel_udp_server = get_tunnel_udp_server(config.copy(), dns_resolver)
         tunnel_udp_server.add_to_loop(loop)
