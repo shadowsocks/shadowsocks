@@ -32,3 +32,7 @@ htmlcov
 
 #Emacs
 .#*
+
+#vscode
+.idea
+.vscode
