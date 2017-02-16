@@ -36,3 +36,6 @@ htmlcov
 #vscode
 .idea
 .vscode
+
+#ss
+config.json
