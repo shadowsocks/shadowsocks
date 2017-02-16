@@ -157,7 +157,7 @@ class UDPRelay(object):
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
             if self.is_tunnel:
-                #add socks5 header to data
+                # add socks5 header to data
                 dns_server = self.dns_server
                 dns_server_port = self.dns_server_port
                 data = common.add_header(dns_server, dns_server_port, data)
@@ -182,7 +182,8 @@ class UDPRelay(object):
         if header_result is None:
             return
         addrtype, dest_addr, dest_port, header_length = header_result
-        logging.info("udp data to %s:%d from %s:%d" %(dest_addr, dest_port, r_addr[0], r_addr[1]))
+        logging.info("udp data to %s:%d from %s:%d" 
+            %(dest_addr, dest_port, r_addr[0], r_addr[1]))
         if self._is_local:
             server_addr, server_port = self._get_a_server()
         else:
@@ -285,7 +286,8 @@ class UDPRelay(object):
                 response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
-            logging.debug("send udp response to %s:%d" %(client_addr[0], client_addr[1]))
+            logging.debug("send udp response to %s:%d" 
+                %(client_addr[0], client_addr[1]))
             self._server_socket.sendto(response, client_addr)
         else:
             # this packet is from somewhere else we know

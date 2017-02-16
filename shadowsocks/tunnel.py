@@ -24,18 +24,19 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
+from shadowsocks import shell, daemon, eventloop, udprelay, asyncdns
+
 
 def get_tunnel_udp_server(config, dns_resolver):
     if config["dns_service"]:
         config["local_port"] = config.copy()["dns_local_port"]
         logging.info("starting tunnel at %s:%d" %
-                 (config['local_address'], config['local_port']))
+            (config['local_address'], config['local_port']))
     else:
         logging.info("dns_service is False")
-        return        
+        return
 
-    #tcp_server = tcprelay.TCPRelay(config, dns_resolver, True)
+    # tcp_server = tcprelay.TCPRelay(config, dns_resolver, True)
     tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
     tunnel_udp_server.is_tunnel = True
     return tunnel_udp_server
@@ -57,12 +58,12 @@ def main():
     tunnel_udp_server = get_tunnel_udp_server(config, dns_resolver)
     loop = eventloop.EventLoop()
     dns_resolver.add_to_loop(loop)
-    #tcp_server.add_to_loop(loop)
+    # tcp_server.add_to_loop(loop)
     tunnel_udp_server.add_to_loop(loop)
 
     def handler(signum, _):
         logging.warn('received SIGQUIT, doing graceful shutting down..')
-        #tcp_server.close(next_tick=True)
+        # tcp_server.close(next_tick=True)
         tunnel_udp_server.close(next_tick=True)
     signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
 
