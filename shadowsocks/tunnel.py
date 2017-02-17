@@ -43,11 +43,12 @@ def main():
     loop = eventloop.EventLoop()
     dns_resolver.add_to_loop(loop)
     # tcp_server.add_to_loop(loop)
-    config["local_port"] = config.copy()["tunnel_port"]
+    _config = config.copy()
+    _config["local_port"] = _config["tunnel_port"]
     logging.info("starting tunnel at %s:%d forward to %s:%d" %
-                 (config['local_address'], config['local_port'], config['tunnel_remote'],
-                  config['tunnel_remote_port']))
-    tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
+                 (_config['local_address'], _config['local_port'],
+                     _config['tunnel_remote'], _config['tunnel_remote_port']))
+    tunnel_udp_server = udprelay.UDPRelay(_config, dns_resolver, True)
     tunnel_udp_server.is_tunnel = True
     tunnel_udp_server.add_to_loop(loop)
 
