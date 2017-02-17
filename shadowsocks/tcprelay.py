@@ -106,6 +106,7 @@ class NoAcceptableMethods(Exception):
 
 
 class TCPRelayHandler(object):
+
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
                  dns_resolver, is_local):
         self._server = server
@@ -260,7 +261,7 @@ class TCPRelayHandler(object):
             tunnel_remote = self.tunnel_remote
             tunnel_remote_port = self.tunnel_remote_port
             data = common.add_header(tunnel_remote,
-                                        tunnel_remote_port, data)
+                                     tunnel_remote_port, data)
         if self._ota_enable_session:
             data = self._ota_chunk_data_gen(data)
         data = self._encryptor.encrypt(data)
@@ -368,7 +369,7 @@ class TCPRelayHandler(object):
             if not self.is_tunnel:
                 # forward address to remote
                 self._write_to_sock((b'\x05\x00\x00\x01'
-                                    b'\x00\x00\x00\x00\x10\x10'),
+                                     b'\x00\x00\x00\x00\x10\x10'),
                                     self._local_sock)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             # ATYP & 0x10 == 0x10, then OTA is enabled.
@@ -508,7 +509,7 @@ class TCPRelayHandler(object):
                 tunnel_remote = self.tunnel_remote
                 tunnel_remote_port = self.tunnel_remote_port
                 data = common.add_header(tunnel_remote,
-                                            tunnel_remote_port, data)
+                                         tunnel_remote_port, data)
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(data)
             data = self._encryptor.encrypt(data)
@@ -717,6 +718,7 @@ class TCPRelayHandler(object):
 
 
 class TCPRelay(object):
+
     def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         self._is_local = is_local
