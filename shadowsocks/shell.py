@@ -159,11 +159,11 @@ def check_config(config, is_local):
     if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
 
-    if 'tunnel_dns_server_port' in config:
-        config['tunnel_dns_server_port'] = \
-            int(config['tunnel_dns_server_port'])
-    if 'tunnel_dns_local_port' in config:
-        config['tunnel_dns_local_port'] = int(config['tunnel_dns_local_port'])
+    if 'tunnel_remote_port' in config:
+        config['tunnel_remote_port'] = \
+            int(config['tunnel_remote_port'])
+    if 'tunnel_port' in config:
+        config['tunnel_port'] = int(config['tunnel_port'])
 
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
@@ -303,11 +303,11 @@ def get_config(is_local):
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
-    config['tunnel_service'] = config.get('tunnel_service', False)
-    config['tunnel_dns_server'] = \
-        to_str(config.get('tunnel_dns_server', "8.8.8.8"))
-    config['tunnel_dns_server_port'] = config.get('tunnel_dns_server_port', 53)
-    config['tunnel_dns_local_port'] = config.get('tunnel_dns_local_port', 53)
+    config['both_tunnel_local'] = config.get('both_tunnel_local', False)
+    config['tunnel_server'] = \
+        to_str(config.get('tunnel_server', "8.8.8.8"))
+    config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
+    config['tunnel_port'] = config.get('tunnel_port', 53)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')

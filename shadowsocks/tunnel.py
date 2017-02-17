@@ -28,14 +28,9 @@ from shadowsocks import shell, daemon, eventloop, udprelay, asyncdns
 
 
 def get_tunnel_udp_server(config, dns_resolver):
-    if config["tunnel_service"]:
-        config["local_port"] = config.copy()["tunnel_dns_local_port"]
-        logging.info("starting tunnel at %s:%d" % \
-            (config['local_address'], config['local_port']))
-    else:
-        logging.info("tunnel_service is False")
-        return
-
+    config["local_port"] = config.copy()["tunnel_port"]
+    logging.info("starting tunnel at %s:%d" % \
+        (config['local_address'], config['local_port']))
     # tcp_server = tcprelay.TCPRelay(config, dns_resolver, True)
     tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
     tunnel_udp_server.is_tunnel = True
