@@ -158,7 +158,7 @@ class UDPRelay(object):
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
             if self.is_tunnel:
-                # add socks5 header to data
+                # add ss header to data
                 tunnel_remote = self.tunnel_remote
                 tunnel_remote_port = self.tunnel_remote_port
                 data = common.add_header(tunnel_remote,
@@ -282,7 +282,7 @@ class UDPRelay(object):
                 return
             addrtype, dest_addr, dest_port, header_length = header_result
             if self.is_tunnel:
-                # remove socks5 header
+                # remove ss header
                 response = data[7:]
             else:
                 response = b'\x00\x00\x00' + data

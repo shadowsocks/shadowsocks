@@ -160,7 +160,7 @@ def pack_addr(address):
     return b'\x03' + chr(len(address)) + address
 
 
-# add socks5 request header
+# add ss header
 def add_header(address, port, data):
     header = b''
     header = pack_addr(address) + struct.pack('>H', port) + data
