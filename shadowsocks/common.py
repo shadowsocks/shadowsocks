@@ -146,6 +146,7 @@ ADDRTYPE_MASK = 0xF
 
 def pack_addr(address):
     address_str = to_str(address)
+    address = to_bytes(address)
     for family in (socket.AF_INET, socket.AF_INET6):
         try:
             r = socket.inet_pton(family, address_str)
@@ -162,9 +163,9 @@ def pack_addr(address):
 
 # add ss header
 def add_header(address, port, data):
-    header = b''
-    header = pack_addr(address) + struct.pack('>H', port) + data
-    return header
+    _data = b''
+    _data = pack_addr(address) + struct.pack('>H', port) + data
+    return _data
 
 
 def parse_header(data):

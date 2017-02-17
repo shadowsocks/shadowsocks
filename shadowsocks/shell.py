@@ -132,6 +132,13 @@ def check_config(config, is_local):
             sys.exit(2)
         else:
             config['server'] = to_str(config['server'])
+
+        if config.get('tunnel_remote', None) is None:
+            logging.error('tunnel_remote addr not specified')
+            print_local_help()
+            sys.exit(2)
+        else:
+            config['tunnel_remote'] = to_str(config['tunnel_remote'])
     else:
         config['server'] = to_str(config.get('server', '0.0.0.0'))
         try:

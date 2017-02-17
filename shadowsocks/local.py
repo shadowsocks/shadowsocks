@@ -55,9 +55,15 @@ def main():
     if config["both_tunnel_local"]:
         _config = config.copy()
         _config["local_port"] = _config["tunnel_port"]
-        logging.info("starting tunnel at %s:%d forward to %s:%d" %
-                     (_config['local_address'], _config['local_port'],
-                      _config['tunnel_remote'], _config['tunnel_remote_port']))
+        logging.info("starting tcp tunnel at %s:%d forward to %s:%d" %
+                    (_config['local_address'], _config['local_port'],
+                    _config['tunnel_remote'], _config['tunnel_remote_port']))
+        tunnel_tcp_server = tcprelay.TCPRelay(_config, dns_resolver, True)
+        tunnel_tcp_server.is_tunnel = True
+        tunnel_tcp_server.add_to_loop(loop)
+        logging.info("starting udp tunnel at %s:%d forward to %s:%d" %
+                    (_config['local_address'], _config['local_port'],
+                        _config['tunnel_remote'], _config['tunnel_remote_port']))
         tunnel_udp_server = udprelay.UDPRelay(_config, dns_resolver, True)
         tunnel_udp_server.is_tunnel = True
         tunnel_udp_server.add_to_loop(loop)
@@ -69,6 +75,7 @@ def main():
         udp_server.close(next_tick=True)
         if has_tunnel:
             tunnel_udp_server.close(next_tick=True)
+            tunnel_tcp_server.close(next_tick=True)
     signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
 
     def int_handler(signum, _):
