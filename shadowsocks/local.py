@@ -25,7 +25,6 @@ import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
-from tunnel import get_tunnel_udp_server
 
 
 @shell.exception_handle(self_=False, exit_code=1)
@@ -52,9 +51,14 @@ def main():
     tcp_server.add_to_loop(loop)
     udp_server.add_to_loop(loop)
     has_tunnel = False
-    # if tunnel_service is True then run tunnel_udp_server
-    if config["tunnel_service"]:
-        tunnel_udp_server = get_tunnel_udp_server(config.copy(), dns_resolver)
+    # if both_tunnel_local is True then run tunnel_udp_server
+    if config["both_tunnel_local"]:
+        config["local_port"] = config.copy()["tunnel_port"]
+        logging.info("starting tunnel at %s:%d forward to %s:%d" % \
+            (config['local_address'], config['local_port'], config['tunnel_remote'], \
+                config['tunnel_remote_port']))
+        tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
+        tunnel_udp_server.is_tunnel = True
         tunnel_udp_server.add_to_loop(loop)
         has_tunnel = True
 

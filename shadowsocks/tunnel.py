@@ -27,16 +27,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from shadowsocks import shell, daemon, eventloop, udprelay, asyncdns
 
 
-def get_tunnel_udp_server(config, dns_resolver):
-    config["local_port"] = config.copy()["tunnel_port"]
-    logging.info("starting tunnel at %s:%d" % \
-        (config['local_address'], config['local_port']))
-    # tcp_server = tcprelay.TCPRelay(config, dns_resolver, True)
-    tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
-    tunnel_udp_server.is_tunnel = True
-    return tunnel_udp_server
-
-
 @shell.exception_handle(self_=False, exit_code=1)
 def main():
     shell.check_python()
@@ -50,12 +40,15 @@ def main():
     config = shell.get_config(True)
     daemon.daemon_exec(config)
     dns_resolver = asyncdns.DNSResolver()
-    # if running tunnel then update tunnel_service to True
-    config["tunnel_service"] = True
-    tunnel_udp_server = get_tunnel_udp_server(config, dns_resolver)
     loop = eventloop.EventLoop()
     dns_resolver.add_to_loop(loop)
     # tcp_server.add_to_loop(loop)
+    config["local_port"] = config.copy()["tunnel_port"]
+    logging.info("starting tunnel at %s:%d forward to %s:%d" % \
+        (config['local_address'], config['local_port'], config['tunnel_remote'], \
+            config['tunnel_remote_port']))
+    tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
+    tunnel_udp_server.is_tunnel = True
     tunnel_udp_server.add_to_loop(loop)
 
     def handler(signum, _):

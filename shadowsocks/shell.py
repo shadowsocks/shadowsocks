@@ -304,8 +304,8 @@ def get_config(is_local):
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
     config['both_tunnel_local'] = config.get('both_tunnel_local', False)
-    config['tunnel_server'] = \
-        to_str(config.get('tunnel_server', "8.8.8.8"))
+    config['tunnel_remote'] = \
+        to_str(config.get('tunnel_remote', '8.8.8.8'))
     config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
     config['tunnel_port'] = config.get('tunnel_port', 53)
 
