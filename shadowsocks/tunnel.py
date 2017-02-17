@@ -44,9 +44,9 @@ def main():
     dns_resolver.add_to_loop(loop)
     # tcp_server.add_to_loop(loop)
     config["local_port"] = config.copy()["tunnel_port"]
-    logging.info("starting tunnel at %s:%d forward to %s:%d" % \
-        (config['local_address'], config['local_port'], config['tunnel_remote'], \
-            config['tunnel_remote_port']))
+    logging.info("starting tunnel at %s:%d forward to %s:%d" %
+                 (config['local_address'], config['local_port'], config['tunnel_remote'],
+                  config['tunnel_remote_port']))
     tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
     tunnel_udp_server.is_tunnel = True
     tunnel_udp_server.add_to_loop(loop)

@@ -54,9 +54,9 @@ def main():
     # if both_tunnel_local is True then run tunnel_udp_server
     if config["both_tunnel_local"]:
         config["local_port"] = config.copy()["tunnel_port"]
-        logging.info("starting tunnel at %s:%d forward to %s:%d" % \
-            (config['local_address'], config['local_port'], config['tunnel_remote'], \
-                config['tunnel_remote_port']))
+        logging.info("starting tunnel at %s:%d forward to %s:%d" %
+                     (config['local_address'], config['local_port'], config['tunnel_remote'],
+                      config['tunnel_remote_port']))
         tunnel_udp_server = udprelay.UDPRelay(config, dns_resolver, True)
         tunnel_udp_server.is_tunnel = True
         tunnel_udp_server.add_to_loop(loop)
