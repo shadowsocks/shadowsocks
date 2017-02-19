@@ -68,24 +68,17 @@ class MuMgr(object):
 		obfs = user.get('obfs', '')
 		protocol = protocol.replace("_compatible", "")
 		obfs = obfs.replace("_compatible", "")
-		link = "%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))).replace("=", ""))
+		protocol_param = ''
 		if muid is not None:
-			protocol_param = user.get('protocol_param', '')
-			param = protocol_param.split('#')
+			protocol_param_ = user.get('protocol_param', '')
+			param = protocol_param_.split('#')
 			if len(param) == 2:
-				user_dict = {}
-				user_list = param[1].split(',')
-				if user_list:
-					for userinfo in user_list:
-						items = userinfo.split(':')
-						if len(items) == 2:
-							user_int_id = int(items[0])
-							passwd = items[1]
-							user_dict[user_int_id] = passwd
-					if muid in user_dict:
-						param = str(muid) + ':' + user_dict[muid]
+				for row in self.data.json:
+					if int(row['port']) == muid:
+						param = str(muid) + ':' + row['passwd']
 						protocol_param = '/?protoparam=' + base64.urlsafe_b64encode(common.to_bytes(param)).replace("=", "")
-						link += protocol_param
+						break
+		link = ("%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))).replace("=", ""))) + protocol_param
 		return "ssr://" + (encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))).replace("=", "") or link)
 
 	def userinfo(self, user, muid = None):
@@ -98,8 +91,19 @@ class MuMgr(object):
 			if key in ['enable'] or key not in user:
 				continue
 			ret += '\n'
-			if key in ['transfer_enable', 'u', 'd']:
-				val = user[key]
+			if (muid is not None) and (key in ['protocol_param']):
+				for row in self.data.json:
+					if int(row['port']) == muid:
+						ret += "    %s : %s" % (key, str(muid) + ':' + row['passwd'])
+						break
+			elif key in ['transfer_enable', 'u', 'd']:
+				if muid is not None:
+					for row in self.data.json:
+						if int(row['port']) == muid:
+							val = row[key]
+							break
+				else:
+					val = user[key]
 				if val / 1024 < 4:
 					ret += "    %s : %s" % (key, val)
 				elif val / 1024 ** 2 < 4:

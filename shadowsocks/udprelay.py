@@ -910,8 +910,6 @@ class UDPRelay(object):
         self.server_users = {}
         self.server_user_transfer_ul = {}
         self.server_user_transfer_dl = {}
-        self.update_users_protocol_param = None
-        self.update_users_acl = None
 
         if common.to_bytes(config['protocol']) in [b"auth_aes128_md5", b"auth_aes128_sha1"]:
             self._update_users(None, None)
@@ -1000,9 +998,18 @@ class UDPRelay(object):
                             passwd = items[1]
                             self.add_user(uid, passwd)
 
-    def update_users(self, protocol_param, acl):
-        self.update_users_protocol_param = protocol_param
-        self.update_users_acl = acl
+    def update_user(self, id, passwd):
+        uid = struct.pack('<I', id)
+        self.add_user(uid, passwd)
+
+    def update_users(self, users):
+        for uid in list(self.server_users.keys()):
+            id = struct.unpack('<I', uid)[0]
+            if id not in users:
+                self.del_user(uid)
+        for id in users:
+            uid = struct.pack('<I', id)
+            self.add_user(uid, users[id])
 
     def add_user(self, user, passwd): # user: binstr[4], passwd: str
         self.server_users[user] = common.to_bytes(passwd)
@@ -1476,10 +1483,6 @@ class UDPRelay(object):
             self._dns_cache.sweep()
             if before_sweep_size != len(self._sockets):
                 logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
-            if self.update_users_protocol_param is not None or self.update_users_acl is not None:
-                self._update_users(self.update_users_protocol_param, self.update_users_acl)
-                self.update_users_protocol_param = None
-                self.update_users_acl = None
             self._sweep_timeout()
 
     def close(self, next_tick=False):

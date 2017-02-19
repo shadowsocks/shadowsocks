@@ -168,7 +168,7 @@ def get_config(is_local):
 
 
         if config_path:
-            logging.info('loading config from %s' % config_path)
+            logging.debug('loading config from %s' % config_path)
             with open(config_path, 'rb') as f:
                 try:
                     config = parse_json_in_str(remove_comment(f.read().decode('utf8')))
@@ -244,6 +244,7 @@ def get_config(is_local):
     config['obfs'] = to_str(config.get('obfs', 'plain'))
     config['obfs_param'] = to_str(config.get('obfs_param', ''))
     config['port_password'] = config.get('port_password', None)
+    config['additional_ports'] = config.get('additional_ports', {})
     config['timeout'] = int(config.get('timeout', 300))
     config['udp_timeout'] = int(config.get('udp_timeout', 120))
     config['udp_cache'] = int(config.get('udp_cache', 64))

@@ -24,6 +24,7 @@ class TransferBase(object):
 		self.port_uid_table = {} #端口到uid的映射（仅v3以上有用）
 		self.onlineuser_cache = lru_cache.LRUCache(timeout=60*30) #用户在线状态记录
 		self.pull_ok = False #记录是否已经拉出过数据
+		self.mu_ports = {}
 
 	def load_cfg(self):
 		pass
@@ -41,7 +42,7 @@ class TransferBase(object):
 				dt_transfer[id] = [self.last_get_transfer[id][0] - last_transfer[id][0], self.last_get_transfer[id][1] - last_transfer[id][1]]
 
 		for id in curr_transfer.keys():
-			if id in self.force_update_transfer:
+			if id in self.force_update_transfer or id in self.mu_ports:
 				continue
 			#算出与上次记录的流量差值，保存于dt_transfer表
 			if id in last_transfer:
@@ -95,11 +96,13 @@ class TransferBase(object):
 
 			port = row['port']
 			passwd = common.to_bytes(row['passwd'])
+			if hasattr(passwd, 'encode'):
+				passwd = passwd.encode('utf-8')
 			cfg = {'password': passwd}
 			if 'id' in row:
 				self.port_uid_table[row['port']] = row['id']
 
-			read_config_keys = ['method', 'obfs', 'obfs_param', 'protocol', 'protocol_param', 'forbidden_ip', 'forbidden_port']
+			read_config_keys = ['method', 'obfs', 'obfs_param', 'protocol', 'protocol_param', 'forbidden_ip', 'forbidden_port', 'speed_limit_per_con', 'speed_limit_per_user']
 			for name in read_config_keys:
 				if name in row and row[name]:
 					cfg[name] = row[name]
@@ -116,10 +119,11 @@ class TransferBase(object):
 				continue
 
 			if allow:
-				allow_users[port] = 1
+				allow_users[port] = passwd
 				if 'protocol' in cfg and 'protocol_param' in cfg and common.to_str(cfg['protocol']) in ['auth_aes128_md5', 'auth_aes128_sha1']:
 					if '#' in common.to_str(cfg['protocol_param']):
-						mu_servers[port] = 1
+						mu_servers[port] = passwd
+						del allow_users[port]
 
 				cfgchange = False
 				if port in ServerPool.get_instance().tcp_servers_pool:
@@ -177,10 +181,11 @@ class TransferBase(object):
 				passwd, cfg = new_servers[port]
 				self.new_server(port, passwd, cfg)
 
-		if isinstance(self, MuJsonTransfer): # works in MuJsonTransfer only
-			logging.debug('db allow users %s \nmu_servers %s' % (allow_users, mu_servers))
-			for port in mu_servers:
-				ServerPool.get_instance().update_mu_server(port, None, allow_users)
+		logging.debug('db allow users %s \nmu_servers %s' % (allow_users, mu_servers))
+		for port in mu_servers:
+			ServerPool.get_instance().update_mu_users(port, allow_users)
+
+		self.mu_ports = mu_servers
 
 	def clear_cache(self, port):
 		if port in self.force_update_transfer: del self.force_update_transfer[port]
@@ -237,6 +242,17 @@ class TransferBase(object):
 					rows = db_instance.pull_db_all_user()
 					if rows:
 						db_instance.pull_ok = True
+						config = shell.get_config(False)
+						for port in config['additional_ports']:
+							val = config['additional_ports'][port]
+							val['port'] = int(port)
+							val['enable'] = 1
+							val['transfer_enable'] = 1024 ** 7
+							val['u'] = 0
+							val['d'] = 0
+							if "password" in val:
+								val["passwd"] = val["password"]
+							rows.append(val)
 					db_instance.del_server_out_of_bound_safe(last_rows, rows)
 					last_rows = rows
 				except Exception as e:

@@ -214,24 +214,24 @@ class ServerPool(object):
 
 		return True
 
-	def update_mu_server(self, port, protocol_param, acl):
+	def update_mu_users(self, port, users):
 		port = int(port)
 		if port in self.tcp_servers_pool:
 			try:
-				self.tcp_servers_pool[port].update_users(protocol_param, acl)
+				self.tcp_servers_pool[port].update_users(users)
 			except Exception as e:
 				logging.warn(e)
 			try:
-				self.udp_servers_pool[port].update_users(protocol_param, acl)
+				self.udp_servers_pool[port].update_users(users)
 			except Exception as e:
 				logging.warn(e)
 		if port in self.tcp_ipv6_servers_pool:
 			try:
-				self.tcp_ipv6_servers_pool[port].update_users(protocol_param, acl)
+				self.tcp_ipv6_servers_pool[port].update_users(users)
 			except Exception as e:
 				logging.warn(e)
 			try:
-				self.udp_ipv6_servers_pool[port].update_users(protocol_param, acl)
+				self.udp_ipv6_servers_pool[port].update_users(users)
 			except Exception as e:
 				logging.warn(e)
 

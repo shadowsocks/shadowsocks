@@ -101,6 +101,9 @@ class SpeedTester(object):
         self._cache = deque()
         self.sum_len = 0
 
+    def update_limit(self, max_speed):
+        self.max_speed = max_speed * 1024
+
     def add(self, data_len):
         if self.max_speed > 0:
             self._cache.append((time.time(), data_len))
@@ -1057,8 +1060,6 @@ class TCPRelay(object):
         self.mu = False
         self._speed_tester_u = {}
         self._speed_tester_d = {}
-        self.update_users_protocol_param = None
-        self.update_users_acl = None
         self.server_connections = 0
         self.protocol_data = obfs.obfs(config['protocol']).init_data()
         self.obfs_data = obfs.obfs(config['obfs']).init_data()
@@ -1145,9 +1146,18 @@ class TCPRelay(object):
                             passwd = items[1]
                             self.add_user(uid, passwd)
 
-    def update_users(self, protocol_param, acl):
-        self.update_users_protocol_param = protocol_param
-        self.update_users_acl = acl
+    def update_user(self, id, passwd):
+        uid = struct.pack('<I', id)
+        self.add_user(uid, passwd)
+
+    def update_users(self, users):
+        for uid in list(self.server_users.keys()):
+            id = struct.unpack('<I', uid)[0]
+            if id not in users:
+                self.del_user(uid)
+        for id in users:
+            uid = struct.pack('<I', id)
+            self.add_user(uid, users[id])
 
     def add_user(self, user, passwd): # user: binstr[4], passwd: str
         self.server_users[user] = common.to_bytes(passwd)
@@ -1189,6 +1199,12 @@ class TCPRelay(object):
             else:
                 self._speed_tester_d[uid] = SpeedTester(self._config.get("speed_limit_per_user", 0))
         return self._speed_tester_d[uid]
+
+    def update_limit(self, uid, max_speed):
+        if uid in self._speed_tester_u:
+            self._speed_tester_u[uid].update_limit(max_speed)
+        if uid in self._speed_tester_d:
+            self._speed_tester_d[uid].update_limit(max_speed)
 
     def update_stat(self, port, stat_dict, val):
         newval = stat_dict.get(0, 0) + val
@@ -1286,10 +1302,6 @@ class TCPRelay(object):
                 logging.info('closed TCP port %d', self._listen_port)
             for handler in list(self._fd_to_handlers.values()):
                 handler.destroy()
-        elif self.update_users_protocol_param is not None or self.update_users_acl is not None:
-            self._update_users(self.update_users_protocol_param, self.update_users_acl)
-            self.update_users_protocol_param = None
-            self.update_users_acl = None
         self._sweep_timeout()
 
     def close(self, next_tick=False):
