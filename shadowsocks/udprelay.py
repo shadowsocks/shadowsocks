@@ -283,7 +283,7 @@ class UDPRelay(object):
             addrtype, dest_addr, dest_port, header_length = header_result
             if self.is_tunnel:
                 # remove ss header
-                response = data[7:]
+                response = data[header_length:]
             else:
                 response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())

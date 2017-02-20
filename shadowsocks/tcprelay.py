@@ -256,12 +256,6 @@ class TCPRelayHandler(object):
             else:
                 self._data_to_write_to_remote.append(data)
             return
-        if self.is_tunnel:
-            # add ss header to data
-            tunnel_remote = self.tunnel_remote
-            tunnel_remote_port = self.tunnel_remote_port
-            data = common.add_header(tunnel_remote,
-                                     tunnel_remote_port, data)
         if self._ota_enable_session:
             data = self._ota_chunk_data_gen(data)
         data = self._encryptor.encrypt(data)
@@ -504,12 +498,6 @@ class TCPRelayHandler(object):
 
     def _handle_stage_stream(self, data):
         if self._is_local:
-            if self.is_tunnel:
-                # add ss header to data
-                tunnel_remote = self.tunnel_remote
-                tunnel_remote_port = self.tunnel_remote_port
-                data = common.add_header(tunnel_remote,
-                                         tunnel_remote_port, data)
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(data)
             data = self._encryptor.encrypt(data)
