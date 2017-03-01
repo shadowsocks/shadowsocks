@@ -319,7 +319,6 @@ def get_config(is_local):
     config['tunnel_port'] = config.get('tunnel_port', 53)
     config['dns_server'] = config.get('dns_server', None)
 
-
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
     if config['verbose'] >= 2:
