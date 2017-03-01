@@ -28,7 +28,7 @@ import traceback
 from functools import wraps
 
 from shadowsocks.common import to_bytes, to_str, IPNetwork
-from shadowsocks import encrypt
+from shadowsocks import cryptor
 
 
 VERBOSE_LEVEL = 5
@@ -187,7 +187,7 @@ def check_config(config, is_local):
     if config.get('dns_server', None) is not None:
         logging.info('Specified DNS server: %s' % config['dns_server'])
 
-    encrypt.try_cipher(config['password'], config['method'])
+    cryptor.try_cipher(config['password'], config['method'])
 
 
 def get_config(is_local):
@@ -202,7 +202,8 @@ def get_config(is_local):
     else:
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=', 'manager-address=', 'version',
+                    'forbidden-ip=', 'user=', 'manager-address=',
+                    'manager-api-port=', 'manager-api-key=', 'version',
                     'prefer-ipv6']
     try:
         config_path = find_config()
@@ -251,6 +252,10 @@ def get_config(is_local):
                 config['workers'] = int(value)
             elif key == '--manager-address':
                 config['manager_address'] = value
+            elif key == '--manager-api-port':
+                config['manager_api_port'] = int(value)
+            elif key == '--manager-api-key':
+                config['manager_api_key'] = value
             elif key == '--user':
                 config['user'] = to_str(value)
             elif key == '--forbidden-ip':
@@ -344,6 +349,18 @@ Proxy options:
   -l LOCAL_PORT          local port, default: 1080
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
+                         supported method:
+                             chacha20-poly1305, chacha20-ietf-poly1305,
+                             *xchacha20-ietf-poly1305,
+                             aes-128-gcm, aes-192-gcm, aes-256-gcm,
+                             aes-128-cfb, aes-192-cfb, aes-256-cfb,
+                             es-128-ctr, aes-192-ctr, aes-256-ctr,
+                             camellia-128-cfb, camellia-192-cfb,
+                             camellia-256-cfb,
+                             salsa20, chacha20, chacha20-ietf,
+                             bf-cfb, cast5-cfb, des-cfb, idea-cfb,
+                             rc2-cfb, seed-cfb,
+                             rc4, rc4-md5, table.
   -t TIMEOUT             timeout in seconds, default: 300
   -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
@@ -374,12 +391,26 @@ Proxy options:
   -p SERVER_PORT         server port, default: 8388
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
+                         supported method:
+                             chacha20-poly1305, chacha20-ietf-poly1305,
+                             *xchacha20-ietf-poly1305,
+                             aes-128-gcm, aes-192-gcm, aes-256-gcm,
+                             aes-128-cfb, aes-192-cfb, aes-256-cfb,
+                             es-128-ctr, aes-192-ctr, aes-256-ctr,
+                             camellia-128-cfb, camellia-192-cfb,
+                             camellia-256-cfb,
+                             salsa20, chacha20, chacha20-ietf,
+                             bf-cfb, cast5-cfb, des-cfb, idea-cfb,
+                             rc2-cfb, seed-cfb,
+                             rc4, rc4-md5, table.
   -t TIMEOUT             timeout in seconds, default: 300
   -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
   --manager-address ADDR optional server manager UDP address, see wiki
+  --manager-api-port     optional server manager API port
+  --manager-api-key      optional server manager API Authorization key
   --prefer-ipv6          resolve ipv6 address first
 
 General options:

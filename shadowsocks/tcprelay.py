@@ -26,7 +26,7 @@ import logging
 import traceback
 import random
 
-from shadowsocks import encrypt, eventloop, shell, common
+from shadowsocks import cryptor, eventloop, shell, common
 from shadowsocks.common import parse_header, onetimeauth_verify, \
     onetimeauth_gen, ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, \
     ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
@@ -94,8 +94,8 @@ WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
 BUF_SIZE = 32 * 1024
 
-
 # helper exceptions for TCPRelayHandler
+
 
 class BadSocksHeader(Exception):
     pass
@@ -120,8 +120,8 @@ class TCPRelayHandler(object):
         # if is_local, this is sslocal
         self._is_local = is_local
         self._stage = STAGE_INIT
-        self._encryptor = encrypt.Encryptor(config['password'],
-                                            config['method'])
+        self._cryptor = cryptor.Cryptor(config['password'],
+                                        config['method'])
         self._ota_enable = config.get('one_time_auth', False)
         self._ota_enable_session = self._ota_enable
         self._ota_buff_head = b''
@@ -253,7 +253,7 @@ class TCPRelayHandler(object):
 
         if self._ota_enable_session:
             data = self._ota_chunk_data_gen(data)
-        data = self._encryptor.encrypt(data)
+        data = self._cryptor.encrypt(data)
         self._data_to_write_to_remote.append(data)
 
         if self._config['fast_open'] and not self._fastopen_connected:
@@ -336,7 +336,7 @@ class TCPRelayHandler(object):
                 offset = header_length + ONETIMEAUTH_BYTES
                 _hash = data[header_length: offset]
                 _data = data[:header_length]
-                key = self._encryptor.decipher_iv + self._encryptor.key
+                key = self._cryptor.decipher_iv + self._cryptor.key
                 if onetimeauth_verify(_hash, _data, key) is False:
                     logging.warn('one time auth fail')
                     self.destroy()
@@ -355,11 +355,11 @@ class TCPRelayHandler(object):
             # ATYP & 0x10 == 0x10, then OTA is enabled.
             if self._ota_enable_session:
                 data = common.chr(addrtype | ADDRTYPE_AUTH) + data[1:]
-                key = self._encryptor.cipher_iv + self._encryptor.key
+                key = self._cryptor.cipher_iv + self._cryptor.key
                 _header = data[:header_length]
                 sha110 = onetimeauth_gen(data, key)
                 data = _header + sha110 + data[header_length:]
-            data_to_send = self._encryptor.encrypt(data)
+            data_to_send = self._cryptor.encrypt(data)
             self._data_to_write_to_remote.append(data_to_send)
             # notice here may go into _handle_dns_resolved directly
             self._dns_resolver.resolve(self._chosen_server[0],
@@ -462,7 +462,7 @@ class TCPRelayHandler(object):
                 _hash = self._ota_buff_head[ONETIMEAUTH_CHUNK_DATA_LEN:]
                 _data = self._ota_buff_data
                 index = struct.pack('>I', self._ota_chunk_idx)
-                key = self._encryptor.decipher_iv + index
+                key = self._cryptor.decipher_iv + index
                 if onetimeauth_verify(_hash, _data, key) is False:
                     logging.warn('one time auth fail, drop chunk !')
                 else:
@@ -477,7 +477,7 @@ class TCPRelayHandler(object):
     def _ota_chunk_data_gen(self, data):
         data_len = struct.pack(">H", len(data))
         index = struct.pack('>I', self._ota_chunk_idx)
-        key = self._encryptor.cipher_iv + index
+        key = self._cryptor.cipher_iv + index
         sha110 = onetimeauth_gen(data, key)
         self._ota_chunk_idx += 1
         return data_len + sha110 + data
@@ -486,7 +486,7 @@ class TCPRelayHandler(object):
         if self._is_local:
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(data)
-            data = self._encryptor.encrypt(data)
+            data = self._cryptor.encrypt(data)
             self._write_to_sock(data, self._remote_sock)
         else:
             if self._ota_enable_session:
@@ -551,7 +551,7 @@ class TCPRelayHandler(object):
             return
         self._update_activity(len(data))
         if not is_local:
-            data = self._encryptor.decrypt(data)
+            data = self._cryptor.decrypt(data)
             if not data:
                 return
         if self._stage == STAGE_STREAM:
@@ -580,9 +580,9 @@ class TCPRelayHandler(object):
             return
         self._update_activity(len(data))
         if self._is_local:
-            data = self._encryptor.decrypt(data)
+            data = self._cryptor.decrypt(data)
         else:
-            data = self._encryptor.encrypt(data)
+            data = self._cryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
         except Exception as e:

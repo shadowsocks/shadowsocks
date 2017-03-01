@@ -22,6 +22,7 @@ import sys
 import os
 import logging
 import signal
+import multiprocessing
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, \
@@ -51,6 +52,19 @@ def main():
 
     if config.get('manager_address', 0):
         logging.info('entering manager mode')
+        if config.get('manager_api_port', 0) and config.get('manager_api_key'):
+            logging.info('serving manager api')
+            from shadowsocks.manager_api import app
+            app.config.update({
+                'MANAGER_ADDRESS': config.get('manager_address'),
+                'AUTHORIZATION_KEY': config.get('manager_api_key')
+            })
+
+            def run_manager_api():
+                app.run(port=config.get('manager_api_port'))
+
+            p = multiprocessing.Process(target=run_manager_api)
+            p.start()
         manager.run(config)
         return
 
