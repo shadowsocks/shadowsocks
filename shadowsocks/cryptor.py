@@ -213,7 +213,7 @@ def test_encrypt_all():
     for method in CIPHERS_TO_TEST:
         logging.warn(method)
         cipher = encrypt_all(b'key', method, plain)
-        plain2 = decrypt_all(b'key', method, cipher)
+        plain2, key, iv = decrypt_all(b'key', method, cipher)
         assert plain == plain2
 
 
