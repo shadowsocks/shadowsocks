@@ -1,0 +1,15 @@
+backports-abc==0.5
+certifi==2016.9.26
+click==6.7
+Flask==0.12
+Flask-Inputs==0.2.0
+functools32==3.2.3.post2
+itsdangerous==0.24
+Jinja2==2.9.4
+jsonschema==2.5.1
+MarkupSafe==0.23
+singledispatch==3.4.0.3
+six==1.10.0
+tornado==4.4.2
+Werkzeug==0.11.15
+WTForms==2.1
