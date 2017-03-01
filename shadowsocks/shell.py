@@ -197,6 +197,8 @@ def check_config(config, is_local):
         if os.name != 'posix':
             logging.error('user can be used only on Unix')
             sys.exit(1)
+    if config.get('dns_server', None) is not None:
+        logging.info('Specified DNS server: %s' % config['dns_server'])
 
     encrypt.try_cipher(config['password'], config['method'])
 
@@ -310,10 +312,13 @@ def get_config(is_local):
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
+
     config['tunnel_remote'] = \
         to_str(config.get('tunnel_remote', '8.8.8.8'))
     config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
     config['tunnel_port'] = config.get('tunnel_port', 53)
+    config['dns_server'] = config.get('dns_server', None)
+
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
