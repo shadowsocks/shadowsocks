@@ -95,7 +95,6 @@ class UDPRelay(object):
             self._listen_port = config['server_port']
             self._remote_addr = None
             self._remote_port = None
-        self.both_tunnel_local = config.get('both_tunnel_local', False)
         self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
         self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
         self.tunnel_port = config.get('tunnel_port', 53)

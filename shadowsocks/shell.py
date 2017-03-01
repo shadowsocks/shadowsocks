@@ -310,7 +310,6 @@ def get_config(is_local):
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
-    config['both_tunnel_local'] = config.get('both_tunnel_local', False)
     config['tunnel_remote'] = \
         to_str(config.get('tunnel_remote', '8.8.8.8'))
     config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)

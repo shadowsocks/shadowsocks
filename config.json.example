@@ -7,7 +7,6 @@
     "method":"aes-256-cfb",
     "local_address":"127.0.0.1",
     "fast_open":false,
-    "both_tunnel_local":false,
     "tunnel_remote":"8.8.8.8",
     "tunnel_remote_port":53,
     "tunnel_port":53

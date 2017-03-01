@@ -116,7 +116,6 @@ class TCPRelayHandler(object):
         self._remote_sock = None
         self._config = config
         self._dns_resolver = dns_resolver
-        self.both_tunnel_local = config.get('both_tunnel_local', False)
         self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
         self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
         self.tunnel_port = config.get('tunnel_port', 53)
@@ -568,14 +567,16 @@ class TCPRelayHandler(object):
             data = self._encryptor.decrypt(data)
             if not data:
                 return
-        # jump over socks5 init
-        if self.is_tunnel:
-            self._stage = STAGE_ADDR
         if self._stage == STAGE_STREAM:
             self._handle_stage_stream(data)
             return
         elif is_local and self._stage == STAGE_INIT:
-            self._handle_stage_init(data)
+            # jump over socks5 init
+            if self.is_tunnel:
+                self._handle_stage_addr(data)
+                return
+            else:
+                self._handle_stage_init(data)
         elif self._stage == STAGE_CONNECTING:
             self._handle_stage_connecting(data)
         elif (is_local and self._stage == STAGE_ADDR) or \
