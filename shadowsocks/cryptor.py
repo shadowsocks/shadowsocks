@@ -137,9 +137,10 @@ class Cryptor(object):
             decipher_iv = buf[:decipher_iv_len]
             self.decipher_iv = decipher_iv
             self.decipher = self.get_cipher(
-                    self.password, self.method,
-                    CIPHER_ENC_DECRYPTION,
-                    iv=decipher_iv)
+                self.password, self.method,
+                CIPHER_ENC_DECRYPTION,
+                iv=decipher_iv
+            )
             buf = buf[decipher_iv_len:]
             if len(buf) == 0:
                 return buf
