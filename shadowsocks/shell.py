@@ -202,8 +202,7 @@ def get_config(is_local):
     else:
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=', 'manager-address=',
-                    'manager-api-port=', 'manager-api-key=', 'version',
+                    'forbidden-ip=', 'user=', 'manager-address=', 'version',
                     'prefer-ipv6']
     try:
         config_path = find_config()
@@ -252,10 +251,6 @@ def get_config(is_local):
                 config['workers'] = int(value)
             elif key == '--manager-address':
                 config['manager_address'] = value
-            elif key == '--manager-api-port':
-                config['manager_api_port'] = int(value)
-            elif key == '--manager-api-key':
-                config['manager_api_key'] = value
             elif key == '--user':
                 config['user'] = to_str(value)
             elif key == '--forbidden-ip':
@@ -409,8 +404,6 @@ Proxy options:
   --workers WORKERS      number of workers, available on Unix/Linux
   --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
   --manager-address ADDR optional server manager UDP address, see wiki
-  --manager-api-port     optional server manager API port
-  --manager-api-key      optional server manager API Authorization key
   --prefer-ipv6          resolve ipv6 address first
 
 General options:
