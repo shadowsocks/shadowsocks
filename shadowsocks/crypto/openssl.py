@@ -331,7 +331,7 @@ def test_aes_gcm(bits=128):
 
 
 def test_aes_256_gcm():
-    run_aead_method('aes-256-gcm')
+    test_aes_gcm(256)
 
 
 def test_aes_256_cfb():
@@ -363,3 +363,4 @@ if __name__ == '__main__':
     test_aes_gcm(128)
     test_aes_gcm(192)
     test_aes_gcm(256)
+    test_aes_256_gcm()
