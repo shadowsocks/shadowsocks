@@ -119,7 +119,7 @@ class TCPRelayHandler(object):
         self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
         self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
         self.tunnel_port = config.get('tunnel_port', 53)
-        self.is_tunnel = server.is_tunnel
+        self._is_tunnel = server._is_tunnel
 
         # TCP Relay works as either sslocal or ssserver
         # if is_local, this is sslocal
@@ -297,7 +297,7 @@ class TCPRelayHandler(object):
     @shell.exception_handle(self_=True, destroy=True, conn_err=True)
     def _handle_stage_addr(self, data):
         if self._is_local:
-            if self.is_tunnel:
+            if self._is_tunnel:
                 # add ss header to data
                 tunnel_remote = self.tunnel_remote
                 tunnel_remote_port = self.tunnel_remote_port
@@ -359,7 +359,7 @@ class TCPRelayHandler(object):
         self._stage = STAGE_DNS
         if self._is_local:
             # jump over socks5 response
-            if not self.is_tunnel:
+            if not self._is_tunnel:
                 # forward address to remote
                 self._write_to_sock((b'\x05\x00\x00\x01'
                                      b'\x00\x00\x00\x00\x10\x10'),
@@ -572,7 +572,7 @@ class TCPRelayHandler(object):
             return
         elif is_local and self._stage == STAGE_INIT:
             # jump over socks5 init
-            if self.is_tunnel:
+            if self._is_tunnel:
                 self._handle_stage_addr(data)
                 return
             else:
@@ -715,7 +715,7 @@ class TCPRelay(object):
         self._closed = False
         self._eventloop = None
         self._fd_to_handlers = {}
-        self.is_tunnel = False
+        self._is_tunnel = False
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers

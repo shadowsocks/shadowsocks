@@ -98,7 +98,7 @@ class UDPRelay(object):
         self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
         self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
         self.tunnel_port = config.get('tunnel_port', 53)
-        self.is_tunnel = False
+        self._is_tunnel = False
         self._dns_resolver = dns_resolver
         self._password = common.to_bytes(config['password'])
         self._method = config['method']
@@ -156,7 +156,7 @@ class UDPRelay(object):
         if self._stat_callback:
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
-            if self.is_tunnel:
+            if self._is_tunnel:
                 # add ss header to data
                 tunnel_remote = self.tunnel_remote
                 tunnel_remote_port = self.tunnel_remote_port
@@ -280,7 +280,7 @@ class UDPRelay(object):
             if header_result is None:
                 return
             addrtype, dest_addr, dest_port, header_length = header_result
-            if self.is_tunnel:
+            if self._is_tunnel:
                 # remove ss header
                 response = data[header_length:]
             else:
