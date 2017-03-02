@@ -22,7 +22,8 @@ from ctypes import c_char_p, c_int, c_long, byref,\
 
 from shadowsocks import common
 from shadowsocks.crypto import util
-from shadowsocks.crypto.aead import *
+from shadowsocks.crypto.aead import AeadCryptoBase, EVP_CTRL_AEAD_SET_IVLEN, \
+    nonce_increment, EVP_CTRL_AEAD_GET_TAG, EVP_CTRL_AEAD_SET_TAG
 
 __all__ = ['ciphers']
 
@@ -116,8 +117,9 @@ class OpenSSLCryptoBase(object):
             buf_size = l * 2
             buf = create_string_buffer(buf_size)
         libcrypto.EVP_CipherUpdate(
-                self._ctx, byref(buf),
-                byref(cipher_out_len), c_char_p(data), l)
+            self._ctx, byref(buf),
+            byref(cipher_out_len), c_char_p(data), l
+        )
         # buf is copied to a str object when we access buf.raw
         return buf.raw[:cipher_out_len.value]
 
@@ -139,17 +141,20 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         AeadCryptoBase.__init__(self, cipher_name, key, iv, op)
 
         r = libcrypto.EVP_CipherInit_ex(
-                self._ctx,
-                self._cipher, None,
-                None, None, c_int(op))
+            self._ctx,
+            self._cipher, None,
+            None, None, c_int(op)
+        )
         if not r:
             self.clean()
             raise Exception('can not initialize cipher context')
 
         r = libcrypto.EVP_CIPHER_CTX_ctrl(
-                self._ctx,
-                c_int(EVP_CTRL_AEAD_SET_IVLEN),
-                c_int(self._nlen), None)
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_SET_IVLEN),
+            c_int(self._nlen),
+            None
+        )
         if not r:
             raise Exception('Set ivlen failed')
 
@@ -164,10 +169,10 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         iv_ptr = c_char_p(self._nonce.raw)
 
         r = libcrypto.EVP_CipherInit_ex(
-                self._ctx,
-                None, None,
-                key_ptr, iv_ptr,
-                c_int(CIPHER_ENC_UNCHANGED)
+            self._ctx,
+            None, None,
+            key_ptr, iv_ptr,
+            c_int(CIPHER_ENC_UNCHANGED)
         )
         if not r:
             self.clean()
@@ -184,9 +189,9 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         """
         tag_len = self._tlen
         r = libcrypto.EVP_CIPHER_CTX_ctrl(
-                self._ctx,
-                c_int(EVP_CTRL_AEAD_SET_TAG),
-                c_int(tag_len), c_char_p(tag)
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_SET_TAG),
+            c_int(tag_len), c_char_p(tag)
         )
         if not r:
             raise Exception('Set tag failed')
@@ -199,9 +204,9 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         tag_len = self._tlen
         tag_buf = create_string_buffer(tag_len)
         r = libcrypto.EVP_CIPHER_CTX_ctrl(
-                self._ctx,
-                c_int(EVP_CTRL_AEAD_GET_TAG),
-                c_int(tag_len), byref(tag_buf)
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_GET_TAG),
+            c_int(tag_len), byref(tag_buf)
         )
         if not r:
             raise Exception('Get tag failed')
@@ -215,8 +220,8 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         global buf_size, buf
         cipher_out_len = c_long(0)
         r = libcrypto.EVP_CipherFinal_ex(
-                self._ctx,
-                byref(buf), byref(cipher_out_len)
+            self._ctx,
+            byref(buf), byref(cipher_out_len)
         )
         if not r:
             # print(self._nonce.raw, r, cipher_out_len)
@@ -321,8 +326,8 @@ def test_aes_128_cfb():
 
 def test_aes_gcm(bits=128):
     method = "aes-{0}-gcm".format(bits)
-    print(method, int(bits/8))
-    run_aead_method(method, bits/8)
+    print(method, int(bits / 8))
+    run_aead_method(method, bits / 8)
 
 
 def test_aes_256_gcm():

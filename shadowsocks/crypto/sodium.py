@@ -21,7 +21,7 @@ from ctypes import c_char_p, c_int, c_ulonglong, byref, c_ulong, \
     create_string_buffer, c_void_p
 
 from shadowsocks.crypto import util
-from shadowsocks.crypto.aead import *
+from shadowsocks.crypto.aead import AeadCryptoBase
 
 __all__ = ['ciphers']
 

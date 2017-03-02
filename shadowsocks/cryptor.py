@@ -87,8 +87,8 @@ class Cryptor(object):
         self._method_info = Cryptor.get_method_info(method)
         if self._method_info:
             self.cipher = self.get_cipher(
-                    password, method, CIPHER_ENC_ENCRYPTION,
-                    random_string(self._method_info[METHOD_INFO_IV_LEN])
+                password, method, CIPHER_ENC_ENCRYPTION,
+                random_string(self._method_info[METHOD_INFO_IV_LEN])
             )
         else:
             logging.error('method %s not supported' % method)

@@ -19,7 +19,6 @@ from __future__ import absolute_import, division, print_function, \
 
 import os
 import logging
-from ctypes import create_string_buffer
 
 
 def find_library_nt(name):
@@ -34,7 +33,7 @@ def find_library_nt(name):
             results.append(fname)
         if fname.lower().endswith(".dll"):
             continue
-        fname = fname + ".dll"
+        fname += ".dll"
         if os.path.isfile(fname):
             results.append(fname)
     return results
@@ -111,9 +110,9 @@ def run_cipher(cipher, decipher):
     import random
     import time
 
-    BLOCK_SIZE = 16384
+    block_size = 16384
     rounds = 1 * 1024
-    plain = urandom(BLOCK_SIZE * rounds)
+    plain = urandom(block_size * rounds)
 
     results = []
     pos = 0
@@ -132,7 +131,7 @@ def run_cipher(cipher, decipher):
         results.append(decipher.decrypt(c[pos:pos + l]))
         pos += l
     end = time.time()
-    print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
+    print('speed: %d bytes/s' % (block_size * rounds / (end - start)))
     assert b''.join(results) == plain
 
 
