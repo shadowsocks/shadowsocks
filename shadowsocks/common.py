@@ -162,7 +162,7 @@ def pack_addr(address):
 
 
 # add ss header
-def add_header(address, port, data):
+def add_header(address, port, data=b''):
     _data = b''
     _data = pack_addr(address) + struct.pack('>H', port) + data
     return _data
