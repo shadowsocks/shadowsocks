@@ -132,6 +132,13 @@ def check_config(config, is_local):
             sys.exit(2)
         else:
             config['server'] = to_str(config['server'])
+
+        if config.get('tunnel_remote', None) is None:
+            logging.error('tunnel_remote addr not specified')
+            print_local_help()
+            sys.exit(2)
+        else:
+            config['tunnel_remote'] = to_str(config['tunnel_remote'])
     else:
         config['server'] = to_str(config.get('server', '0.0.0.0'))
         try:
@@ -158,6 +165,12 @@ def check_config(config, is_local):
 
     if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
+
+    if 'tunnel_remote_port' in config:
+        config['tunnel_remote_port'] = \
+            int(config['tunnel_remote_port'])
+    if 'tunnel_port' in config:
+        config['tunnel_port'] = int(config['tunnel_port'])
 
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
@@ -299,6 +312,11 @@ def get_config(is_local):
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
+
+    config['tunnel_remote'] = \
+        to_str(config.get('tunnel_remote', '8.8.8.8'))
+    config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
+    config['tunnel_port'] = config.get('tunnel_port', 53)
     config['dns_server'] = config.get('dns_server', None)
 
     logging.getLogger('').handlers = []

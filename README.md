@@ -22,12 +22,12 @@ Server
 Debian / Ubuntu:
 
     apt-get install python-pip
-    pip install shadowsocks
+    pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
 CentOS:
 
     yum install python-setuptools && easy_install pip
-    pip install shadowsocks
+    pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
 Windows:
 
