@@ -76,7 +76,7 @@ class MuMgr(object):
 				for row in self.data.json:
 					if int(row['port']) == muid:
 						param = str(muid) + ':' + row['passwd']
-						protocol_param = '/?protoparam=' + base64.urlsafe_b64encode(common.to_bytes(param)).replace("=", "")
+						protocol_param = '/?protoparam=' + common.to_str(base64.urlsafe_b64encode(common.to_bytes(param))).replace("=", "")
 						break
 		link = ("%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, common.to_str(base64.urlsafe_b64encode(common.to_bytes(user['passwd']))).replace("=", ""))) + protocol_param
 		return "ssr://" + (encode and common.to_str(base64.urlsafe_b64encode(common.to_bytes(link))).replace("=", "") or link)
