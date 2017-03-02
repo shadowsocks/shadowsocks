@@ -18,7 +18,6 @@ from ctypes import create_string_buffer
 
 import hashlib
 from struct import pack, unpack
-from abc import ABCMeta, abstractmethod
 
 from shadowsocks.crypto import hkdf
 from shadowsocks.common import ord, chr
@@ -102,7 +101,6 @@ class AeadCryptoBase(object):
     | Fixed  | Variable  |   Fixed   |
     +--------+-----------+-----------+
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, cipher_name, key, iv, op):
         self._op = int(op)
@@ -129,7 +127,6 @@ class AeadCryptoBase(object):
         nonce_increment(self._nonce, self._nlen)
         # print("".join("%02x" % ord(b) for b in self._nonce))
 
-    @abstractmethod
     def aead_encrypt(self, data):
         """
         Encrypt data with authenticate tag
@@ -137,7 +134,7 @@ class AeadCryptoBase(object):
         :param data: plain text
         :return: cipher text with tag
         """
-        return b""
+        raise Exception("Must implement aead_encrypt method")
 
     def encrypt_chunk(self, data):
         """
@@ -186,7 +183,6 @@ class AeadCryptoBase(object):
 
         return ctext
 
-    @abstractmethod
     def aead_decrypt(self, data):
         """
         Decrypt data and authenticate tag
@@ -194,7 +190,7 @@ class AeadCryptoBase(object):
         :param data: str cipher text with tag
         :return: str plain text
         """
-        return b""
+        raise Exception("Must implement aead_decrypt method")
 
     def decrypt_chunk_size(self, data):
         """
