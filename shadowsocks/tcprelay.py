@@ -106,6 +106,7 @@ class NoAcceptableMethods(Exception):
 
 
 class TCPRelayHandler(object):
+
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
                  dns_resolver, is_local):
         self._server = server
@@ -115,6 +116,10 @@ class TCPRelayHandler(object):
         self._remote_sock = None
         self._config = config
         self._dns_resolver = dns_resolver
+        self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
+        self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
+        self.tunnel_port = config.get('tunnel_port', 53)
+        self._is_tunnel = server._is_tunnel
 
         # TCP Relay works as either sslocal or ssserver
         # if is_local, this is sslocal
@@ -250,7 +255,6 @@ class TCPRelayHandler(object):
             else:
                 self._data_to_write_to_remote.append(data)
             return
-
         if self._ota_enable_session:
             data = self._ota_chunk_data_gen(data)
         data = self._encryptor.encrypt(data)
@@ -293,29 +297,36 @@ class TCPRelayHandler(object):
     @shell.exception_handle(self_=True, destroy=True, conn_err=True)
     def _handle_stage_addr(self, data):
         if self._is_local:
-            cmd = common.ord(data[1])
-            if cmd == CMD_UDP_ASSOCIATE:
-                logging.debug('UDP associate')
-                if self._local_sock.family == socket.AF_INET6:
-                    header = b'\x05\x00\x00\x04'
-                else:
-                    header = b'\x05\x00\x00\x01'
-                addr, port = self._local_sock.getsockname()[:2]
-                addr_to_send = socket.inet_pton(self._local_sock.family,
-                                                addr)
-                port_to_send = struct.pack('>H', port)
-                self._write_to_sock(header + addr_to_send + port_to_send,
-                                    self._local_sock)
-                self._stage = STAGE_UDP_ASSOC
-                # just wait for the client to disconnect
-                return
-            elif cmd == CMD_CONNECT:
-                # just trim VER CMD RSV
-                data = data[3:]
+            if self._is_tunnel:
+                # add ss header to data
+                tunnel_remote = self.tunnel_remote
+                tunnel_remote_port = self.tunnel_remote_port
+                data = common.add_header(tunnel_remote,
+                                         tunnel_remote_port, data)
             else:
-                logging.error('unknown command %d', cmd)
-                self.destroy()
-                return
+                cmd = common.ord(data[1])
+                if cmd == CMD_UDP_ASSOCIATE:
+                    logging.debug('UDP associate')
+                    if self._local_sock.family == socket.AF_INET6:
+                        header = b'\x05\x00\x00\x04'
+                    else:
+                        header = b'\x05\x00\x00\x01'
+                    addr, port = self._local_sock.getsockname()[:2]
+                    addr_to_send = socket.inet_pton(self._local_sock.family,
+                                                    addr)
+                    port_to_send = struct.pack('>H', port)
+                    self._write_to_sock(header + addr_to_send + port_to_send,
+                                        self._local_sock)
+                    self._stage = STAGE_UDP_ASSOC
+                    # just wait for the client to disconnect
+                    return
+                elif cmd == CMD_CONNECT:
+                    # just trim VER CMD RSV
+                    data = data[3:]
+                else:
+                    logging.error('unknown command %d', cmd)
+                    self.destroy()
+                    return
         header_result = parse_header(data)
         if header_result is None:
             raise Exception('can not parse header')
@@ -347,10 +358,12 @@ class TCPRelayHandler(object):
         self._update_stream(STREAM_UP, WAIT_STATUS_WRITING)
         self._stage = STAGE_DNS
         if self._is_local:
-            # forward address to remote
-            self._write_to_sock((b'\x05\x00\x00\x01'
-                                 b'\x00\x00\x00\x00\x10\x10'),
-                                self._local_sock)
+            # jump over socks5 response
+            if not self._is_tunnel:
+                # forward address to remote
+                self._write_to_sock((b'\x05\x00\x00\x01'
+                                     b'\x00\x00\x00\x00\x10\x10'),
+                                    self._local_sock)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             # ATYP & 0x10 == 0x10, then OTA is enabled.
             if self._ota_enable_session:
@@ -558,7 +571,12 @@ class TCPRelayHandler(object):
             self._handle_stage_stream(data)
             return
         elif is_local and self._stage == STAGE_INIT:
-            self._handle_stage_init(data)
+            # jump over socks5 init
+            if self._is_tunnel:
+                self._handle_stage_addr(data)
+                return
+            else:
+                self._handle_stage_init(data)
         elif self._stage == STAGE_CONNECTING:
             self._handle_stage_connecting(data)
         elif (is_local and self._stage == STAGE_ADDR) or \
@@ -689,6 +707,7 @@ class TCPRelayHandler(object):
 
 
 class TCPRelay(object):
+
     def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         self._is_local = is_local
@@ -696,6 +715,7 @@ class TCPRelay(object):
         self._closed = False
         self._eventloop = None
         self._fd_to_handlers = {}
+        self._is_tunnel = False
 
         self._timeout = config['timeout']
         self._timeouts = []  # a list for all the handlers
