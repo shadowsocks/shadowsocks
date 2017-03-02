@@ -276,7 +276,7 @@ def test_chacha20_ietf():
 
 def test_chacha20_poly1305():
 
-    print ("Test chacha20-poly1305")
+    print("Test chacha20-poly1305")
     cipher = SodiumAeadCrypto('chacha20-poly1305',
                               b'k' * 32, b'i' * 32, 1)
     decipher = SodiumAeadCrypto('chacha20-poly1305',
@@ -287,7 +287,7 @@ def test_chacha20_poly1305():
 
 def test_chacha20_ietf_poly1305():
 
-    print ("Test chacha20-ietf-poly1305")
+    print("Test chacha20-ietf-poly1305")
     cipher = SodiumAeadCrypto('chacha20-ietf-poly1305',
                               b'k' * 32, b'i' * 32, 1)
     decipher = SodiumAeadCrypto('chacha20-ietf-poly1305',
