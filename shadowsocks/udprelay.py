@@ -68,7 +68,7 @@ import struct
 import errno
 import random
 
-from shadowsocks import encrypt, eventloop, lru_cache, common, shell
+from shadowsocks import cryptor, eventloop, lru_cache, common, shell
 from shadowsocks.common import parse_header, pack_addr, onetimeauth_verify, \
     onetimeauth_gen, ONETIMEAUTH_BYTES, ADDRTYPE_AUTH
 
@@ -170,7 +170,7 @@ class UDPRelay(object):
                 else:
                     data = data[3:]
         else:
-            data, key, iv = encrypt.decrypt_all(self._password,
+            data, key, iv = cryptor.decrypt_all(self._password,
                                                 self._method,
                                                 data)
             # decrypt data
@@ -234,11 +234,11 @@ class UDPRelay(object):
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
-            key, iv, m = encrypt.gen_key_iv(self._password, self._method)
+            key, iv, m = cryptor.gen_key_iv(self._password, self._method)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(key, iv, data)
-            data = encrypt.encrypt_all_m(key, iv, m, self._method, data)
+            data = cryptor.encrypt_all_m(key, iv, m, self._method, data)
             if not data:
                 return
         else:
@@ -267,13 +267,12 @@ class UDPRelay(object):
                 # drop
                 return
             data = pack_addr(r_addr[0]) + struct.pack('>H', r_addr[1]) + data
-            response = encrypt.encrypt_all(self._password, self._method, 1,
-                                           data)
+            response = cryptor.encrypt_all(self._password, self._method, data)
             if not response:
                 return
         else:
-            data = encrypt.encrypt_all(self._password, self._method, 0,
-                                       data)
+            data, key, iv = cryptor.decrypt_all(self._password,
+                                                self._method, data)
             if not data:
                 return
             header_result = parse_header(data)

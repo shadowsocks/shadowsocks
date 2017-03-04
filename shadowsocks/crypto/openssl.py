@@ -22,6 +22,8 @@ from ctypes import c_char_p, c_int, c_long, byref,\
 
 from shadowsocks import common
 from shadowsocks.crypto import util
+from shadowsocks.crypto.aead import AeadCryptoBase, EVP_CTRL_AEAD_SET_IVLEN, \
+    nonce_increment, EVP_CTRL_AEAD_GET_TAG, EVP_CTRL_AEAD_SET_TAG
 
 __all__ = ['ciphers']
 
@@ -29,6 +31,8 @@ libcrypto = None
 loaded = False
 
 buf_size = 2048
+
+CIPHER_ENC_UNCHANGED = -1
 
 
 def load_openssl():
@@ -45,9 +49,12 @@ def load_openssl():
 
     libcrypto.EVP_CipherInit_ex.argtypes = (c_void_p, c_void_p, c_char_p,
                                             c_char_p, c_char_p, c_int)
+    libcrypto.EVP_CIPHER_CTX_ctrl.argtypes = (c_void_p, c_int, c_int, c_void_p)
 
     libcrypto.EVP_CipherUpdate.argtypes = (c_void_p, c_void_p, c_void_p,
                                            c_char_p, c_int)
+
+    libcrypto.EVP_CipherFinal_ex.argtypes = (c_void_p, c_void_p, c_void_p)
 
     try:
         libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
@@ -64,7 +71,7 @@ def load_openssl():
 
 
 def load_cipher(cipher_name):
-    func_name = 'EVP_' + cipher_name.replace('-', '_')
+    func_name = b'EVP_' + cipher_name.replace(b'-', b'_')
     if bytes != str:
         func_name = str(func_name, 'utf-8')
     cipher = getattr(libcrypto, func_name, None)
@@ -74,9 +81,13 @@ def load_cipher(cipher_name):
     return None
 
 
-class OpenSSLCrypto(object):
-    def __init__(self, cipher_name, key, iv, op):
+class OpenSSLCryptoBase(object):
+    """
+    OpenSSL crypto base class
+    """
+    def __init__(self, cipher_name):
         self._ctx = None
+        self._cipher = None
         if not loaded:
             load_openssl()
         cipher_name = common.to_bytes(cipher_name)
@@ -85,26 +96,30 @@ class OpenSSLCrypto(object):
             cipher = load_cipher(cipher_name)
         if not cipher:
             raise Exception('cipher %s not found in libcrypto' % cipher_name)
-        key_ptr = c_char_p(key)
-        iv_ptr = c_char_p(iv)
         self._ctx = libcrypto.EVP_CIPHER_CTX_new()
+        self._cipher = cipher
         if not self._ctx:
             raise Exception('can not create cipher context')
-        r = libcrypto.EVP_CipherInit_ex(self._ctx, cipher, None,
-                                        key_ptr, iv_ptr, c_int(op))
-        if not r:
-            self.clean()
-            raise Exception('can not initialize cipher context')
+
+        self.encrypt_once = self.update
+        self.decrypt_once = self.update
 
     def update(self, data):
+        """
+        Encrypt/decrypt data
+        :param data: str
+        :return: str
+        """
         global buf_size, buf
         cipher_out_len = c_long(0)
         l = len(data)
         if buf_size < l:
             buf_size = l * 2
             buf = create_string_buffer(buf_size)
-        libcrypto.EVP_CipherUpdate(self._ctx, byref(buf),
-                                   byref(cipher_out_len), c_char_p(data), l)
+        libcrypto.EVP_CipherUpdate(
+            self._ctx, byref(buf),
+            byref(cipher_out_len), c_char_p(data), l
+        )
         # buf is copied to a str object when we access buf.raw
         return buf.raw[:cipher_out_len.value]
 
@@ -117,45 +132,206 @@ class OpenSSLCrypto(object):
             libcrypto.EVP_CIPHER_CTX_free(self._ctx)
 
 
+class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
+    """
+    Implement OpenSSL Aead mode: gcm, ocb
+    """
+    def __init__(self, cipher_name, key, iv, op):
+        super(OpenSSLAeadCrypto, self).__init__(cipher_name)
+        AeadCryptoBase.__init__(self, cipher_name, key, iv, op)
+
+        r = libcrypto.EVP_CipherInit_ex(
+            self._ctx,
+            self._cipher, None,
+            None, None, c_int(op)
+        )
+        if not r:
+            self.clean()
+            raise Exception('can not initialize cipher context')
+
+        r = libcrypto.EVP_CIPHER_CTX_ctrl(
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_SET_IVLEN),
+            c_int(self._nlen),
+            None
+        )
+        if not r:
+            raise Exception('Set ivlen failed')
+
+        self.cipher_ctx_init()
+
+    def cipher_ctx_init(self):
+        """
+        Need init cipher context after EVP_CipherFinal_ex to reuse context
+        :return: void
+        """
+        key_ptr = c_char_p(self._skey)
+        iv_ptr = c_char_p(self._nonce.raw)
+
+        r = libcrypto.EVP_CipherInit_ex(
+            self._ctx,
+            None, None,
+            key_ptr, iv_ptr,
+            c_int(CIPHER_ENC_UNCHANGED)
+        )
+        if not r:
+            self.clean()
+            raise Exception('can not initialize cipher context')
+
+        nonce_increment(self._nonce, self._nlen)
+        # print("".join("%02x" % ord(b) for b in self._nonce))
+
+    def set_tag(self, tag):
+        """
+        Set tag before decrypt any data (update)
+        :param tag: authenticated tag
+        :return: void
+        """
+        tag_len = self._tlen
+        r = libcrypto.EVP_CIPHER_CTX_ctrl(
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_SET_TAG),
+            c_int(tag_len), c_char_p(tag)
+        )
+        if not r:
+            raise Exception('Set tag failed')
+
+    def get_tag(self):
+        """
+        Get authenticated tag, called after EVP_CipherFinal_ex
+        :return: str
+        """
+        tag_len = self._tlen
+        tag_buf = create_string_buffer(tag_len)
+        r = libcrypto.EVP_CIPHER_CTX_ctrl(
+            self._ctx,
+            c_int(EVP_CTRL_AEAD_GET_TAG),
+            c_int(tag_len), byref(tag_buf)
+        )
+        if not r:
+            raise Exception('Get tag failed')
+        return tag_buf.raw[:tag_len]
+
+    def final(self):
+        """
+        Finish encrypt/decrypt a chunk (<= 0x3FFF)
+        :return: str
+        """
+        global buf_size, buf
+        cipher_out_len = c_long(0)
+        r = libcrypto.EVP_CipherFinal_ex(
+            self._ctx,
+            byref(buf), byref(cipher_out_len)
+        )
+        if not r:
+            # print(self._nonce.raw, r, cipher_out_len)
+            raise Exception('Verify data failed')
+        return buf.raw[:cipher_out_len.value]
+
+    def aead_encrypt(self, data):
+        """
+        Encrypt data with authenticate tag
+
+        :param data: plain text
+        :return: cipher text with tag
+        """
+        ctext = self.update(data) + self.final() + self.get_tag()
+        return ctext
+
+    def aead_decrypt(self, data):
+        """
+        Decrypt data and authenticate tag
+
+        :param data: cipher text with tag
+        :return: plain text
+        """
+        clen = len(data)
+        if clen < self._tlen:
+            raise Exception('Data too short')
+
+        self.set_tag(data[clen - self._tlen:])
+        plaintext = self.update(data[:clen - self._tlen]) + self.final()
+        return plaintext
+
+
+class OpenSSLStreamCrypto(OpenSSLCryptoBase):
+    """
+    Crypto for stream modes: cfb, ofb, ctr
+    """
+    def __init__(self, cipher_name, key, iv, op):
+        super(OpenSSLStreamCrypto, self).__init__(cipher_name)
+        key_ptr = c_char_p(key)
+        iv_ptr = c_char_p(iv)
+        r = libcrypto.EVP_CipherInit_ex(self._ctx, self._cipher, None,
+                                        key_ptr, iv_ptr, c_int(op))
+        if not r:
+            self.clean()
+            raise Exception('can not initialize cipher context')
+        self.encrypt = self.update
+        self.decrypt = self.update
+
+
 ciphers = {
-    'aes-128-cfb': (16, 16, OpenSSLCrypto),
-    'aes-192-cfb': (24, 16, OpenSSLCrypto),
-    'aes-256-cfb': (32, 16, OpenSSLCrypto),
-    'aes-128-ofb': (16, 16, OpenSSLCrypto),
-    'aes-192-ofb': (24, 16, OpenSSLCrypto),
-    'aes-256-ofb': (32, 16, OpenSSLCrypto),
-    'aes-128-ctr': (16, 16, OpenSSLCrypto),
-    'aes-192-ctr': (24, 16, OpenSSLCrypto),
-    'aes-256-ctr': (32, 16, OpenSSLCrypto),
-    'aes-128-cfb8': (16, 16, OpenSSLCrypto),
-    'aes-192-cfb8': (24, 16, OpenSSLCrypto),
-    'aes-256-cfb8': (32, 16, OpenSSLCrypto),
-    'aes-128-cfb1': (16, 16, OpenSSLCrypto),
-    'aes-192-cfb1': (24, 16, OpenSSLCrypto),
-    'aes-256-cfb1': (32, 16, OpenSSLCrypto),
-    'bf-cfb': (16, 8, OpenSSLCrypto),
-    'camellia-128-cfb': (16, 16, OpenSSLCrypto),
-    'camellia-192-cfb': (24, 16, OpenSSLCrypto),
-    'camellia-256-cfb': (32, 16, OpenSSLCrypto),
-    'cast5-cfb': (16, 8, OpenSSLCrypto),
-    'des-cfb': (8, 8, OpenSSLCrypto),
-    'idea-cfb': (16, 8, OpenSSLCrypto),
-    'rc2-cfb': (16, 8, OpenSSLCrypto),
-    'rc4': (16, 0, OpenSSLCrypto),
-    'seed-cfb': (16, 16, OpenSSLCrypto),
+    'aes-128-cfb': (16, 16, OpenSSLStreamCrypto),
+    'aes-192-cfb': (24, 16, OpenSSLStreamCrypto),
+    'aes-256-cfb': (32, 16, OpenSSLStreamCrypto),
+    'aes-128-gcm': (16, 16, OpenSSLAeadCrypto),
+    'aes-192-gcm': (24, 24, OpenSSLAeadCrypto),
+    'aes-256-gcm': (32, 32, OpenSSLAeadCrypto),
+    'aes-128-ofb': (16, 16, OpenSSLStreamCrypto),
+    'aes-192-ofb': (24, 16, OpenSSLStreamCrypto),
+    'aes-256-ofb': (32, 16, OpenSSLStreamCrypto),
+    'aes-128-ctr': (16, 16, OpenSSLStreamCrypto),
+    'aes-192-ctr': (24, 16, OpenSSLStreamCrypto),
+    'aes-256-ctr': (32, 16, OpenSSLStreamCrypto),
+    'aes-128-cfb8': (16, 16, OpenSSLStreamCrypto),
+    'aes-192-cfb8': (24, 16, OpenSSLStreamCrypto),
+    'aes-256-cfb8': (32, 16, OpenSSLStreamCrypto),
+    'aes-128-cfb1': (16, 16, OpenSSLStreamCrypto),
+    'aes-192-cfb1': (24, 16, OpenSSLStreamCrypto),
+    'aes-256-cfb1': (32, 16, OpenSSLStreamCrypto),
+    'bf-cfb': (16, 8, OpenSSLStreamCrypto),
+    'camellia-128-cfb': (16, 16, OpenSSLStreamCrypto),
+    'camellia-192-cfb': (24, 16, OpenSSLStreamCrypto),
+    'camellia-256-cfb': (32, 16, OpenSSLStreamCrypto),
+    'cast5-cfb': (16, 8, OpenSSLStreamCrypto),
+    'des-cfb': (8, 8, OpenSSLStreamCrypto),
+    'idea-cfb': (16, 8, OpenSSLStreamCrypto),
+    'rc2-cfb': (16, 8, OpenSSLStreamCrypto),
+    'rc4': (16, 0, OpenSSLStreamCrypto),
+    'seed-cfb': (16, 16, OpenSSLStreamCrypto),
 }
 
 
 def run_method(method):
 
-    cipher = OpenSSLCrypto(method, b'k' * 32, b'i' * 16, 1)
-    decipher = OpenSSLCrypto(method, b'k' * 32, b'i' * 16, 0)
+    cipher = OpenSSLStreamCrypto(method, b'k' * 32, b'i' * 16, 1)
+    decipher = OpenSSLStreamCrypto(method, b'k' * 32, b'i' * 16, 0)
+
+    util.run_cipher(cipher, decipher)
+
+
+def run_aead_method(method, key_len=16):
+
+    key_len = int(key_len)
+    cipher = OpenSSLAeadCrypto(method, b'k' * key_len, b'i' * key_len, 1)
+    decipher = OpenSSLAeadCrypto(method, b'k' * key_len, b'i' * key_len, 0)
 
     util.run_cipher(cipher, decipher)
 
 
 def test_aes_128_cfb():
     run_method('aes-128-cfb')
+
+
+def test_aes_gcm(bits=128):
+    method = "aes-{0}-gcm".format(bits)
+    print(method, int(bits / 8))
+    run_aead_method(method, bits / 8)
+
+
+def test_aes_256_gcm():
+    test_aes_gcm(256)
 
 
 def test_aes_256_cfb():
@@ -184,3 +360,7 @@ def test_rc4():
 
 if __name__ == '__main__':
     test_aes_128_cfb()
+    test_aes_gcm(128)
+    test_aes_gcm(192)
+    test_aes_gcm(256)
+    test_aes_256_gcm()

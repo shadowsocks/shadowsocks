@@ -33,7 +33,7 @@ def find_library_nt(name):
             results.append(fname)
         if fname.lower().endswith(".dll"):
             continue
-        fname = fname + ".dll"
+        fname += ".dll"
         if os.path.isfile(fname):
             results.append(fname)
     return results
@@ -92,14 +92,27 @@ def find_library(possible_lib_names, search_symbol, library_name):
     return None
 
 
+def parse_mode(cipher_nme):
+    """
+    Parse the cipher mode from cipher name
+    e.g. aes-128-gcm, the mode is gcm
+    :param cipher_nme: str cipher name, aes-128-cfb, aes-128-gcm ...
+    :return: str/None The mode, cfb, gcm ...
+    """
+    hyphen = cipher_nme.rfind('-')
+    if hyphen > 0:
+        return cipher_nme[hyphen:]
+    return None
+
+
 def run_cipher(cipher, decipher):
     from os import urandom
     import random
     import time
 
-    BLOCK_SIZE = 16384
+    block_size = 16384
     rounds = 1 * 1024
-    plain = urandom(BLOCK_SIZE * rounds)
+    plain = urandom(block_size * rounds)
 
     results = []
     pos = 0
@@ -107,18 +120,18 @@ def run_cipher(cipher, decipher):
     start = time.time()
     while pos < len(plain):
         l = random.randint(100, 32768)
-        c = cipher.update(plain[pos:pos + l])
+        c = cipher.encrypt(plain[pos:pos + l])
         results.append(c)
         pos += l
     pos = 0
     c = b''.join(results)
     results = []
-    while pos < len(plain):
+    while pos < len(c):
         l = random.randint(100, 32768)
-        results.append(decipher.update(c[pos:pos + l]))
+        results.append(decipher.decrypt(c[pos:pos + l]))
         pos += l
     end = time.time()
-    print('speed: %d bytes/s' % (BLOCK_SIZE * rounds / (end - start)))
+    print('speed: %d bytes/s' % (block_size * rounds / (end - start)))
     assert b''.join(results) == plain
 
 
