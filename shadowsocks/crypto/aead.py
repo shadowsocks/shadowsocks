@@ -14,11 +14,12 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-from ctypes import create_string_buffer
+from ctypes import c_int, create_string_buffer, byref, c_void_p
 
 import hashlib
 from struct import pack, unpack
 
+from shadowsocks.crypto import util
 from shadowsocks.crypto import hkdf
 from shadowsocks.common import ord, chr
 
@@ -42,21 +43,57 @@ CIPHER_NONCE_LEN = {
     'aes-128-gcm': 12,
     'aes-192-gcm': 12,
     'aes-256-gcm': 12,
+    'aes-128-ocb': 12,  # requires openssl 1.1
+    'aes-192-ocb': 12,
+    'aes-256-ocb': 12,
     'chacha20-poly1305': 12,
     'chacha20-ietf-poly1305': 12,
     'xchacha20-ietf-poly1305': 24,
+    'sodium:aes-256-gcm': 12,
 }
 
 CIPHER_TAG_LEN = {
     'aes-128-gcm': 16,
     'aes-192-gcm': 16,
     'aes-256-gcm': 16,
+    'aes-128-ocb': 16,  # requires openssl 1.1
+    'aes-192-ocb': 16,
+    'aes-256-ocb': 16,
     'chacha20-poly1305': 16,
     'chacha20-ietf-poly1305': 16,
     'xchacha20-ietf-poly1305': 16,
+    'sodium:aes-256-gcm': 16,
 }
 
 SUBKEY_INFO = b"ss-subkey"
+
+libsodium = None
+sodium_loaded = False
+
+
+def load_sodium():
+    """
+    Load libsodium helpers for nonce increment
+    :return: None
+    """
+    global libsodium, sodium_loaded
+
+    libsodium = util.find_library('sodium', 'sodium_increment',
+                                  'libsodium')
+    if libsodium is None:
+        return
+
+    if libsodium.sodium_init() < 0:
+        libsodium = None
+        return
+
+    libsodium.sodium_increment.restype = c_void_p
+    libsodium.sodium_increment.argtypes = (
+        c_void_p, c_int
+    )
+
+    sodium_loaded = True
+    return
 
 
 def nonce_increment(nonce, nlen):
@@ -119,12 +156,28 @@ class AeadCryptoBase(object):
         self.encrypt_once = self.aead_encrypt
         self.decrypt_once = self.aead_decrypt
 
+        # load libsodium for nonce increment
+        if not sodium_loaded:
+            load_sodium()
+
+    def nonce_increment(self):
+        """
+        AEAD ciphers need nonce to be unique per key
+        TODO: cache and check unique
+        :return: None
+        """
+        global libsodium, sodium_loaded
+        if sodium_loaded:
+            libsodium.sodium_increment(byref(self._nonce), c_int(self._nlen))
+        else:
+            nonce_increment(self._nonce, self._nlen)
+
     def cipher_ctx_init(self):
         """
         Increase nonce to make it unique for the same key
-        :return: void
+        :return: None
         """
-        nonce_increment(self._nonce, self._nlen)
+        self.nonce_increment()
         # print("".join("%02x" % ord(b) for b in self._nonce))
 
     def aead_encrypt(self, data):
@@ -132,7 +185,7 @@ class AeadCryptoBase(object):
         Encrypt data with authenticate tag
 
         :param data: plain text
-        :return: cipher text with tag
+        :return: str [payload][tag] cipher text with tag
         """
         raise Exception("Must implement aead_encrypt method")
 
@@ -141,23 +194,21 @@ class AeadCryptoBase(object):
         Encrypt a chunk for TCP chunks
 
         :param data: str
-        :return: (str, int)
+        :return: str [len][tag][payload][tag]
         """
         plen = len(data)
-        l = AEAD_CHUNK_SIZE_LEN + plen + self._tlen * 2
+        # l = AEAD_CHUNK_SIZE_LEN + plen + self._tlen * 2
 
         # network byte order
-        ctext = self.aead_encrypt(pack("!H", plen & AEAD_CHUNK_SIZE_MASK))
-        if len(ctext) != AEAD_CHUNK_SIZE_LEN + self._tlen:
+        ctext = [self.aead_encrypt(pack("!H", plen & AEAD_CHUNK_SIZE_MASK))]
+        if len(ctext[0]) != AEAD_CHUNK_SIZE_LEN + self._tlen:
+            raise Exception("size length invalid")
+
+        ctext.append(self.aead_encrypt(data))
+        if len(ctext[1]) != plen + self._tlen:
             raise Exception("data length invalid")
 
-        self.cipher_ctx_init()
-        ctext += self.aead_encrypt(data)
-        if len(ctext) != l:
-            raise Exception("data length invalid")
-
-        self.cipher_ctx_init()
-        return ctext, l
+        return b''.join(ctext)
 
     def encrypt(self, data):
         """
@@ -169,25 +220,24 @@ class AeadCryptoBase(object):
         """
         plen = len(data)
         if plen <= AEAD_CHUNK_SIZE_MASK:
-            ctext, _ = self.encrypt_chunk(data)
+            ctext = self.encrypt_chunk(data)
             return ctext
-        ctext, clen = b"", 0
+        ctext = []
         while plen > 0:
             mlen = plen if plen < AEAD_CHUNK_SIZE_MASK \
                 else AEAD_CHUNK_SIZE_MASK
-            r, l = self.encrypt_chunk(data[:mlen])
-            ctext += r
-            clen += l
+            c = self.encrypt_chunk(data[:mlen])
+            ctext.append(c)
             data = data[mlen:]
             plen -= mlen
 
-        return ctext
+        return b''.join(ctext)
 
     def aead_decrypt(self, data):
         """
         Decrypt data and authenticate tag
 
-        :param data: str cipher text with tag
+        :param data: str [len][tag][payload][tag] cipher text with tag
         :return: str plain text
         """
         raise Exception("Must implement aead_decrypt method")
@@ -196,7 +246,7 @@ class AeadCryptoBase(object):
         """
         Decrypt chunk size
 
-        :param data: str encrypted msg
+        :param data: str [size][tag] encrypted chunk payload len
         :return: (int, str) msg length and remaining encrypted data
         """
         if self._chunk['mlen'] > 0:
@@ -213,7 +263,6 @@ class AeadCryptoBase(object):
         if plen & AEAD_CHUNK_SIZE_MASK != plen or plen <= 0:
             raise Exception('Invalid message length')
 
-        self.cipher_ctx_init()
         return plen, data[hlen:]
 
     def decrypt_chunk_payload(self, plen, data):
@@ -221,7 +270,7 @@ class AeadCryptoBase(object):
         Decrypted encrypted msg payload
 
         :param plen: int payload length
-        :param data: str encrypted data
+        :param data: str [payload][tag][[len][tag]....] encrypted data
         :return: (str, str) plain text and remaining encrypted data
         """
         data = self._chunk['data'] + data
@@ -237,15 +286,13 @@ class AeadCryptoBase(object):
         if len(plaintext) != plen:
             raise Exception("plaintext length invalid")
 
-        self.cipher_ctx_init()
-
         return plaintext, data[plen + self._tlen:]
 
     def decrypt_chunk(self, data):
         """
         Decrypt a TCP chunk
 
-        :param data: str encrypted msg
+        :param data: str [len][tag][payload][tag][[len][tag]...] encrypted msg
         :return: (str, str) decrypted msg and remaining encrypted data
         """
         plen, data = self.decrypt_chunk_size(data)
@@ -261,11 +308,13 @@ class AeadCryptoBase(object):
         :param data: str
         :return: str
         """
-        ptext, left = self.decrypt_chunk(data)
+        ptext = []
+        pnext, left = self.decrypt_chunk(data)
+        ptext.append(pnext)
         while len(left) > 0:
             pnext, left = self.decrypt_chunk(left)
-            ptext += pnext
-        return ptext
+            ptext.append(pnext)
+        return b''.join(ptext)
 
 
 def test_nonce_increment():
