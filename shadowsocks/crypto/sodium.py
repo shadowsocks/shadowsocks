@@ -287,7 +287,7 @@ ciphers = {
 
 
 def test_salsa20():
-    
+
     print("Test salsa20")
     cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
     decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
@@ -398,4 +398,3 @@ if __name__ == '__main__':
     test_chacha20_ietf_poly1305_chunk()
     test_aes_256_gcm()
     test_aes_256_gcm_chunk()
-
