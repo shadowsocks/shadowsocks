@@ -114,25 +114,27 @@ def run_cipher(cipher, decipher):
     rounds = 1 * 1024
     plain = urandom(block_size * rounds)
 
-    results = []
+    cipher_results = []
     pos = 0
     print('test start')
     start = time.time()
     while pos < len(plain):
         l = random.randint(100, 32768)
-        c = cipher.encrypt(plain[pos:pos + l])
-        results.append(c)
+        # print(pos, l)
+        c = cipher.encrypt_once(plain[pos:pos + l])
+        cipher_results.append(c)
         pos += l
     pos = 0
-    c = b''.join(results)
-    results = []
-    while pos < len(c):
-        l = random.randint(100, 32768)
-        results.append(decipher.decrypt(c[pos:pos + l]))
+    # c = b''.join(cipher_results)
+    plain_results = []
+    for c in cipher_results:
+        # l = random.randint(100, 32768)
+        l = len(c)
+        plain_results.append(decipher.decrypt_once(c))
         pos += l
     end = time.time()
     print('speed: %d bytes/s' % (block_size * rounds / (end - start)))
-    assert b''.join(results) == plain
+    assert b''.join(plain_results) == plain
 
 
 def test_find_library():
