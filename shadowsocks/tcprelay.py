@@ -641,6 +641,7 @@ class TCPRelayHandler(object):
             logging.error(eventloop.get_sock_error(self._remote_sock))
         self.destroy()
 
+    @shell.exception_handle(self_=True, destroy=True)
     def handle_event(self, sock, event):
         # handle all events in this handler and dispatch them to methods
         if self._stage == STAGE_DESTROYED:
