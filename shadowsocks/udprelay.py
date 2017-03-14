@@ -170,14 +170,16 @@ class UDPRelay(object):
                 else:
                     data = data[3:]
         else:
-            data, key, iv = cryptor.decrypt_all(self._password,
-                                                self._method,
-                                                data)
             # decrypt data
+            try:
+                data, key, iv = cryptor.decrypt_all(self._password,
+                                                    self._method,
+                                                    data)
+            except Exception:
+                logging.debug('UDP handle_server: decrypt data failed')
+                return
             if not data:
-                logging.debug(
-                    'UDP handle_server: data is empty after decrypt'
-                )
+                logging.debug('UDP handle_server: data is empty after decrypt')
                 return
         header_result = parse_header(data)
         if header_result is None:
@@ -238,7 +240,11 @@ class UDPRelay(object):
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(key, iv, data)
-            data = cryptor.encrypt_all_m(key, iv, m, self._method, data)
+            try:
+                data = cryptor.encrypt_all_m(key, iv, m, self._method, data)
+            except Exception:
+                logging.debug("UDP handle_server: encrypt data failed")
+                return
             if not data:
                 return
         else:
@@ -267,12 +273,21 @@ class UDPRelay(object):
                 # drop
                 return
             data = pack_addr(r_addr[0]) + struct.pack('>H', r_addr[1]) + data
-            response = cryptor.encrypt_all(self._password, self._method, data)
+            try:
+                response = cryptor.encrypt_all(self._password,
+                                               self._method, data)
+            except Exception:
+                logging.debug("UDP handle_client: encrypt data failed")
+                return
             if not response:
                 return
         else:
-            data, key, iv = cryptor.decrypt_all(self._password,
-                                                self._method, data)
+            try:
+                data, key, iv = cryptor.decrypt_all(self._password,
+                                                    self._method, data)
+            except Exception:
+                logging.debug('UDP handle_client: decrypt data failed')
+                return
             if not data:
                 return
             header_result = parse_header(data)
