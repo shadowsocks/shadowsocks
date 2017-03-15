@@ -1,3 +1,8 @@
+3.1.0 2017-03-16
+- add "glzjinmod" interface
+- rate limit
+- add additional_ports in config
+
 3.0.4 2017-01-08
 - multi-user in single port
 
