@@ -26,6 +26,7 @@ def find_library_nt(name):
     # ctypes.util.find_library just returns first result he found
     # but we want to try them all
     # because on Windows, users may have both 32bit and 64bit version installed
+    import glob
     results = []
     for directory in os.environ['PATH'].split(os.pathsep):
         fname = os.path.join(directory, name)
@@ -33,9 +34,10 @@ def find_library_nt(name):
             results.append(fname)
         if fname.lower().endswith(".dll"):
             continue
-        fname += ".dll"
-        if os.path.isfile(fname):
-            results.append(fname)
+        fname += "*.dll"
+        files = glob.glob(fname)
+        if files:
+            results.extend(files)
     return results
 
 
