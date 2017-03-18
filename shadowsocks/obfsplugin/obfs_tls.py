@@ -152,6 +152,8 @@ class tls_ticket_auth(plain.plain):
         verify = buf[11:33]
         if hmac.new(self.server_info.key + self.server_info.data.client_id, verify, hashlib.sha1).digest()[:10] != buf[33:43]:
             raise Exception('client_decode data error')
+        if hmac.new(self.server_info.key + self.server_info.data.client_id, buf[:-10], hashlib.sha1).digest()[:10] != buf[-10:]:
+            raise Exception('client_decode data error')
         return (b'', True)
 
     def server_encode(self, buf):
@@ -170,6 +172,10 @@ class tls_ticket_auth(plain.plain):
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"c02f000005ff01000100")
         data = b"\x02\x00" + struct.pack('>H', len(data)) + data #server hello
         data = b"\x16\x03\x03" + struct.pack('>H', len(data)) + data
+        if random.randint(0, 255) < 128:
+            ticket = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 256) + 64)
+            ticket = struct.pack('>H', len(ticket) + 4) b"\x04\x00" + struct.pack('>H', len(ticket))
+            data += b"\x16" + self.tls_version + ticket #New session ticket
         data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
         data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
         data += hmac.new(self.server_info.key + self.client_id, data, hashlib.sha1).digest()[:10]
