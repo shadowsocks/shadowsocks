@@ -174,7 +174,7 @@ class tls_ticket_auth(plain.plain):
         data = b"\x16\x03\x03" + struct.pack('>H', len(data)) + data
         if random.randint(0, 255) < 128:
             ticket = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 256) + 64)
-            ticket = struct.pack('>H', len(ticket) + 4) b"\x04\x00" + struct.pack('>H', len(ticket))
+            ticket = struct.pack('>H', len(ticket) + 4) + b"\x04\x00" + struct.pack('>H', len(ticket))
             data += b"\x16" + self.tls_version + ticket #New session ticket
         data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
         data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
