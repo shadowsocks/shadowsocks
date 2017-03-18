@@ -172,12 +172,13 @@ class tls_ticket_auth(plain.plain):
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"c02f000005ff01000100")
         data = b"\x02\x00" + struct.pack('>H', len(data)) + data #server hello
         data = b"\x16\x03\x03" + struct.pack('>H', len(data)) + data
-        if random.randint(0, 255) < 128:
-            ticket = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 256) + 64)
+        if random.randint(0, 8) < 1:
+            ticket = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 164) * 2 + 64)
             ticket = struct.pack('>H', len(ticket) + 4) + b"\x04\x00" + struct.pack('>H', len(ticket))
             data += b"\x16" + self.tls_version + ticket #New session ticket
         data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
-        data += b"\x16" + self.tls_version + b"\x00\x20" + os.urandom(22) #Finished
+        finish_len = random.choice([32, 40])
+        data += b"\x16" + self.tls_version + struct.pack('>H', finish_len) + os.urandom(finish_len - 10) #Finished
         data += hmac.new(self.server_info.key + self.client_id, data, hashlib.sha1).digest()[:10]
         return data
 
@@ -215,7 +216,7 @@ class tls_ticket_auth(plain.plain):
             if not match_begin(buf, b"\x14" + self.tls_version + b"\x00\x01\x01"): #ChangeCipherSpec
                 raise Exception('server_decode data error')
             buf = buf[6:]
-            if not match_begin(buf, b"\x16" + self.tls_version + b"\x00\x20"): #Finished
+            if not match_begin(buf, b"\x16" + self.tls_version + b"\x00"): #Finished
                 raise Exception('server_decode data error')
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
                 raise Exception('server_decode data error')
