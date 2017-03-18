@@ -210,7 +210,6 @@ class tls_ticket_auth(plain.plain):
             self.recv_buffer += buf
             buf = self.recv_buffer
             verify = buf
-            verify_len = 43 - 10
             if len(buf) < 43:
                 raise Exception('server_decode data error')
             if not match_begin(buf, b"\x14" + self.tls_version + b"\x00\x01\x01"): #ChangeCipherSpec
@@ -218,11 +217,12 @@ class tls_ticket_auth(plain.plain):
             buf = buf[6:]
             if not match_begin(buf, b"\x16" + self.tls_version + b"\x00"): #Finished
                 raise Exception('server_decode data error')
+            verify_len = struct.unpack('>H', buf[3:5])[0] + 1 # 11 - 10
+            if len(verify) < verify_len + 10:
+                raise Exception('server_decode data error')
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
                 raise Exception('server_decode data error')
-            if len(buf) < 37:
-                raise Exception('server_decode data error')
-            self.recv_buffer = buf[37:]
+            self.recv_buffer = verify[verify_len + 10:]
             self.handshake_status = 8
             return self.server_decode(b'')
 
