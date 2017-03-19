@@ -250,8 +250,8 @@ def get_config(is_local):
     config['udp_cache'] = int(config.get('udp_cache', 64))
     config['fast_open'] = config.get('fast_open', False)
     config['workers'] = config.get('workers', 1)
-    config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
-    config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
+    config['pid-file'] = config.get('pid-file', '/var/run/shadowsocksr.pid')
+    config['log-file'] = config.get('log-file', '/var/log/shadowsocksr.log')
     config['verbose'] = config.get('verbose', False)
     config['connect_verbose_info'] = config.get('connect_verbose_info', 0)
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
@@ -278,7 +278,7 @@ def get_config(is_local):
             sys.exit(2)
         try:
             config['ignore_bind'] = \
-                IPNetwork(config.get('ignore_bind', '127.0.0.0/8,::1/128'))
+                IPNetwork(config.get('ignore_bind', '127.0.0.0/8,::1/128,10.0.0.0/8,192.168.0.0/16'))
         except Exception as e:
             logging.error(e)
             sys.exit(2)
