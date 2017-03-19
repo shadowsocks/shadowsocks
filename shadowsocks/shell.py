@@ -167,8 +167,7 @@ def check_config(config, is_local):
         config['server_port'] = int(config['server_port'])
 
     if 'tunnel_remote_port' in config:
-        config['tunnel_remote_port'] = \
-            int(config['tunnel_remote_port'])
+        config['tunnel_remote_port'] = int(config['tunnel_remote_port'])
     if 'tunnel_port' in config:
         config['tunnel_port'] = int(config['tunnel_port'])
 
@@ -198,6 +197,8 @@ def check_config(config, is_local):
             logging.error('user can be used only on Unix')
             sys.exit(1)
     if config.get('dns_server', None) is not None:
+        if type(config['dns_server']) != list:
+            config['dns_server'] = to_str(config['dns_server'])
         logging.info('Specified DNS server: %s' % config['dns_server'])
 
     cryptor.try_cipher(config['password'], config['method'])
@@ -313,8 +314,7 @@ def get_config(is_local):
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
     config['server_port'] = config.get('server_port', 8388)
 
-    config['tunnel_remote'] = \
-        to_str(config.get('tunnel_remote', '8.8.8.8'))
+    config['tunnel_remote'] = to_str(config.get('tunnel_remote', '8.8.8.8'))
     config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
     config['tunnel_port'] = config.get('tunnel_port', 53)
     config['dns_server'] = config.get('dns_server', None)
