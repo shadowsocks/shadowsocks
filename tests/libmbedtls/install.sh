@@ -7,5 +7,6 @@ if [ ! -d mbedtls-$MBEDTLS_VER ]; then
 fi
 pushd mbedtls-$MBEDTLS_VER
 make SHARED=1 CFLAGS=-fPIC && sudo make install || exit 1
+rm -rf mbedtls-$MBEDTLS_VER || exit 1
 sudo ldconfig
 popd
