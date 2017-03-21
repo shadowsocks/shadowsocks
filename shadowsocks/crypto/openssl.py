@@ -39,14 +39,16 @@ ctx_cleanup = None
 CIPHER_ENC_UNCHANGED = -1
 
 
-def load_openssl():
+def load_openssl(crypto_path=None):
     global loaded, libcrypto, libsodium, buf, ctx_cleanup
 
+    crypto_path = dict(crypto_path) if crypto_path else dict()
+    path = crypto_path.get('openssl', None)
     libcrypto = util.find_library(('crypto', 'eay32'),
                                   'EVP_get_cipherbyname',
-                                  'libcrypto')
+                                  'libcrypto', path)
     if libcrypto is None:
-        raise Exception('libcrypto(OpenSSL) not found')
+        raise Exception('libcrypto(OpenSSL) not found with path %s' % path)
 
     libcrypto.EVP_get_cipherbyname.restype = c_void_p
     libcrypto.EVP_CIPHER_CTX_new.restype = c_void_p
@@ -89,11 +91,11 @@ class OpenSSLCryptoBase(object):
     """
     OpenSSL crypto base class
     """
-    def __init__(self, cipher_name):
+    def __init__(self, cipher_name, crypto_path=None):
         self._ctx = None
         self._cipher = None
         if not loaded:
-            load_openssl()
+            load_openssl(crypto_path)
         cipher_name = common.to_bytes(cipher_name)
         cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
         if not cipher:
@@ -140,9 +142,9 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
     """
     Implement OpenSSL Aead mode: gcm, ocb
     """
-    def __init__(self, cipher_name, key, iv, op):
-        super(OpenSSLAeadCrypto, self).__init__(cipher_name)
-        AeadCryptoBase.__init__(self, cipher_name, key, iv, op)
+    def __init__(self, cipher_name, key, iv, op, crypto_path=None):
+        OpenSSLCryptoBase.__init__(self, cipher_name, crypto_path)
+        AeadCryptoBase.__init__(self, cipher_name, key, iv, op, crypto_path)
 
         key_ptr = c_char_p(self._skey)
         r = libcrypto.EVP_CipherInit_ex(
@@ -170,7 +172,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
     def cipher_ctx_init(self):
         """
         Need init cipher context after EVP_CipherFinal_ex to reuse context
-        :return: void
+        :return: None
         """
         iv_ptr = c_char_p(self._nonce.raw)
         r = libcrypto.EVP_CipherInit_ex(
@@ -190,7 +192,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         """
         Set tag before decrypt any data (update)
         :param tag: authenticated tag
-        :return: void
+        :return: None
         """
         tag_len = self._tlen
         r = libcrypto.EVP_CIPHER_CTX_ctrl(
@@ -265,8 +267,8 @@ class OpenSSLStreamCrypto(OpenSSLCryptoBase):
     """
     Crypto for stream modes: cfb, ofb, ctr
     """
-    def __init__(self, cipher_name, key, iv, op):
-        super(OpenSSLStreamCrypto, self).__init__(cipher_name)
+    def __init__(self, cipher_name, key, iv, op, crypto_path=None):
+        OpenSSLCryptoBase.__init__(self, cipher_name, crypto_path)
         key_ptr = c_char_p(key)
         iv_ptr = c_char_p(iv)
         r = libcrypto.EVP_CipherInit_ex(self._ctx, self._cipher, None,
@@ -282,9 +284,6 @@ ciphers = {
     'aes-128-cfb': (16, 16, OpenSSLStreamCrypto),
     'aes-192-cfb': (24, 16, OpenSSLStreamCrypto),
     'aes-256-cfb': (32, 16, OpenSSLStreamCrypto),
-    'aes-128-gcm': (16, 16, OpenSSLAeadCrypto),
-    'aes-192-gcm': (24, 24, OpenSSLAeadCrypto),
-    'aes-256-gcm': (32, 32, OpenSSLAeadCrypto),
     'aes-128-ofb': (16, 16, OpenSSLStreamCrypto),
     'aes-192-ofb': (24, 16, OpenSSLStreamCrypto),
     'aes-256-ofb': (32, 16, OpenSSLStreamCrypto),
@@ -307,6 +306,13 @@ ciphers = {
     'rc2-cfb': (16, 8, OpenSSLStreamCrypto),
     'rc4': (16, 0, OpenSSLStreamCrypto),
     'seed-cfb': (16, 16, OpenSSLStreamCrypto),
+    # AEAD: iv_len = salt_len = key_len
+    'aes-128-gcm': (16, 16, OpenSSLAeadCrypto),
+    'aes-192-gcm': (24, 24, OpenSSLAeadCrypto),
+    'aes-256-gcm': (32, 32, OpenSSLAeadCrypto),
+    'aes-128-ocb': (16, 16, OpenSSLAeadCrypto),
+    'aes-192-ocb': (24, 24, OpenSSLAeadCrypto),
+    'aes-256-ocb': (32, 32, OpenSSLAeadCrypto),
 }
 
 
@@ -353,10 +359,6 @@ def run_aead_method_chunk(method, key_len=16):
     util.run_cipher(cipher, decipher)
 
 
-def test_aes_128_cfb():
-    run_method('aes-128-cfb')
-
-
 def test_aes_gcm(bits=128):
     method = "aes-{0}-gcm".format(bits)
     run_aead_method(method, bits / 8)
@@ -375,6 +377,10 @@ def test_aes_gcm_chunk(bits=128):
 def test_aes_ocb_chunk(bits=128):
     method = "aes-{0}-ocb".format(bits)
     run_aead_method_chunk(method, bits / 8)
+
+
+def test_aes_128_cfb():
+    run_method('aes-128-cfb')
 
 
 def test_aes_256_cfb():
@@ -404,6 +410,7 @@ def test_rc4():
 if __name__ == '__main__':
     test_aes_128_cfb()
     test_aes_256_cfb()
+    test_aes_256_ofb()
     test_aes_gcm(128)
     test_aes_gcm(192)
     test_aes_gcm(256)
