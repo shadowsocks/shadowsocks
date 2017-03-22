@@ -6,6 +6,6 @@ if [ ! -d libsodium-1.0.12 ]; then
 fi
 pushd libsodium-1.0.12
 ./configure && make -j2 && make install || exit 1
-rm -rf libsodium-1.0.12 || exit 1
 sudo ldconfig
 popd
+rm -rf libsodium-1.0.12 || exit 1

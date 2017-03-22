@@ -7,6 +7,6 @@ if [ ! -d openssl-$OPENSSL_VER ]; then
 fi
 pushd openssl-$OPENSSL_VER
 ./config && make && sudo make install || exit 1
-rm -rf openssl-$OPENSSL_VER || exit 1
 # sudo ldconfig  # test multiple libcrypto
 popd
+rm -rf openssl-$OPENSSL_VER || exit 1
