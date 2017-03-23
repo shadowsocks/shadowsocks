@@ -384,21 +384,19 @@ Proxy options:
                          Sodium 1.0.12:
                             xchacha20
                          OpenSSL:
-                            aes-[128|192|256]-gcm, aes-[128|192|256]-cfb,
-                            aes-[128|192|256]-ofb, aes-[128|192|256]-ctr,
-                            camellia-[128|192|256]-cfb,
+                            aes-{128|192|256}-gcm, aes-{128|192|256}-cfb,
+                            aes-{128|192|256}-ofb, aes-{128|192|256}-ctr,
+                            camellia-{128|192|256}-cfb,
                             bf-cfb, cast5-cfb, des-cfb, idea-cfb,
                             rc2-cfb, seed-cfb,
                             rc4, rc4-md5, table.
                          OpenSSL 1.1:
-                            aes-[128|192|256]-ocb
+                            aes-{128|192|256}-ocb
                          mbedTLS:
-                            mbedtls:aes-[128|192|256]-cfb128,
-                            mbedtls:aes-[128|192|256]-ctr,
-                            mbedtls:camellia-[128|192|256]-cfb128,
-                            mbedtls:salsa20, mbedtls:chacha20,
-                            mbedtls:chacha20-ietf,
-                            mbedtls:aes[128|192|256]-gcm
+                            mbedtls:aes-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-ctr,
+                            mbedtls:camellia-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-gcm
   -t TIMEOUT             timeout in seconds, default: 300
   -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
@@ -440,21 +438,19 @@ Proxy options:
                          Sodium 1.0.12:
                             xchacha20
                          OpenSSL:
-                            aes-[128|192|256]-gcm, aes-[128|192|256]-cfb,
-                            aes-[128|192|256]-ofb, aes-[128|192|256]-ctr,
-                            camellia-[128|192|256]-cfb,
+                            aes-{128|192|256}-gcm, aes-{128|192|256}-cfb,
+                            aes-{128|192|256}-ofb, aes-{128|192|256}-ctr,
+                            camellia-{128|192|256}-cfb,
                             bf-cfb, cast5-cfb, des-cfb, idea-cfb,
                             rc2-cfb, seed-cfb,
                             rc4, rc4-md5, table.
                          OpenSSL 1.1:
-                            aes-[128|192|256]-ocb
+                            aes-{128|192|256}-ocb
                          mbedTLS:
-                            mbedtls:aes-[128|192|256]-cfb128,
-                            mbedtls:aes-[128|192|256]-ctr,
-                            mbedtls:camellia-[128|192|256]-cfb128,
-                            mbedtls:salsa20, mbedtls:chacha20,
-                            mbedtls:chacha20-ietf,
-                            mbedtls:aes[128|192|256]-gcm
+                            mbedtls:aes-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-ctr,
+                            mbedtls:camellia-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-gcm
   -t TIMEOUT             timeout in seconds, default: 300
   -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
