@@ -159,7 +159,7 @@ class http_simple(plain.plain):
         if lines and len(lines) > 1:
             for line in lines:
                 if match_begin(line, b"Host: "):
-                    return line[6:]
+                    return common.to_str(line[6:])
 
     def not_match_return(self, buf):
         self.has_sent_header = True

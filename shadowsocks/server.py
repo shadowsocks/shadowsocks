@@ -96,8 +96,8 @@ def main():
             protocol_param = password_obfs.get('protocol_param', protocol_param)
             obfs = password_obfs.get('obfs', obfs)
             obfs_param = password_obfs.get('obfs_param', obfs_param)
-            bind = password_obfs.get('bind', bind)
-            bindv6 = password_obfs.get('bindv6', bindv6)
+            bind = password_obfs.get('out_bind', bind)
+            bindv6 = password_obfs.get('out_bindv6', bindv6)
         else:
             password = password_obfs
         a_config = config.copy()
