@@ -1,3 +1,9 @@
+3.1.1 2017-03-25
+- add "New session ticket"
+- ignore bind 10.0.0.0/8 and 192.168.0.0/16 by default
+- improve rand size under auth_aes128_*
+- fix bugs
+
 3.1.0 2017-03-16
 - add "glzjinmod" interface
 - rate limit

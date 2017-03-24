@@ -928,6 +928,7 @@ class UDPRelay(object):
         server_info.key = encrypt.encrypt_key(self._password, self._method)
         server_info.head_len = 30
         server_info.tcp_mss = 1440
+        server_info.buffer_size = BUF_SIZE
         self._protocol.set_server_info(server_info)
 
         self._sockets = set()

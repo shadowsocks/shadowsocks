@@ -1186,7 +1186,7 @@ class auth_aes128_sha1(auth_base):
         self.server_info.data.set_max_client(max_client)
 
     def rnd_data_len(self, buf_size, full_buf_size):
-        if buf_size > 1300 or self.last_rnd_len > 1300 or full_buf_size > 1492:
+        if buf_size > 1300 or self.last_rnd_len > 1300 or full_buf_size >= self.server_info.buffer_size:
             return 0
         if buf_size > 1100:
             return common.ord(os.urandom(1)[0]) % 128
