@@ -33,12 +33,16 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--count', default=3, type=int,
                         help='with how many failure times it should be '
                              'considered as an attack')
+    parser.add_argument('-wl', '--whitelist', action='append',
+                        help='whiltelist ip that shall not be banned.')
     config = parser.parse_args()
     ips = {}
     banned = set()
     for line in sys.stdin:
         if 'can not parse header when' in line:
             ip = line.split()[-1].split(':')[-2]
+            if ip in config.whitelist:
+                continue
             if ip not in ips:
                 ips[ip] = 1
                 print(ip)
