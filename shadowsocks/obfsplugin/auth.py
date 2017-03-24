@@ -1172,6 +1172,7 @@ class auth_aes128_sha1(auth_base):
         self.recv_id = 1
         self.user_id = None
         self.user_key = None
+        self.last_rnd_len = 0
 
     def init_data(self):
         return obfs_auth_mu_data()
@@ -1184,21 +1185,25 @@ class auth_aes128_sha1(auth_base):
             max_client = 64
         self.server_info.data.set_max_client(max_client)
 
+    def rnd_data_len(self, buf_size):
+        if buf_size > 1300 or self.last_rnd_len > 1300:
+            return 0
+        if buf_size > 1100:
+            return common.ord(os.urandom(1)[0]) % 128
+        #self.pack_id
+        if buf_size > 400:
+            return struct.unpack('>H', os.urandom(2))[0] % 256
+        else:
+            return struct.unpack('>H', os.urandom(2))[0] % 1024
+
     def rnd_data(self, buf_size):
-        if buf_size > 1200:
-            return b'\x01'
+        data_len = self.rnd_data_len(buf_size)
+        self.last_rnd_len = data_len
 
-        if self.pack_id > 4:
-            rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 32)
-        elif buf_size > 900:
-            rnd_data = os.urandom(common.ord(os.urandom(1)[0]) % 128)
-        else:
-            rnd_data = os.urandom(struct.unpack('>H', os.urandom(2))[0] % 512)
+        if data_len < 128:
+            return common.chr(data_len + 1) + os.urandom(data_len)
 
-        if len(rnd_data) < 128:
-            return common.chr(len(rnd_data) + 1) + rnd_data
-        else:
-            return common.chr(255) + struct.pack('<H', len(rnd_data) + 3) + rnd_data
+        return common.chr(255) + struct.pack('<H', data_len + 1) + os.urandom(data_len - 2)
 
     def pack_data(self, buf):
         data = self.rnd_data(len(buf)) + buf
@@ -1255,6 +1260,7 @@ class auth_aes128_sha1(auth_base):
 
     def client_pre_encrypt(self, buf):
         ret = b''
+        self.last_rnd_len = 0
         if not self.has_sent_header:
             head_size = self.get_head_size(buf, 30)
             datalen = min(len(buf), random.randint(0, 31) + head_size)
@@ -1305,6 +1311,7 @@ class auth_aes128_sha1(auth_base):
         if self.raw_trans:
             return buf
         ret = b''
+        self.last_rnd_len = 0
         while len(buf) > self.unit_len:
             ret += self.pack_data(buf[:self.unit_len])
             buf = buf[self.unit_len:]

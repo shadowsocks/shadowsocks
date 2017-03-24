@@ -165,7 +165,7 @@ class TCPRelayHandler(object):
         server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1460
+        server_info.tcp_mss = 1448
         self._obfs.set_server_info(server_info)
 
         self._protocol = obfs.obfs(config['protocol'])
@@ -183,7 +183,7 @@ class TCPRelayHandler(object):
         server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1460
+        server_info.tcp_mss = 1448
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["*#0.0.0.0:0"])
