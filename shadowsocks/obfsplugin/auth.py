@@ -1185,8 +1185,8 @@ class auth_aes128_sha1(auth_base):
             max_client = 64
         self.server_info.data.set_max_client(max_client)
 
-    def rnd_data_len(self, buf_size):
-        if buf_size > 1300 or self.last_rnd_len > 1300:
+    def rnd_data_len(self, buf_size, full_buf_size):
+        if buf_size > 1300 or self.last_rnd_len > 1300 or full_buf_size > 1492:
             return 0
         if buf_size > 1100:
             return common.ord(os.urandom(1)[0]) % 128
@@ -1196,17 +1196,16 @@ class auth_aes128_sha1(auth_base):
         else:
             return struct.unpack('>H', os.urandom(2))[0] % 1024
 
-    def rnd_data(self, buf_size):
-        data_len = self.rnd_data_len(buf_size)
-        self.last_rnd_len = data_len
+    def rnd_data(self, buf_size, full_buf_size):
+        data_len = self.rnd_data_len(buf_size, full_buf_size)
 
         if data_len < 128:
             return common.chr(data_len + 1) + os.urandom(data_len)
 
         return common.chr(255) + struct.pack('<H', data_len + 1) + os.urandom(data_len - 2)
 
-    def pack_data(self, buf):
-        data = self.rnd_data(len(buf)) + buf
+    def pack_data(self, buf, full_buf_size):
+        data = self.rnd_data(len(buf), full_buf_size) + buf
         data_len = len(data) + 8
         mac_key = self.user_key + struct.pack('<I', self.pack_id)
         mac = hmac.new(mac_key, struct.pack('<H', data_len), self.hashfunc).digest()[:2]
@@ -1260,7 +1259,7 @@ class auth_aes128_sha1(auth_base):
 
     def client_pre_encrypt(self, buf):
         ret = b''
-        self.last_rnd_len = 0
+        ogn_data_len = len(buf)
         if not self.has_sent_header:
             head_size = self.get_head_size(buf, 30)
             datalen = min(len(buf), random.randint(0, 31) + head_size)
@@ -1268,9 +1267,10 @@ class auth_aes128_sha1(auth_base):
             buf = buf[datalen:]
             self.has_sent_header = True
         while len(buf) > self.unit_len:
-            ret += self.pack_data(buf[:self.unit_len])
+            ret += self.pack_data(buf[:self.unit_len], ogn_data_len)
             buf = buf[self.unit_len:]
-        ret += self.pack_data(buf)
+        ret += self.pack_data(buf, ogn_data_len)
+        self.last_rnd_len = ogn_data_len
         return ret
 
     def client_post_decrypt(self, buf):
@@ -1311,11 +1311,12 @@ class auth_aes128_sha1(auth_base):
         if self.raw_trans:
             return buf
         ret = b''
-        self.last_rnd_len = 0
+        ogn_data_len = len(buf)
         while len(buf) > self.unit_len:
-            ret += self.pack_data(buf[:self.unit_len])
+            ret += self.pack_data(buf[:self.unit_len], ogn_data_len)
             buf = buf[self.unit_len:]
-        ret += self.pack_data(buf)
+        ret += self.pack_data(buf, ogn_data_len)
+        self.last_rnd_len = ogn_data_len
         return ret
 
     def server_post_decrypt(self, buf):
