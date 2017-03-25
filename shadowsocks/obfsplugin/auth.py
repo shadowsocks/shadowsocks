@@ -26,6 +26,7 @@ import base64
 import time
 import datetime
 import random
+import math
 import struct
 import zlib
 import hmac
@@ -1185,16 +1186,24 @@ class auth_aes128_sha1(auth_base):
             max_client = 64
         self.server_info.data.set_max_client(max_client)
 
+    def trapezoid_random_float(self, d):
+        if d == 0:
+            return random.random()
+        s = random.random()
+        a = 1 - d
+        return (math.sqrt(a * a + 4 * d * s) - a) / (2 * d)
+
+    def trapezoid_random_int(self, max_val, d):
+        v = self.trapezoid_random_float(d)
+        return int(v * max_val)
+
     def rnd_data_len(self, buf_size, full_buf_size):
-        if buf_size > 1300 or self.last_rnd_len > 1300 or full_buf_size >= self.server_info.buffer_size:
+        rev_len = self.server_info.tcp_mss - buf_size - 9
+        if rev_len <= 0 or self.last_rnd_len >= self.server_info.buffer_size or full_buf_size >= self.server_info.buffer_size:
             return 0
-        if buf_size > 1100:
-            return common.ord(os.urandom(1)[0]) % 128
-        #self.pack_id
-        if buf_size > 400:
-            return struct.unpack('>H', os.urandom(2))[0] % 256
-        else:
-            return struct.unpack('>H', os.urandom(2))[0] % 1024
+        if buf_size > 900:
+            return struct.unpack('>H', os.urandom(2))[0] % rev_len
+        return self.trapezoid_random_int(rev_len, -0.3)
 
     def rnd_data(self, buf_size, full_buf_size):
         data_len = self.rnd_data_len(buf_size, full_buf_size)
