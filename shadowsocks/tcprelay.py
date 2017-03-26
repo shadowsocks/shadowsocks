@@ -166,6 +166,7 @@ class TCPRelayHandler(object):
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
         server_info.tcp_mss = 1448
+        server_info.buffer_size = BUF_SIZE
         self._obfs.set_server_info(server_info)
 
         self._protocol = obfs.obfs(config['protocol'])
