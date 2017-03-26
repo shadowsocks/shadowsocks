@@ -463,7 +463,7 @@ class TCPRelayHandler(object):
             return ("0.0.0.0", 0)
 
     def _handel_protocol_error(self, client_address, ogn_data):
-        logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d via port %d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1], self._server._listen_port))
+        logging.warn("Protocol ERROR, TCP ogn data %s from %s:%d via port %d by UID %d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1], self._server._listen_port, self._user_id))
         self._encrypt_correct = False
         #create redirect or disconnect by hash code
         host, port = self._get_redirect_host(client_address, ogn_data)
@@ -644,15 +644,15 @@ class TCPRelayHandler(object):
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
                     if self._remote_address:
-                        raise Exception('IP %s is in forbidden list, when connect to %s:%d via port %d' %
-                            (common.to_str(sa[0]), self._remote_address[0], self._remote_address[1], self._server._listen_port))
+                        raise Exception('IP %s is in forbidden list, when connect to %s:%d via port %d by UID %d' %
+                            (common.to_str(sa[0]), self._remote_address[0], self._remote_address[1], self._server._listen_port, self._user_id))
                     raise Exception('IP %s is in forbidden list, reject' %
                                     common.to_str(sa[0]))
             if self._forbidden_portset:
                 if sa[1] in self._forbidden_portset:
                     if self._remote_address:
-                        raise Exception('Port %d is in forbidden list, when connect to %s:%d via port %d' %
-                            (sa[1], self._remote_address[0], self._remote_address[1], self._server._listen_port))
+                        raise Exception('Port %d is in forbidden list, when connect to %s:%d via port %d by UID %d' %
+                            (sa[1], self._remote_address[0], self._remote_address[1], self._server._listen_port, self._user_id))
                     raise Exception('Port %d is in forbidden list, reject' % sa[1])
         remote_sock = socket.socket(af, socktype, proto)
         self._remote_sock = remote_sock
