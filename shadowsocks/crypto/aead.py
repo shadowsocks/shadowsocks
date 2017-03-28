@@ -202,10 +202,12 @@ class AeadCryptoBase(object):
         # network byte order
         ctext = [self.aead_encrypt(pack("!H", plen & AEAD_CHUNK_SIZE_MASK))]
         if len(ctext[0]) != AEAD_CHUNK_SIZE_LEN + self._tlen:
+            self.clean()
             raise Exception("size length invalid")
 
         ctext.append(self.aead_encrypt(data))
         if len(ctext[1]) != plen + self._tlen:
+            self.clean()
             raise Exception("data length invalid")
 
         return b''.join(ctext)
@@ -261,6 +263,7 @@ class AeadCryptoBase(object):
         plen = self.aead_decrypt(data[:hlen])
         plen, = unpack("!H", plen)
         if plen & AEAD_CHUNK_SIZE_MASK != plen or plen <= 0:
+            self.clean()
             raise Exception('Invalid message length')
 
         return plen, data[hlen:]
@@ -284,6 +287,7 @@ class AeadCryptoBase(object):
         plaintext = self.aead_decrypt(data[:plen + self._tlen])
 
         if len(plaintext) != plen:
+            self.clean()
             raise Exception("plaintext length invalid")
 
         return plaintext, data[plen + self._tlen:]

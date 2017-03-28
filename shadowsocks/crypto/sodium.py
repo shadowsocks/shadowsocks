@@ -196,6 +196,9 @@ class SodiumCrypto(object):
         # strip off the padding
         return buf.raw[padding:padding + l]
 
+    def clean(self):
+        pass
+
 
 class SodiumAeadCrypto(AeadCryptoBase):
     def __init__(self, cipher_name, key, iv, op):

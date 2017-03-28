@@ -163,6 +163,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
             None
         )
         if not r:
+            self.clean()
             raise Exception('Set ivlen failed')
 
         self.cipher_ctx_init()
@@ -199,6 +200,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
             c_int(tag_len), c_char_p(tag)
         )
         if not r:
+            self.clean()
             raise Exception('Set tag failed')
 
     def get_tag(self):
@@ -214,6 +216,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
             c_int(tag_len), byref(tag_buf)
         )
         if not r:
+            self.clean()
             raise Exception('Get tag failed')
         return tag_buf.raw[:tag_len]
 
@@ -229,6 +232,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
             byref(buf), byref(cipher_out_len)
         )
         if not r:
+            self.clean()
             # print(self._nonce.raw, r, cipher_out_len)
             raise Exception('Finalize cipher failed')
         return buf.raw[:cipher_out_len.value]
@@ -253,6 +257,7 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         """
         clen = len(data)
         if clen < self._tlen:
+            self.clean()
             raise Exception('Data too short')
 
         self.set_tag(data[clen - self._tlen:])
