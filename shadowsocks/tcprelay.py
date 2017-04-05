@@ -761,7 +761,7 @@ class TCPRelayHandler(object):
 
     def _get_read_size(self, sock, recv_buffer_size):
         if self._overhead == 0:
-            return buffer_size
+            return recv_buffer_size
         buffer_size = len(sock.recv(recv_buffer_size, socket.MSG_PEEK))
         if buffer_size == recv_buffer_size:
             return buffer_size
