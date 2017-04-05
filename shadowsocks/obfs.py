@@ -53,6 +53,9 @@ class obfs(object):
     def set_server_info(self, server_info):
         return self.obfs.set_server_info(server_info)
 
+    def get_server_info(self):
+        return self.obfs.get_server_info()
+
     def get_method_info(self, method):
         method = method.lower()
         m = method_supported.get(method)
@@ -61,6 +64,9 @@ class obfs(object):
     def get_obfs(self, method):
         m = self._method_info
         return m[0](method)
+
+    def get_overhead(self, direction):
+        return self.obfs.get_overhead(direction)
 
     def client_pre_encrypt(self, buf):
         return self.obfs.client_pre_encrypt(buf)

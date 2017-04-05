@@ -91,6 +91,8 @@ WAIT_STATUS_READING = 1
 WAIT_STATUS_WRITING = 2
 WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
+NETWORK_MTU = 1492
+TCP_MSS = NETWORK_MTU - 40
 BUF_SIZE = 32 * 1024
 UDP_MAX_BUF_SIZE = 65536
 
@@ -137,6 +139,7 @@ class TCPRelayHandler(object):
         self._accept_address = local_sock.getsockname()[:2]
         self._user = None
         self._user_id = server._listen_port
+        self._tcp_mss = TCP_MSS
 
         # TCP Relay works as either sslocal or ssserver
         # if is_local, this is sslocal
@@ -151,6 +154,16 @@ class TCPRelayHandler(object):
             return
         self._encrypt_correct = True
         self._obfs = obfs.obfs(config['obfs'])
+        self._protocol = obfs.obfs(config['protocol'])
+        self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local)
+        self._recv_buffer_size = BUF_SIZE - self._overhead
+
+        try:
+            self._tcp_mss = local_sock.getsockopt(socket.SOL_TCP, socket.TCP_MAXSEG)
+            logging.debug("TCP MSS = %d" % (self._tcp_mss,))
+        except:
+            pass
+
         server_info = obfs.server_info(server.obfs_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
@@ -165,11 +178,10 @@ class TCPRelayHandler(object):
         server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1448
-        server_info.buffer_size = BUF_SIZE
+        server_info.tcp_mss = self._tcp_mss
+        server_info.buffer_size = self._recv_buffer_size
         self._obfs.set_server_info(server_info)
 
-        self._protocol = obfs.obfs(config['protocol'])
         server_info = obfs.server_info(server.protocol_data)
         server_info.host = config['server']
         server_info.port = server._listen_port
@@ -184,8 +196,8 @@ class TCPRelayHandler(object):
         server_info.key_str = common.to_bytes(config['password'])
         server_info.key = self._encryptor.cipher_key
         server_info.head_len = 30
-        server_info.tcp_mss = 1448
-        server_info.buffer_size = BUF_SIZE
+        server_info.tcp_mss = self._tcp_mss
+        server_info.buffer_size = self._recv_buffer_size
         self._protocol.set_server_info(server_info)
 
         self._redir_list = config.get('redirect', ["*#0.0.0.0:0"])
@@ -440,17 +452,15 @@ class TCPRelayHandler(object):
                 items_match = common.to_str(items_sum[0]).rsplit(':', 1)
                 items = common.to_str(items_sum[1]).rsplit(':', 1)
                 if len(items_match) > 1:
-                    if self._server._listen_port != int(items_match[1]):
-                        continue
-                match_port = 0
-                if len(items_match) > 1:
                     if items_match[1] != "*":
                         try:
-                            match_port = int(items_match[1])
+                            if self._server._listen_port != int(items_match[1]) and int(items_match[1]) != 0:
+                                continue
                         except:
                             pass
-                if items_match[0] != "*" and common.match_regex(items_match[0], ogn_data) == False and \
-                not (match_port == self._server._listen_port or match_port == 0):
+
+                if items_match[0] != "*" and common.match_regex(
+                        items_match[0], ogn_data) == False:
                     continue
                 if len(items) > 1:
                     try:
@@ -573,6 +583,12 @@ class TCPRelayHandler(object):
                 if header_result is None:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                     header_result = parse_header(data)
+                self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local)
+                self._recv_buffer_size = BUF_SIZE - self._overhead
+                server_info = self._obfs.get_server_info()
+                server_info.buffer_size = self._recv_buffer_size
+                server_info = self._protocol.get_server_info()
+                server_info.buffer_size = self._recv_buffer_size
             connecttype, remote_addr, remote_port, header_length = header_result
             common.connect_log('%s connecting %s:%d via port %d by UID %d' %
                         ((connecttype == 0) and 'TCP' or 'UDP',
@@ -743,15 +759,30 @@ class TCPRelayHandler(object):
                     logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
         self.destroy()
 
+    def _get_read_size(self, sock, recv_buffer_size):
+        if self._overhead == 0:
+            return buffer_size
+        buffer_size = len(sock.recv(recv_buffer_size, socket.MSG_PEEK))
+        if buffer_size == recv_buffer_size:
+            return buffer_size
+        s = buffer_size % self._tcp_mss + self._overhead
+        if s > self._tcp_mss:
+            return buffer_size + s - self._tcp_mss
+        return buffer_size
+
     def _on_local_read(self):
         # handle all local read events and dispatch them to methods for
         # each stage
         if not self._local_sock:
             return
         is_local = self._is_local
+        if is_local:
+            recv_buffer_size = self._get_read_size(self._local_sock, self._recv_buffer_size)
+        else:
+            recv_buffer_size = BUF_SIZE
         data = None
         try:
-            data = self._local_sock.recv(BUF_SIZE)
+            data = self._local_sock.recv(recv_buffer_size)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
                     (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
@@ -848,7 +879,11 @@ class TCPRelayHandler(object):
                     data = struct.pack('>H', size) + data
                 #logging.info('UDP over TCP recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._client_address[0], self._client_address[1]))
             else:
-                data = self._remote_sock.recv(BUF_SIZE)
+                if self._is_local:
+                    recv_buffer_size = BUF_SIZE
+                else:
+                    recv_buffer_size = self._get_read_size(self._remote_sock, self._recv_buffer_size)
+                data = self._remote_sock.recv(recv_buffer_size)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
                     (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK, 10035): #errno.WSAEWOULDBLOCK

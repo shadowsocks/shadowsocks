@@ -65,9 +65,13 @@ class tls_ticket_auth(plain.plain):
         self.client_id = b''
         self.max_time_dif = 60 * 60 * 24 # time dif (second) setting
         self.tls_version = b'\x03\x03'
+        self.overhead = 5
 
     def init_data(self):
         return obfs_auth_data()
+
+    def get_overhead(self, direction): # direction: true for c->s false for s->c
+        return self.overhead
 
     def sni(self, url):
         url = common.to_bytes(url)
@@ -184,6 +188,7 @@ class tls_ticket_auth(plain.plain):
 
     def decode_error_return(self, buf):
         self.handshake_status = -1
+        self.overhead = 0
         if self.method == 'tls1.2_ticket_auth':
             return (b'E'*2048, False, False)
         return (buf, True, False)

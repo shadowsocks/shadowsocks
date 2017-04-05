@@ -40,6 +40,9 @@ class plain(object):
     def init_data(self):
         return b''
 
+    def get_overhead(self, direction): # direction: true for c->s false for s->c
+        return 0
+
     def get_server_info(self):
         return self.server_info
 

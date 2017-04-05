@@ -82,9 +82,13 @@ class auth_base(plain.plain):
         super(auth_base, self).__init__(method)
         self.method = method
         self.no_compatible_method = ''
+        self.overhead = 7
 
     def init_data(self):
         return ''
+
+    def get_overhead(self, direction): # direction: true for c->s false for s->c
+        return self.overhead
 
     def set_server_info(self, server_info):
         self.server_info = server_info
@@ -103,6 +107,7 @@ class auth_base(plain.plain):
 
     def not_match_return(self, buf):
         self.raw_trans = True
+        self.overhead = 0
         if self.method == self.no_compatible_method:
             return (b'E'*2048, False)
         return (buf, False)
@@ -871,6 +876,9 @@ class auth_aes128(auth_base):
     def init_data(self):
         return obfs_auth_v2_data()
 
+    def get_overhead(self, direction): # direction: true for c->s false for s->c
+        return 9
+
     def set_server_info(self, server_info):
         self.server_info = server_info
         try:
@@ -1174,9 +1182,13 @@ class auth_aes128_sha1(auth_base):
         self.user_id = None
         self.user_key = None
         self.last_rnd_len = 0
+        self.overhead = 9
 
     def init_data(self):
         return obfs_auth_mu_data()
+
+    def get_overhead(self, direction): # direction: true for c->s false for s->c
+        return self.overhead
 
     def set_server_info(self, server_info):
         self.server_info = server_info
@@ -1198,9 +1210,15 @@ class auth_aes128_sha1(auth_base):
         return int(v * max_val)
 
     def rnd_data_len(self, buf_size, full_buf_size):
-        rev_len = self.server_info.tcp_mss - buf_size - 9
-        if rev_len <= 0 or self.last_rnd_len >= self.server_info.buffer_size or full_buf_size >= self.server_info.buffer_size:
+        if full_buf_size >= self.server_info.buffer_size:
             return 0
+        rev_len = self.server_info.tcp_mss - buf_size - 9
+        if rev_len == 0:
+            return 0
+        if rev_len < 0:
+            if rev_len > -self.server_info.tcp_mss:
+                return self.trapezoid_random_int(rev_len + self.server_info.tcp_mss, -0.3)
+            return common.ord(os.urandom(1)[0]) % 32
         if buf_size > 900:
             return struct.unpack('>H', os.urandom(2))[0] % rev_len
         return self.trapezoid_random_int(rev_len, -0.3)
