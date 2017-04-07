@@ -1,3 +1,7 @@
+3.1.2 2017-04-07
+- display UID
+- auto adjust TCP MSS
+
 3.1.1 2017-03-25
 - add "New session ticket"
 - ignore bind 10.0.0.0/8 and 192.168.0.0/16 by default
