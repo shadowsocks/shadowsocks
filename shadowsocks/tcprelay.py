@@ -767,7 +767,7 @@ class TCPRelayHandler(object):
             return buffer_size
         s = buffer_size % self._tcp_mss + self._overhead
         if s > self._tcp_mss:
-            return buffer_size + s - self._tcp_mss
+            return buffer_size - (s - self._tcp_mss)
         return buffer_size
 
     def _on_local_read(self):
