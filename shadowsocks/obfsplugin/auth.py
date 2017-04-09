@@ -1212,12 +1212,13 @@ class auth_aes128_sha1(auth_base):
     def rnd_data_len(self, buf_size, full_buf_size):
         if full_buf_size >= self.server_info.buffer_size:
             return 0
-        rev_len = self.server_info.tcp_mss - buf_size - 9
+        tcp_mss = self.server_info.tcp_mss if self.server_info.tcp_mss < 4096 else 4096
+        rev_len = tcp_mss - buf_size - 9
         if rev_len == 0:
             return 0
         if rev_len < 0:
-            if rev_len > -self.server_info.tcp_mss:
-                return self.trapezoid_random_int(rev_len + self.server_info.tcp_mss, -0.3)
+            if rev_len > -tcp_mss:
+                return self.trapezoid_random_int(rev_len + tcp_mss, -0.3)
             return common.ord(os.urandom(1)[0]) % 32
         if buf_size > 900:
             return struct.unpack('>H', os.urandom(2))[0] % rev_len
