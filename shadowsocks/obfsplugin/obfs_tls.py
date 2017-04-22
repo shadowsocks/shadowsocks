@@ -97,7 +97,8 @@ class tls_ticket_auth(plain.plain):
             if len(buf) > 0:
                 ret += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
             return ret
-        self.send_buffer += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
+        if len(buf) > 0:
+            self.send_buffer += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
         if self.handshake_status == 0:
             self.handshake_status = 1
             data = self.tls_version + self.pack_auth_data(self.server_info.data.client_id) + b"\x20" + self.server_info.data.client_id + binascii.unhexlify(b"001cc02bc02fcca9cca8cc14cc13c00ac014c009c013009c0035002f000a" + b"0100")
