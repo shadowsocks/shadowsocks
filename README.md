@@ -84,3 +84,18 @@ Apache License
 [PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
 [Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
 
+
+
+# cat /usr/lib/systemd/system/shadowsocks@.service
+[Unit]
+Description=Shadowsocks Client Service
+After=network.target
+
+[Service]
+Type=simple
+User=nobody
+ExecStart=/usr/bin/sslocal -c /etc/shadowsocks/%i.json
+
+[Install]
+WantedBy=multi-user.target
+
