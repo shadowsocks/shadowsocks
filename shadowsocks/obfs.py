@@ -34,6 +34,9 @@ method_supported.update(verify.obfs_map)
 method_supported.update(auth.obfs_map)
 method_supported.update(auth_chain.obfs_map)
 
+def mu_protocol():
+    return ["auth_aes128_md5", "auth_aes128_sha1", "auth_chain_a"]
+
 class server_info(object):
     def __init__(self, data):
         self.data = data
@@ -99,8 +102,8 @@ class obfs(object):
     def client_udp_post_decrypt(self, buf):
         return self.obfs.client_udp_post_decrypt(buf)
 
-    def server_udp_pre_encrypt(self, buf):
-        return self.obfs.server_udp_pre_encrypt(buf)
+    def server_udp_pre_encrypt(self, buf, uid):
+        return self.obfs.server_udp_pre_encrypt(buf, uid)
 
     def server_udp_post_decrypt(self, buf):
         return self.obfs.server_udp_post_decrypt(buf)

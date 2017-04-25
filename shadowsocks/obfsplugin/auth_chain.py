@@ -289,6 +289,10 @@ class auth_chain_a(auth_base):
             return random.next() % 521
         return random.next() % 1021
 
+    def udp_rnd_data_len(self, last_hash, random):
+        random.init_from_bin(last_hash)
+        return random.next() % 127
+
     def rnd_start_pos(self, rand_len, random):
         if rand_len > 0:
             return random.next() % 8589934609 % rand_len
@@ -457,20 +461,12 @@ class auth_chain_a(auth_base):
                 return (b'', False)
 
             self.last_client_hash = md5data
-            md5data = hmac.new(mac_key, self.recv_buf[12 : 12 + 20], self.hashfunc).digest()
-            if md5data[:4] != self.recv_buf[32:36]:
-                logging.error('%s data uncorrect auth HMAC-SHA1 from %s:%d, data %s' % (self.no_compatible_method, self.server_info.client, self.server_info.client_port, binascii.hexlify(self.recv_buf)))
-                if len(self.recv_buf) < 36:
-                    return (b'', False)
-                return self.not_match_return(self.recv_buf)
-
-            self.last_server_hash = md5data
             uid = struct.unpack('<I', self.recv_buf[12:16])[0] ^ struct.unpack('<I', md5data[8:12])[0]
             self.user_id_num = uid
             uid = struct.pack('<I', uid)
             if uid in self.server_info.users:
                 self.user_id = uid
-                self.user_key = self.hashfunc(self.server_info.users[uid]).digest()
+                self.user_key = self.server_info.users[uid]
                 self.server_info.update_user_func(uid)
             else:
                 self.user_id_num = 0
@@ -478,6 +474,15 @@ class auth_chain_a(auth_base):
                     self.user_key = self.server_info.key
                 else:
                     self.user_key = self.server_info.recv_iv
+
+            md5data = hmac.new(self.user_key, self.recv_buf[12 : 12 + 20], self.hashfunc).digest()
+            if md5data[:4] != self.recv_buf[32:36]:
+                logging.error('%s data uncorrect auth HMAC-SHA1 from %s:%d, data %s' % (self.no_compatible_method, self.server_info.client, self.server_info.client_port, binascii.hexlify(self.recv_buf)))
+                if len(self.recv_buf) < 36:
+                    return (b'', False)
+                return self.not_match_return(self.recv_buf)
+
+            self.last_server_hash = md5data
             encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + self.salt, 'aes-128-cbc')
             head = encryptor.decrypt(b'\x00' * 16 + self.recv_buf[16:32] + b'\x00') # need an extra byte or recv empty
             self.client_over_head = struct.unpack('<H', head[12:14])[0]
@@ -497,7 +502,7 @@ class auth_chain_a(auth_base):
                 logging.info('%s: auth fail, data %s' % (self.no_compatible_method, binascii.hexlify(out_buf)))
                 return self.not_match_return(self.recv_buf)
 
-            self.encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(self.last_server_hash)), 'rc4')
+            self.encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(self.last_client_hash)), 'rc4')
             self.recv_buf = self.recv_buf[36:]
             self.has_recv_header = True
             sendback = True
@@ -555,32 +560,65 @@ class auth_chain_a(auth_base):
             if self.user_key is None:
                 self.user_id = os.urandom(4)
                 self.user_key = self.server_info.key
-        buf += self.user_id
-        return buf + hmac.new(self.user_key, buf, self.hashfunc).digest()[:4]
+        authdata = os.urandom(3)
+        mac_key = self.server_info.key
+        md5data = hmac.new(mac_key, authdata, self.hashfunc).digest()
+        uid = struct.unpack('<I', self.user_id)[0] ^ struct.unpack('<I', md5data[:4])[0]
+        uid = struct.pack('<I', uid)
+        rand_len = self.udp_rnd_data_len(md5data, self.random_client)
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
+        out_buf = encryptor.encrypt(buf)
+        buf = out_buf + os.urandom(rand_len) + authdata + uid
+        return buf + hmac.new(self.user_key, buf, self.hashfunc).digest()[:1]
 
     def client_udp_post_decrypt(self, buf):
-        user_key = self.server_info.key
-        if hmac.new(user_key, buf[:-4], self.hashfunc).digest()[:4] != buf[-4:]:
-            return b''
-        return buf[:-4]
+        if len(buf) <= 8:
+            return (b'', None)
+        if hmac.new(self.user_key, buf[:-1], self.hashfunc).digest()[:1] != buf[-1:]:
+            return (b'', None)
+        mac_key = self.server_info.key
+        md5data = hmac.new(mac_key, buf[-8:-1], self.hashfunc).digest()
+        rand_len = self.udp_rnd_data_len(md5data, self.random_server)
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
+        return encryptor.decrypt(buf[:-8 - rand_len])
 
-    def server_udp_pre_encrypt(self, buf):
-        user_key = self.server_info.key
-        return buf + hmac.new(user_key, buf, self.hashfunc).digest()[:4]
-
-    def server_udp_post_decrypt(self, buf):
-        uid = buf[-8:-4]
+    def server_udp_pre_encrypt(self, buf, uid):
         if uid in self.server_info.users:
-            user_key = self.hashfunc(self.server_info.users[uid]).digest()
+            user_key = self.server_info.users[uid]
         else:
             uid = None
             if not self.server_info.users:
                 user_key = self.server_info.key
             else:
                 user_key = self.server_info.recv_iv
-        if hmac.new(user_key, buf[:-4], self.hashfunc).digest()[:4] != buf[-4:]:
+        authdata = os.urandom(7)
+        mac_key = self.server_info.key
+        md5data = hmac.new(mac_key, authdata, self.hashfunc).digest()
+        rand_len = self.udp_rnd_data_len(md5data, self.random_server)
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
+        out_buf = encryptor.encrypt(buf)
+        buf = out_buf + os.urandom(rand_len) + authdata
+        return buf + hmac.new(user_key, buf, self.hashfunc).digest()[:1]
+
+    def server_udp_post_decrypt(self, buf):
+        mac_key = self.server_info.key
+        md5data = hmac.new(mac_key, buf[-8:-5], self.hashfunc).digest()
+        uid = struct.unpack('<I', buf[-5:-1])[0] ^ struct.unpack('<I', md5data[:4])[0]
+        uid = struct.pack('<I', uid)
+        if uid in self.server_info.users:
+            user_key = self.server_info.users[uid]
+        else:
+            uid = None
+            if not self.server_info.users:
+                user_key = self.server_info.key
+            else:
+                user_key = self.server_info.recv_iv
+        if hmac.new(user_key, buf[:-1], self.hashfunc).digest()[:1] != buf[-1:]:
             return (b'', None)
-        return (buf[:-8], uid)
+        rand_len = self.udp_rnd_data_len(md5data, self.random_client)
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
+        out_buf = encryptor.decrypt(buf[:-8 - rand_len])
+        return (out_buf, uid)
 
     def dispose(self):
         self.server_info.data.remove(self.user_id, self.client_id)

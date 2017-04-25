@@ -1116,7 +1116,7 @@ class TCPRelay(object):
             listen_port = config['server_port']
         self._listen_port = listen_port
 
-        if common.to_bytes(config['protocol']) in [b"auth_aes128_md5", b"auth_aes128_sha1"]:
+        if common.to_str(config['protocol']) in obfs.mu_protocol():
             self._update_users(None, None)
 
         addrs = socket.getaddrinfo(listen_addr, listen_port, 0,
