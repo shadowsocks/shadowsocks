@@ -313,6 +313,7 @@ class auth_chain_a(auth_base):
                 return buf
 
     def pack_client_data(self, buf):
+        buf = self.encryptor.encrypt(buf)
         data = self.rnd_data(len(buf), buf, self.last_client_hash, self.random_client)
         data_len = len(data) + 8
         mac_key = self.user_key + struct.pack('<I', self.pack_id)
@@ -357,13 +358,14 @@ class auth_chain_a(auth_base):
         if self.user_key is None:
             self.user_key = self.server_info.key
 
-        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key))+ to_bytes(base64.b64encode(self.last_client_hash)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
 
         uid = struct.unpack('<I', uid)[0] ^ struct.unpack('<I', self.last_client_hash[8:12])[0]
         uid = struct.pack('<I', uid)
-        data = check_head + uid + encryptor.encrypt(data)[16:]
-        self.last_server_hash = hmac.new(mac_key, data, self.hashfunc).digest()
-        data += self.last_server_hash[:4]
+        data = uid + encryptor.encrypt(data)[16:]
+        self.last_server_hash = hmac.new(self.user_key, data, self.hashfunc).digest()
+        data = check_head + data + self.last_server_hash[:4]
+        self.encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(self.last_client_hash)), 'rc4')
         return data + self.pack_client_data(buf)
 
     def auth_data(self):
@@ -425,7 +427,7 @@ class auth_chain_a(auth_base):
             out_buf += self.encryptor.decrypt(self.recv_buf[pos : data_len + pos])
             self.last_server_hash = server_hash
             if self.recv_id == 1:
-                self.server_info.tcp_mss = out_buf[:2]
+                self.server_info.tcp_mss = struct.unpack('<H', out_buf[:2])[0]
                 out_buf = out_buf[2:]
             self.recv_id = (self.recv_id + 1) & 0xFFFFFFFF
             self.recv_buf = self.recv_buf[length + 4:]
@@ -482,7 +484,7 @@ class auth_chain_a(auth_base):
 
             md5data = hmac.new(self.user_key, self.recv_buf[12 : 12 + 20], self.hashfunc).digest()
             if md5data[:4] != self.recv_buf[32:36]:
-                logging.error('%s data uncorrect auth HMAC-SHA1 from %s:%d, data %s' % (self.no_compatible_method, self.server_info.client, self.server_info.client_port, binascii.hexlify(self.recv_buf)))
+                logging.error('%s data uncorrect auth HMAC-MD5 from %s:%d, data %s' % (self.no_compatible_method, self.server_info.client, self.server_info.client_port, binascii.hexlify(self.recv_buf)))
                 if len(self.recv_buf) < 36:
                     return (b'', False)
                 return self.not_match_return(self.recv_buf)
