@@ -336,34 +336,35 @@ class auth_chain_a(auth_base):
         return data
 
     def pack_auth_data(self, auth_data, buf):
-        if len(buf) == 0:
-            return b''
-        if len(buf) > 400:
-            rnd_len = struct.unpack('<H', os.urandom(2))[0] % 512
-        else:
-            rnd_len = struct.unpack('<H', os.urandom(2))[0] % 1024
         data = auth_data
-        data_len = 7 + 4 + 16 + 4 + len(buf) + rnd_len + 4
-        data = data + struct.pack('<H', data_len) + struct.pack('<H', rnd_len)
+        data_len = 12 + 4 + 16 + 4
+        data = data + (struct.pack('<H', self.server_info.overhead) + struct.pack('<H', 0))
         mac_key = self.server_info.iv + self.server_info.key
-        uid = os.urandom(4)
+
+        check_head = os.urandom(4)
+        self.last_client_hash = hmac.new(mac_key, check_head, self.hashfunc).digest()
+        check_head += self.last_client_hash[:8]
+
         if b':' in to_bytes(self.server_info.protocol_param):
             try:
                 items = to_bytes(self.server_info.protocol_param).split(b':')
-                self.user_key = self.hashfunc(items[1]).digest()
+                self.user_key = items[1]
                 uid = struct.pack('<I', int(items[0]))
             except:
-                pass
+                uid = os.urandom(4)
+        else:
+            uid = os.urandom(4)
         if self.user_key is None:
             self.user_key = self.server_info.key
-        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
-        data = uid + encryptor.encrypt(data)[16:]
-        data += hmac.new(mac_key, data, self.hashfunc).digest()[:4]
-        check_head = os.urandom(1)
-        check_head += hmac.new(mac_key, check_head, self.hashfunc).digest()[:6]
-        data = check_head + data + os.urandom(rnd_len) + buf
-        data += hmac.new(self.user_key, data, self.hashfunc).digest()[:4]
-        return data
+
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key))+ to_bytes(base64.b64encode(self.last_client_hash)) + self.salt, 'aes-128-cbc', b'\x00' * 16)
+
+        uid = struct.unpack('<I', uid)[0] ^ struct.unpack('<I', self.last_client_hash[8:12])[0]
+        uid = struct.pack('<I', uid)
+        data = check_head + uid + encryptor.encrypt(data)[16:]
+        self.last_server_hash = hmac.new(mac_key, data, self.hashfunc).digest()
+        data += self.last_server_hash[:4]
+        return data + self.pack_client_data(buf)
 
     def auth_data(self):
         utc_time = int(time.time()) & 0xFFFFFFFF
@@ -400,30 +401,34 @@ class auth_chain_a(auth_base):
         out_buf = b''
         while len(self.recv_buf) > 4:
             mac_key = self.user_key + struct.pack('<I', self.recv_id)
-            mac = hmac.new(mac_key, self.recv_buf[:2], self.hashfunc).digest()[:2]
-            if mac != self.recv_buf[2:4]:
-                raise Exception('client_post_decrypt data uncorrect mac')
-            length = struct.unpack('<H', self.recv_buf[:2])[0]
-            if length >= 8192 or length < 7:
+            data_len = struct.unpack('<H', self.recv_buf[:2])[0] ^ struct.unpack('<H', self.last_server_hash[14:16])[0]
+            rand_len = self.rnd_data_len(data_len, self.last_server_hash, self.random_server)
+            length = data_len + rand_len
+            if length >= 4096:
                 self.raw_trans = True
                 self.recv_buf = b''
                 raise Exception('client_post_decrypt data error')
-            if length > len(self.recv_buf):
+
+            if length + 4 > len(self.recv_buf):
                 break
 
-            if hmac.new(mac_key, self.recv_buf[:length - 4], self.hashfunc).digest()[:4] != self.recv_buf[length - 4:length]:
+            server_hash = hmac.new(mac_key, self.recv_buf[:length + 2], self.hashfunc).digest()
+            if server_hash[:2] != self.recv_buf[length + 2 : length + 4]:
+                logging.info('%s: checksum error, data %s' % (self.no_compatible_method, binascii.hexlify(self.recv_buf[:length])))
                 self.raw_trans = True
                 self.recv_buf = b''
                 raise Exception('client_post_decrypt data uncorrect checksum')
 
+            pos = 2
+            if data_len > 0 and rand_len > 0:
+                pos = 2 + self.rnd_start_pos(rand_len, self.random_server)
+            out_buf += self.encryptor.decrypt(self.recv_buf[pos : data_len + pos])
+            self.last_server_hash = server_hash
+            if self.recv_id == 1:
+                self.server_info.tcp_mss = out_buf[:2]
+                out_buf = out_buf[2:]
             self.recv_id = (self.recv_id + 1) & 0xFFFFFFFF
-            pos = common.ord(self.recv_buf[4])
-            if pos < 255:
-                pos += 4
-            else:
-                pos = struct.unpack('<H', self.recv_buf[5:7])[0] + 4
-            out_buf += self.recv_buf[pos:length - 4]
-            self.recv_buf = self.recv_buf[length:]
+            self.recv_buf = self.recv_buf[length + 4:]
 
         return out_buf
 
