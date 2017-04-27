@@ -596,9 +596,12 @@ class TCPRelayHandler(object):
                 server_info = self._protocol.get_server_info()
                 server_info.buffer_size = self._recv_buffer_size
             connecttype, remote_addr, remote_port, header_length = header_result
-            common.connect_log('%s connecting %s:%d via port %d by UID %d' %
-                        ((connecttype == 0) and 'TCP' or 'UDP',
-                            common.to_str(remote_addr), remote_port, self._server._listen_port, self._user_id))
+            if connecttype != 0:
+                common.connect_log('UDP over TCP by user %d' %
+                        (self._user_id, ))
+            else:
+                common.connect_log('TCP request %s:%d by user %d' %
+                        (common.to_str(remote_addr), remote_port, self._user_id))
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
             # pause reading
@@ -746,6 +749,10 @@ class TCPRelayHandler(object):
                                     pass # always goto here
                                 else:
                                     raise e
+                            addr, port = self._remote_sock.getsockname()[:2]
+                            common.connect_log('TCP connecting %s(%s):%d from %s:%d by user %d' %
+                                (self._remote_address[0], remote_addr, remote_port, addr, port, self._user_id))
+
                             self._loop.add(remote_sock,
                                        eventloop.POLL_ERR | eventloop.POLL_OUT,
                                        self._server)
