@@ -1,3 +1,7 @@
+3.2.0 2017-04-27
+- add auth_chain_a
+- remove auth_aes128, auth_sha1, auth_sha1_v2, verify_simple, auth_simple, verify_sha1
+
 3.1.2 2017-04-07
 - display UID
 - auto adjust TCP MSS
