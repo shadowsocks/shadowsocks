@@ -602,7 +602,7 @@ class auth_chain_a(auth_base):
         mac_key = self.server_info.key
         md5data = hmac.new(mac_key, authdata, self.hashfunc).digest()
         rand_len = self.udp_rnd_data_len(md5data, self.random_server)
-        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
+        encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(user_key)) + to_bytes(base64.b64encode(md5data)), 'rc4')
         out_buf = encryptor.encrypt(buf)
         buf = out_buf + os.urandom(rand_len) + authdata
         return buf + hmac.new(user_key, buf, self.hashfunc).digest()[:1]
