@@ -445,9 +445,9 @@ class UDPRelay(object):
         af, socktype, proto, canonname, sa = addrs[0]
         key = client_key(r_addr, af)
         client_pair = self._cache.get(key, None)
-        if not client_pair:
+        if client_pair is None:
             client_pair = self._cache_dns_client.get(key, None)
-        if not client_pair:
+        if client_pair is None:
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
                     logging.debug('IP %s is in forbidden list, drop' %
@@ -486,9 +486,6 @@ class UDPRelay(object):
                 user_id = self._listen_port
             else:
                 user_id = struct.unpack('<I', client_uid)[0]
-            common.connect_log('UDP data to %s:%d via port %d by UID %d' %
-                        (common.to_str(server_addr), server_port,
-                            self._listen_port, user_id))
         else:
             client, client_uid = client_pair
         self._cache.clear(self._udp_cache_size)
@@ -509,6 +506,10 @@ class UDPRelay(object):
         try:
             #logging.info('UDP handle_server sendto %s:%d %d bytes' % (common.to_str(server_addr), server_port, len(data)))
             client.sendto(data, (server_addr, server_port))
+            if client_pair is None: # new request
+                addr, port = client.getsockname()[:2]
+                common.connect_log('UDP data to %s:%d from %s:%d by UID %d' %
+                        (common.to_str(server_addr), server_port, addr, port, user_id))
             self.add_transfer_u(client_uid, len(data))
         except IOError as e:
             err = eventloop.errno_from_exception(e)

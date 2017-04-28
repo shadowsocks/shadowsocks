@@ -223,6 +223,8 @@ class TCPRelayHandler(object):
         self.speed_tester_u = SpeedTester(config.get("speed_limit_per_con", 0))
         self.speed_tester_d = SpeedTester(config.get("speed_limit_per_con", 0))
         self._recv_pack_id = 0
+        self._udp_send_pack_id = 0
+        self._udpv6_send_pack_id = 0
 
     def __hash__(self):
         # default __hash__ is id / 16
@@ -338,14 +340,23 @@ class TCPRelayHandler(object):
                     connecttype, dest_addr, dest_port, header_length = header_result
                     addrs = socket.getaddrinfo(dest_addr, dest_port, 0,
                             socket.SOCK_DGRAM, socket.SOL_UDP)
-                    #logging.info('UDP over TCP sendto %s:%d %d bytes from %s:%d' % (dest_addr, dest_port, len(data), self._client_address[0], self._client_address[1]))
                     if addrs:
                         af, socktype, proto, canonname, server_addr = addrs[0]
                         data = data[header_length:]
                         if af == socket.AF_INET6:
                             self._remote_sock_v6.sendto(data, (server_addr[0], dest_port))
+                            if self._udpv6_send_pack_id == 0:
+                                addr, port = self._remote_sock_v6.getsockname()[:2]
+                                common.connect_log('UDPv6 sendto %s:%d from %s:%d by user %d' %
+                                    (server_addr[0], dest_port, addr, port, self._user_id))
+                            self._udpv6_send_pack_id += 1
                         else:
                             sock.sendto(data, (server_addr[0], dest_port))
+                            if self._udp_send_pack_id == 0:
+                                addr, port = sock.getsockname()[:2]
+                                common.connect_log('UDP sendto %s:%d from %s:%d by user %d' %
+                                    (server_addr[0], dest_port, addr, port, self._user_id))
+                            self._udp_send_pack_id += 1
 
             except Exception as e:
                 #trace = traceback.format_exc()
@@ -597,8 +608,9 @@ class TCPRelayHandler(object):
                 server_info.buffer_size = self._recv_buffer_size
             connecttype, remote_addr, remote_port, header_length = header_result
             if connecttype != 0:
-                common.connect_log('UDP over TCP by user %d' %
-                        (self._user_id, ))
+                pass
+                #common.connect_log('UDP over TCP by user %d' %
+                #        (self._user_id, ))
             else:
                 common.connect_log('TCP request %s:%d by user %d' %
                         (common.to_str(remote_addr), remote_port, self._user_id))
@@ -711,7 +723,6 @@ class TCPRelayHandler(object):
         if result:
             ip = result[1]
             if ip:
-
                 try:
                     self._stage = STAGE_CONNECTING
                     remote_addr = ip
