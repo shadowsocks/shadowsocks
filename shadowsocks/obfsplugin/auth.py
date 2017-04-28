@@ -501,7 +501,7 @@ class auth_aes128_sha1(auth_base):
     def rnd_data_len(self, buf_size, full_buf_size):
         if full_buf_size >= self.server_info.buffer_size:
             return 0
-        tcp_mss = self.server_info.tcp_mss if self.server_info.tcp_mss < 1500 else 1500
+        tcp_mss = self.server_info.tcp_mss
         rev_len = tcp_mss - buf_size - 9
         if rev_len == 0:
             return 0

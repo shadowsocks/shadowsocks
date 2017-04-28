@@ -248,7 +248,9 @@ class TCPRelayHandler(object):
     def _update_tcp_mss(self, local_sock):
         self._tcp_mss = TCP_MSS
         try:
-            self._tcp_mss = local_sock.getsockopt(socket.SOL_TCP, socket.TCP_MAXSEG)
+            tcp_mss = local_sock.getsockopt(socket.SOL_TCP, socket.TCP_MAXSEG)
+            if tcp_mss > 500 and tcp_mss <= 1500:
+                self._tcp_mss = tcp_mss
             logging.debug("TCP MSS = %d" % (self._tcp_mss,))
         except:
             pass
