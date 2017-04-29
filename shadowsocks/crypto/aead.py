@@ -71,7 +71,7 @@ libsodium = None
 sodium_loaded = False
 
 
-def load_sodium():
+def load_sodium(path=None):
     """
     Load libsodium helpers for nonce increment
     :return: None
@@ -79,12 +79,14 @@ def load_sodium():
     global libsodium, sodium_loaded
 
     libsodium = util.find_library('sodium', 'sodium_increment',
-                                  'libsodium')
+                                  'libsodium', path)
     if libsodium is None:
+        print('load libsodium failed with path %s' % path)
         return
 
     if libsodium.sodium_init() < 0:
         libsodium = None
+        print('sodium init failed')
         return
 
     libsodium.sodium_increment.restype = c_void_p
@@ -139,7 +141,7 @@ class AeadCryptoBase(object):
     +--------+-----------+-----------+
     """
 
-    def __init__(self, cipher_name, key, iv, op):
+    def __init__(self, cipher_name, key, iv, op, crypto_path=None):
         self._op = int(op)
         self._salt = iv
         self._nlen = CIPHER_NONCE_LEN[cipher_name]
@@ -158,7 +160,9 @@ class AeadCryptoBase(object):
 
         # load libsodium for nonce increment
         if not sodium_loaded:
-            load_sodium()
+            crypto_path = dict(crypto_path) if crypto_path else dict()
+            path = crypto_path.get('sodium', None)
+            load_sodium(path)
 
     def nonce_increment(self):
         """
@@ -171,6 +175,7 @@ class AeadCryptoBase(object):
             libsodium.sodium_increment(byref(self._nonce), c_int(self._nlen))
         else:
             nonce_increment(self._nonce, self._nlen)
+        # print("".join("%02x" % ord(b) for b in self._nonce))
 
     def cipher_ctx_init(self):
         """
@@ -178,7 +183,6 @@ class AeadCryptoBase(object):
         :return: None
         """
         self.nonce_increment()
-        # print("".join("%02x" % ord(b) for b in self._nonce))
 
     def aead_encrypt(self, data):
         """
@@ -331,4 +335,5 @@ def test_nonce_increment():
 
 
 if __name__ == '__main__':
+    load_sodium()
     test_nonce_increment()

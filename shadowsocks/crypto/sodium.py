@@ -17,7 +17,7 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-from ctypes import c_char_p, c_int, c_ulonglong, byref, c_ulong, \
+from ctypes import c_char_p, c_int, c_uint, c_ulonglong, byref, \
     create_string_buffer, c_void_p
 
 from shadowsocks.crypto import util
@@ -36,18 +36,21 @@ buf_size = 2048
 BLOCK_SIZE = 64
 
 
-def load_libsodium():
+def load_libsodium(crypto_path=None):
     global loaded, libsodium, buf
 
+    crypto_path = dict(crypto_path) if crypto_path else dict()
+    path = crypto_path.get('sodium', None)
+
     if not aead.sodium_loaded:
-        aead.load_sodium()
+        aead.load_sodium(path)
 
     if aead.sodium_loaded:
         libsodium = aead.libsodium
     else:
-        print('load libsodium again')
+        print('load libsodium again with path %s' % path)
         libsodium = util.find_library('sodium', 'crypto_stream_salsa20_xor_ic',
-                                      'libsodium')
+                                      'libsodium', path)
         if libsodium is None:
             raise Exception('libsodium not found')
 
@@ -55,39 +58,52 @@ def load_libsodium():
             raise Exception('libsodium init failed')
 
     libsodium.crypto_stream_salsa20_xor_ic.restype = c_int
-    libsodium.crypto_stream_salsa20_xor_ic.argtypes = (c_void_p, c_char_p,
-                                                       c_ulonglong,
-                                                       c_char_p, c_ulonglong,
-                                                       c_char_p)
+    libsodium.crypto_stream_salsa20_xor_ic.argtypes = (
+        c_void_p, c_char_p,  # cipher output, msg
+        c_ulonglong,  # msg len
+        c_char_p, c_ulonglong,  # nonce, uint64_t initial block counter
+        c_char_p  # key
+    )
     libsodium.crypto_stream_chacha20_xor_ic.restype = c_int
-    libsodium.crypto_stream_chacha20_xor_ic.argtypes = (c_void_p, c_char_p,
-                                                        c_ulonglong,
-                                                        c_char_p, c_ulonglong,
-                                                        c_char_p)
+    libsodium.crypto_stream_chacha20_xor_ic.argtypes = (
+        c_void_p, c_char_p,
+        c_ulonglong,
+        c_char_p, c_ulonglong,
+        c_char_p
+    )
+    if hasattr(libsodium, 'crypto_stream_xchacha20_xor_ic'):
+        libsodium.crypto_stream_xchacha20_xor_ic.restype = c_int
+        libsodium.crypto_stream_xchacha20_xor_ic.argtypes = (
+            c_void_p, c_char_p,
+            c_ulonglong,
+            c_char_p, c_ulonglong,
+            c_char_p
+        )
     libsodium.crypto_stream_chacha20_ietf_xor_ic.restype = c_int
-    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (c_void_p,
-                                                             c_char_p,
-                                                             c_ulonglong,
-                                                             c_char_p,
-                                                             c_ulong,
-                                                             c_char_p)
+    libsodium.crypto_stream_chacha20_ietf_xor_ic.argtypes = (
+        c_void_p, c_char_p,
+        c_ulonglong,
+        c_char_p,
+        c_uint,  # uint32_t initial counter
+        c_char_p
+    )
 
     # chacha20-poly1305
     libsodium.crypto_aead_chacha20poly1305_encrypt.restype = c_int
     libsodium.crypto_aead_chacha20poly1305_encrypt.argtypes = (
-        c_void_p, c_void_p,     # c, clen
+        c_void_p, c_void_p,  # c, clen
         c_char_p, c_ulonglong,  # m, mlen
         c_char_p, c_ulonglong,  # ad, adlen
-        c_char_p,               # nsec, not used
-        c_char_p, c_char_p      # npub, k
+        c_char_p,  # nsec, not used
+        c_char_p, c_char_p  # npub, k
     )
     libsodium.crypto_aead_chacha20poly1305_decrypt.restype = c_int
     libsodium.crypto_aead_chacha20poly1305_decrypt.argtypes = (
-        c_void_p, c_void_p,     # m, mlen
-        c_char_p,               # nsec, not used
+        c_void_p, c_void_p,  # m, mlen
+        c_char_p,  # nsec, not used
         c_char_p, c_ulonglong,  # c, clen
         c_char_p, c_ulonglong,  # ad, adlen
-        c_char_p, c_char_p      # npub, k
+        c_char_p, c_char_p  # npub, k
     )
 
     # chacha20-ietf-poly1305, same api structure as above
@@ -154,9 +170,9 @@ def load_libsodium():
 
 
 class SodiumCrypto(object):
-    def __init__(self, cipher_name, key, iv, op):
+    def __init__(self, cipher_name, key, iv, op, crypto_path=None):
         if not loaded:
-            load_libsodium()
+            load_libsodium(crypto_path)
         self.key = key
         self.iv = iv
         self.key_ptr = c_char_p(key)
@@ -165,6 +181,11 @@ class SodiumCrypto(object):
             self.cipher = libsodium.crypto_stream_salsa20_xor_ic
         elif cipher_name == 'chacha20':
             self.cipher = libsodium.crypto_stream_chacha20_xor_ic
+        elif cipher_name == 'xchacha20':
+            if hasattr(libsodium, 'crypto_stream_xchacha20_xor_ic'):
+                self.cipher = libsodium.crypto_stream_xchacha20_xor_ic
+            else:
+                raise Exception('Unsupported cipher')
         elif cipher_name == 'chacha20-ietf':
             self.cipher = libsodium.crypto_stream_chacha20_ietf_xor_ic
         else:
@@ -198,32 +219,34 @@ class SodiumCrypto(object):
 
 
 class SodiumAeadCrypto(AeadCryptoBase):
-    def __init__(self, cipher_name, key, iv, op):
+    def __init__(self, cipher_name, key, iv, op, crypto_path=None):
         if not loaded:
-            load_libsodium()
-        AeadCryptoBase.__init__(self, cipher_name, key, iv, op)
+            load_libsodium(crypto_path)
+        AeadCryptoBase.__init__(self, cipher_name, key, iv, op, crypto_path)
 
         if cipher_name == 'chacha20-poly1305':
             self.encryptor = libsodium.crypto_aead_chacha20poly1305_encrypt
             self.decryptor = libsodium.crypto_aead_chacha20poly1305_decrypt
         elif cipher_name == 'chacha20-ietf-poly1305':
-            self.encryptor = libsodium.\
+            self.encryptor = libsodium. \
                 crypto_aead_chacha20poly1305_ietf_encrypt
-            self.decryptor = libsodium.\
+            self.decryptor = libsodium. \
                 crypto_aead_chacha20poly1305_ietf_decrypt
         elif cipher_name == 'xchacha20-ietf-poly1305':
             if hasattr(libsodium,
                        'crypto_aead_xchacha20poly1305_ietf_encrypt'):
-                self.encryptor = libsodium.\
+                self.encryptor = libsodium. \
                     crypto_aead_xchacha20poly1305_ietf_encrypt
-                self.decryptor = libsodium.\
+                self.decryptor = libsodium. \
                     crypto_aead_xchacha20poly1305_ietf_decrypt
             else:
-                raise Exception('Unknown cipher')
+                raise Exception('Unsupported cipher')
         elif cipher_name == 'sodium:aes-256-gcm':
             if hasattr(libsodium, 'crypto_aead_aes256gcm_encrypt'):
                 self.encryptor = libsodium.crypto_aead_aes256gcm_encrypt
                 self.decryptor = libsodium.crypto_aead_aes256gcm_decrypt
+            else:
+                raise Exception('Unsupported cipher')
         else:
             raise Exception('Unknown cipher')
 
@@ -269,7 +292,7 @@ class SodiumAeadCrypto(AeadCryptoBase):
             raise Exception("Decrypt failed")
 
         if cipher_out_len.value != clen - self._tlen:
-            raise Exception("Encrypt failed")
+            raise Exception("Decrypt failed")
 
         self.cipher_ctx_init()
         return buf.raw[:cipher_out_len.value]
@@ -278,7 +301,9 @@ class SodiumAeadCrypto(AeadCryptoBase):
 ciphers = {
     'salsa20': (32, 8, SodiumCrypto),
     'chacha20': (32, 8, SodiumCrypto),
+    'xchacha20': (32, 24, SodiumCrypto),
     'chacha20-ietf': (32, 12, SodiumCrypto),
+    # AEAD: iv_len = salt_len = key_len
     'chacha20-poly1305': (32, 32, SodiumAeadCrypto),
     'chacha20-ietf-poly1305': (32, 32, SodiumAeadCrypto),
     'xchacha20-ietf-poly1305': (32, 32, SodiumAeadCrypto),
@@ -286,17 +311,7 @@ ciphers = {
 }
 
 
-def test_salsa20():
-
-    print("Test salsa20")
-    cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
-    decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
-
-    util.run_cipher(cipher, decipher)
-
-
 def test_chacha20():
-
     print("Test chacha20")
     cipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 1)
     decipher = SodiumCrypto('chacha20', b'k' * 32, b'i' * 16, 0)
@@ -304,8 +319,23 @@ def test_chacha20():
     util.run_cipher(cipher, decipher)
 
 
-def test_chacha20_ietf():
+def test_xchacha20():
+    print("Test xchacha20")
+    cipher = SodiumCrypto('xchacha20', b'k' * 32, b'i' * 24, 1)
+    decipher = SodiumCrypto('xchacha20', b'k' * 32, b'i' * 24, 0)
 
+    util.run_cipher(cipher, decipher)
+
+
+def test_salsa20():
+    print("Test salsa20")
+    cipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 1)
+    decipher = SodiumCrypto('salsa20', b'k' * 32, b'i' * 16, 0)
+
+    util.run_cipher(cipher, decipher)
+
+
+def test_chacha20_ietf():
     print("Test chacha20-ietf")
     cipher = SodiumCrypto('chacha20-ietf', b'k' * 32, b'i' * 16, 1)
     decipher = SodiumCrypto('chacha20-ietf', b'k' * 32, b'i' * 16, 0)
@@ -314,7 +344,6 @@ def test_chacha20_ietf():
 
 
 def test_chacha20_poly1305():
-
     print("Test chacha20-poly1305 [payload][tag]")
     cipher = SodiumAeadCrypto('chacha20-poly1305',
                               b'k' * 32, b'i' * 32, 1)
@@ -325,7 +354,6 @@ def test_chacha20_poly1305():
 
 
 def test_chacha20_poly1305_chunk():
-
     print("Test chacha20-poly1305 chunk [size][tag][payload][tag]")
     cipher = SodiumAeadCrypto('chacha20-poly1305',
                               b'k' * 32, b'i' * 32, 1)
@@ -339,7 +367,6 @@ def test_chacha20_poly1305_chunk():
 
 
 def test_chacha20_ietf_poly1305():
-
     print("Test chacha20-ietf-poly1305 [payload][tag]")
     cipher = SodiumAeadCrypto('chacha20-ietf-poly1305',
                               b'k' * 32, b'i' * 32, 1)
@@ -350,7 +377,6 @@ def test_chacha20_ietf_poly1305():
 
 
 def test_chacha20_ietf_poly1305_chunk():
-
     print("Test chacha20-ietf-poly1305 chunk [size][tag][payload][tag]")
     cipher = SodiumAeadCrypto('chacha20-ietf-poly1305',
                               b'k' * 32, b'i' * 32, 1)
@@ -364,7 +390,6 @@ def test_chacha20_ietf_poly1305_chunk():
 
 
 def test_aes_256_gcm():
-
     print("Test sodium:aes-256-gcm [payload][tag]")
     cipher = SodiumAeadCrypto('sodium:aes-256-gcm',
                               b'k' * 32, b'i' * 32, 1)
@@ -375,7 +400,6 @@ def test_aes_256_gcm():
 
 
 def test_aes_256_gcm_chunk():
-
     print("Test sodium:aes-256-gcm chunk [size][tag][payload][tag]")
     cipher = SodiumAeadCrypto('sodium:aes-256-gcm',
                               b'k' * 32, b'i' * 32, 1)
@@ -390,6 +414,7 @@ def test_aes_256_gcm_chunk():
 
 if __name__ == '__main__':
     test_chacha20()
+    test_xchacha20()
     test_salsa20()
     test_chacha20_ietf()
     test_chacha20_poly1305()

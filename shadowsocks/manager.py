@@ -71,6 +71,7 @@ class Manager(object):
 
         port_password = config['port_password']
         del config['port_password']
+        config['crypto_path'] = config.get('crypto_path', dict())
         for port, password in port_password.items():
             a_config = config.copy()
             a_config['server_port'] = int(port)

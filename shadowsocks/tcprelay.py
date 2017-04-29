@@ -93,6 +93,8 @@ WAIT_STATUS_WRITING = 2
 WAIT_STATUS_READWRITING = WAIT_STATUS_READING | WAIT_STATUS_WRITING
 
 BUF_SIZE = 32 * 1024
+UP_STREAM_BUF_SIZE = 16 * 1024
+DOWN_STREAM_BUF_SIZE = 32 * 1024
 
 # helper exceptions for TCPRelayHandler
 
@@ -126,7 +128,8 @@ class TCPRelayHandler(object):
         self._is_local = is_local
         self._stage = STAGE_INIT
         self._cryptor = cryptor.Cryptor(config['password'],
-                                        config['method'])
+                                        config['method'],
+                                        config['crypto_path'])
         self._ota_enable = config.get('one_time_auth', False)
         self._ota_enable_session = self._ota_enable
         self._ota_buff_head = b''
@@ -553,8 +556,12 @@ class TCPRelayHandler(object):
             return
         is_local = self._is_local
         data = None
+        if is_local:
+            buf_size = UP_STREAM_BUF_SIZE
+        else:
+            buf_size = DOWN_STREAM_BUF_SIZE
         try:
-            data = self._local_sock.recv(BUF_SIZE)
+            data = self._local_sock.recv(buf_size)
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \
                     (errno.ETIMEDOUT, errno.EAGAIN, errno.EWOULDBLOCK):
@@ -586,8 +593,12 @@ class TCPRelayHandler(object):
     def _on_remote_read(self):
         # handle all remote read events
         data = None
+        if self._is_local:
+            buf_size = UP_STREAM_BUF_SIZE
+        else:
+            buf_size = DOWN_STREAM_BUF_SIZE
         try:
-            data = self._remote_sock.recv(BUF_SIZE)
+            data = self._remote_sock.recv(buf_size)
 
         except (OSError, IOError) as e:
             if eventloop.errno_from_exception(e) in \

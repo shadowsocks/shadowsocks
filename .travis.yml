@@ -16,6 +16,8 @@ before_install:
   - pip install pep8 pyflakes nose coverage PySocks
   - sudo tests/socksify/install.sh
   - sudo tests/libsodium/install.sh
+  - sudo tests/libmbedtls/install.sh
+  - sudo tests/libopenssl/install.sh
   - sudo tests/setup_tc.sh
 script:
   - tests/jenkins.sh

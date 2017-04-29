@@ -23,7 +23,7 @@ import hashlib
 import logging
 
 from shadowsocks import common
-from shadowsocks.crypto import rc4_md5, openssl, sodium, table
+from shadowsocks.crypto import rc4_md5, openssl, mbedtls, sodium, table
 
 
 CIPHER_ENC_ENCRYPTION = 1
@@ -36,6 +36,7 @@ METHOD_INFO_CRYPTO = 2
 method_supported = {}
 method_supported.update(rc4_md5.ciphers)
 method_supported.update(openssl.ciphers)
+method_supported.update(mbedtls.ciphers)
 method_supported.update(sodium.ciphers)
 method_supported.update(table.ciphers)
 
@@ -46,8 +47,8 @@ def random_string(length):
 cached_keys = {}
 
 
-def try_cipher(key, method=None):
-    Cryptor(key, method)
+def try_cipher(key, method=None, crypto_path=None):
+    Cryptor(key, method, crypto_path)
 
 
 def EVP_BytesToKey(password, key_len, iv_len):
@@ -75,7 +76,14 @@ def EVP_BytesToKey(password, key_len, iv_len):
 
 
 class Cryptor(object):
-    def __init__(self, password, method):
+    def __init__(self, password, method, crypto_path=None):
+        """
+        Crypto wrapper
+        :param password: str cipher password
+        :param method: str cipher
+        :param crypto_path: dict or none
+            {'openssl': path, 'sodium': path, 'mbedtls': path}
+        """
         self.password = password
         self.key = None
         self.method = method
@@ -83,6 +91,7 @@ class Cryptor(object):
         self.cipher_iv = b''
         self.decipher = None
         self.decipher_iv = None
+        self.crypto_path = crypto_path
         method = method.lower()
         self._method_info = Cryptor.get_method_info(method)
         if self._method_info:
@@ -118,7 +127,7 @@ class Cryptor(object):
         if op == CIPHER_ENC_ENCRYPTION:
             # this iv is for cipher not decipher
             self.cipher_iv = iv
-        return m[METHOD_INFO_CRYPTO](method, key, iv, op)
+        return m[METHOD_INFO_CRYPTO](method, key, iv, op, self.crypto_path)
 
     def encrypt(self, buf):
         if len(buf) == 0:
@@ -139,7 +148,7 @@ class Cryptor(object):
             self.decipher = self.get_cipher(
                 self.password, self.method,
                 CIPHER_ENC_DECRYPTION,
-                iv=decipher_iv
+                decipher_iv
             )
             buf = buf[decipher_iv_len:]
             if len(buf) == 0:
@@ -158,30 +167,30 @@ def gen_key_iv(password, method):
     return key, iv, m
 
 
-def encrypt_all_m(key, iv, m, method, data):
+def encrypt_all_m(key, iv, m, method, data, crypto_path=None):
     result = [iv]
-    cipher = m(method, key, iv, 1)
+    cipher = m(method, key, iv, 1, crypto_path)
     result.append(cipher.encrypt_once(data))
     return b''.join(result)
 
 
-def decrypt_all(password, method, data):
+def decrypt_all(password, method, data, crypto_path=None):
     result = []
     method = method.lower()
     (key, iv, m) = gen_key_iv(password, method)
     iv = data[:len(iv)]
     data = data[len(iv):]
-    cipher = m(method, key, iv, CIPHER_ENC_DECRYPTION)
+    cipher = m(method, key, iv, CIPHER_ENC_DECRYPTION, crypto_path)
     result.append(cipher.decrypt_once(data))
     return b''.join(result), key, iv
 
 
-def encrypt_all(password, method, data):
+def encrypt_all(password, method, data, crypto_path=None):
     result = []
     method = method.lower()
     (key, iv, m) = gen_key_iv(password, method)
     result.append(iv)
-    cipher = m(method, key, iv, CIPHER_ENC_ENCRYPTION)
+    cipher = m(method, key, iv, CIPHER_ENC_ENCRYPTION, crypto_path)
     result.append(cipher.encrypt_once(data))
     return b''.join(result)
 
@@ -189,6 +198,7 @@ def encrypt_all(password, method, data):
 CIPHERS_TO_TEST = [
     'aes-128-cfb',
     'aes-256-cfb',
+    'aes-256-gcm',
     'rc4-md5',
     'salsa20',
     'chacha20',
