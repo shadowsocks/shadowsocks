@@ -245,6 +245,7 @@ def get_config(is_local):
     config['obfs_param'] = to_str(config.get('obfs_param', ''))
     config['port_password'] = config.get('port_password', None)
     config['additional_ports'] = config.get('additional_ports', {})
+    config['additional_ports_only'] = config.get('additional_ports_only', False)
     config['timeout'] = int(config.get('timeout', 300))
     config['udp_timeout'] = int(config.get('udp_timeout', 120))
     config['udp_cache'] = int(config.get('udp_cache', 64))

@@ -152,8 +152,9 @@ class TransferBase(object):
 				else:
 					self.new_server(port, passwd, cfg)
 			else:
+				config = shell.get_config(False)
 				if ServerPool.get_instance().server_is_run(port) > 0:
-					if not allow:
+					if config['additional_ports_only'] or not allow:
 						logging.info('db stop server at port [%s]' % (port,))
 						ServerPool.get_instance().cb_del_server(port)
 						self.force_update_transfer.add(port)
@@ -164,7 +165,7 @@ class TransferBase(object):
 							self.force_update_transfer.add(port)
 							new_servers[port] = (passwd, cfg)
 
-				elif allow and port > 0 and port < 65536 and ServerPool.get_instance().server_run_status(port) is False:
+				elif not config['additional_ports_only'] and allow and port > 0 and port < 65536 and ServerPool.get_instance().server_run_status(port) is False:
 					self.new_server(port, passwd, cfg)
 
 		for row in last_rows:
