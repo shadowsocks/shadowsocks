@@ -88,6 +88,7 @@ class TransferBase(object):
 		new_servers = {}
 		allow_users = {}
 		mu_servers  = {}
+		config = shell.get_config(False)
 		for row in rows:
 			try:
 				allow = switchrule.isTurnOn(row) and row['enable'] == 1 and row['u'] + row['d'] < row['transfer_enable']
@@ -152,7 +153,6 @@ class TransferBase(object):
 				else:
 					self.new_server(port, passwd, cfg)
 			else:
-				config = shell.get_config(False)
 				if ServerPool.get_instance().server_is_run(port) > 0:
 					if config['additional_ports_only'] or not allow:
 						logging.info('db stop server at port [%s]' % (port,))

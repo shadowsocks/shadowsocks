@@ -506,11 +506,11 @@ class UDPRelay(object):
         try:
             #logging.info('UDP handle_server sendto %s:%d %d bytes' % (common.to_str(server_addr), server_port, len(data)))
             client.sendto(data, (server_addr, server_port))
+            self.add_transfer_u(client_uid, len(data))
             if client_pair is None: # new request
                 addr, port = client.getsockname()[:2]
                 common.connect_log('UDP data to %s:%d from %s:%d by UID %d' %
                         (common.to_str(server_addr), server_port, addr, port, user_id))
-            self.add_transfer_u(client_uid, len(data))
         except IOError as e:
             err = eventloop.errno_from_exception(e)
             if err in (errno.EINPROGRESS, errno.EAGAIN):
