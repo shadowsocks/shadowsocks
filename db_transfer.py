@@ -410,13 +410,19 @@ class DbTransfer(TransferBase):
 class Dbv3Transfer(DbTransfer):
 	def __init__(self):
 		super(Dbv3Transfer, self).__init__()
-		self.key_list += ['id', 'method']
-		self.ss_node_info_name = 'ss_node_info_log'
-		if get_config().API_INTERFACE == 'sspanelv3ssr':
+		self.update_node_state = True if get_config().API_INTERFACE != 'legendsockssr' else False
+		if self.update_node_state:
+			self.key_list += ['id']
+		self.key_list += ['method']
+		if self.update_node_state:
+			self.ss_node_info_name = 'ss_node_info_log'
+			if get_config().API_INTERFACE == 'sspanelv3ssr':
+				self.key_list += ['obfs', 'protocol']
+			if get_config().API_INTERFACE == 'glzjinmod':
+				self.key_list += ['obfs', 'protocol']
+				self.ss_node_info_name = 'ss_node_info'
+		else:
 			self.key_list += ['obfs', 'protocol']
-		if get_config().API_INTERFACE == 'glzjinmod':
-			self.key_list += ['obfs', 'protocol']
-			self.ss_node_info_name = 'ss_node_info'
 		self.start_time = time.time()
 
 	def update_all_user(self, dt_transfer):
@@ -458,16 +464,17 @@ class Dbv3Transfer(DbTransfer):
 			query_sub_when2 += ' WHEN %s THEN d+%s' % (id, int(transfer[1] * self.cfg["transfer_mul"]))
 			update_transfer[id] = transfer
 
-			cur = conn.cursor()
-			try:
-				if id in self.port_uid_table:
-					cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `node_id`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
-						str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
-						str(self.cfg["node_id"]) + "', '" + str(self.cfg["transfer_mul"]) + "', '" + \
-						self.traffic_format((transfer[0] + transfer[1]) * self.cfg["transfer_mul"]) + "', unix_timestamp()); ")
-			except:
-				logging.warn('no `user_traffic_log` in db')
-			cur.close()
+			if self.update_node_state:
+				cur = conn.cursor()
+				try:
+					if id in self.port_uid_table:
+						cur.execute("INSERT INTO `user_traffic_log` (`id`, `user_id`, `u`, `d`, `node_id`, `rate`, `traffic`, `log_time`) VALUES (NULL, '" + \
+							str(self.port_uid_table[id]) + "', '" + str(transfer[0]) + "', '" + str(transfer[1]) + "', '" + \
+							str(self.cfg["node_id"]) + "', '" + str(self.cfg["transfer_mul"]) + "', '" + \
+							self.traffic_format((transfer[0] + transfer[1]) * self.cfg["transfer_mul"]) + "', unix_timestamp()); ")
+				except:
+					logging.warn('no `user_traffic_log` in db')
+				cur.close()
 
 			if query_sub_in is not None:
 				query_sub_in += ',%s' % id
@@ -486,25 +493,26 @@ class Dbv3Transfer(DbTransfer):
 				logging.error(e)
 			cur.close()
 
-		try:
-			cur = conn.cursor()
+		if self.update_node_state:
 			try:
-				cur.execute("INSERT INTO `ss_node_online_log` (`id`, `node_id`, `online_user`, `log_time`) VALUES (NULL, '" + \
-					str(self.cfg["node_id"]) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
-			except Exception as e:
-				logging.error(e)
-			cur.close()
+				cur = conn.cursor()
+				try:
+					cur.execute("INSERT INTO `ss_node_online_log` (`id`, `node_id`, `online_user`, `log_time`) VALUES (NULL, '" + \
+						str(self.cfg["node_id"]) + "', '" + str(alive_user_count) + "', unix_timestamp()); ")
+				except Exception as e:
+					logging.error(e)
+				cur.close()
 
-			cur = conn.cursor()
-			try:
-				cur.execute("INSERT INTO `" + self.ss_node_info_name + "` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
-					str(self.cfg["node_id"]) + "', '" + str(self.uptime()) + "', '" + \
-					str(self.load()) + "', unix_timestamp()); ")
-			except Exception as e:
-				logging.error(e)
-			cur.close()
-		except:
-			logging.warn('no `ss_node_online_log` or `" + self.ss_node_info_name + "` in db')
+				cur = conn.cursor()
+				try:
+					cur.execute("INSERT INTO `" + self.ss_node_info_name + "` (`id`, `node_id`, `uptime`, `load`, `log_time`) VALUES (NULL, '" + \
+						str(self.cfg["node_id"]) + "', '" + str(self.uptime()) + "', '" + \
+						str(self.load()) + "', unix_timestamp()); ")
+				except Exception as e:
+					logging.error(e)
+				cur.close()
+			except:
+				logging.warn('no `ss_node_online_log` or `" + self.ss_node_info_name + "` in db')
 
 		conn.close()
 		return update_transfer
@@ -518,26 +526,27 @@ class Dbv3Transfer(DbTransfer):
 
 		cur = conn.cursor()
 
-		node_info_keys = ['traffic_rate']
-		try:
-			cur.execute("SELECT " + ','.join(node_info_keys) +" FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
-			nodeinfo = cur.fetchone()
-		except Exception as e:
-			logging.error(e)
-			nodeinfo = None
+		if self.update_node_state:
+			node_info_keys = ['traffic_rate']
+			try:
+				cur.execute("SELECT " + ','.join(node_info_keys) +" FROM ss_node where `id`='" + str(self.cfg["node_id"]) + "'")
+				nodeinfo = cur.fetchone()
+			except Exception as e:
+				logging.error(e)
+				nodeinfo = None
 
-		if nodeinfo == None:
-			rows = []
+			if nodeinfo == None:
+				rows = []
+				cur.close()
+				conn.commit()
+				logging.warn('None result when select node info from ss_node in db, maybe you set the incorrect node id')
+				return rows
 			cur.close()
-			conn.commit()
-			logging.warn('None result when select node info from ss_node in db, maybe you set the incorrect node id')
-			return rows
-		cur.close()
 
-		node_info_dict = {}
-		for column in range(len(nodeinfo)):
-			node_info_dict[node_info_keys[column]] = nodeinfo[column]
-		self.cfg['transfer_mul'] = float(node_info_dict['traffic_rate'])
+			node_info_dict = {}
+			for column in range(len(nodeinfo)):
+				node_info_dict[node_info_keys[column]] = nodeinfo[column]
+			self.cfg['transfer_mul'] = float(node_info_dict['traffic_rate'])
 
 		cur = conn.cursor()
 		try:
