@@ -1,6 +1,7 @@
 #!/bin/bash
 cd `dirname $0`
-eval $(ps -ef | grep "[0-9] python server\\.py a" | awk '{print "kill "$2}')
-ulimit -n 4096
-nohup python server.py a >> /dev/null 2>&1 &
+python_ver=$(ls /usr/lib|grep "^python"|tail -1)
+eval $(ps -ef | grep "[0-9] ${python_ver} server\\.py a" | awk '{print "kill "$2}')
+ulimit -n 512000
+nohup ${python_ver} server.py a>> /dev/null 2>&1 &
 

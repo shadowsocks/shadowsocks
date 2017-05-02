@@ -311,41 +311,6 @@ class UDPRelay(object):
             client.info('close_client pass %s' % client)
             pass
 
-    def _pre_parse_udp_header(self, data):
-        if data is None:
-            return
-        datatype = common.ord(data[0])
-        if datatype == 0x8:
-            if len(data) >= 8:
-                crc = binascii.crc32(data) & 0xffffffff
-                if crc != 0xffffffff:
-                    logging.warn('uncorrect CRC32, maybe wrong password or '
-                                 'encryption method')
-                    return None
-                cmd = common.ord(data[1])
-                request_id = struct.unpack('>H', data[2:4])[0]
-                data = data[4:-4]
-                return (cmd, request_id, data)
-            elif len(data) >= 6 and common.ord(data[1]) == 0x0:
-                crc = binascii.crc32(data) & 0xffffffff
-                if crc != 0xffffffff:
-                    logging.warn('uncorrect CRC32, maybe wrong password or '
-                                 'encryption method')
-                    return None
-                cmd = common.ord(data[1])
-                data = data[2:-4]
-                return (cmd, 0, data)
-            else:
-                logging.warn('header too short, maybe wrong password or '
-                             'encryption method')
-                return None
-        return data
-
-    def _pack_rsp_data(self, cmd, request_id, data):
-        _rand_data = b"123456789abcdefghijklmnopqrstuvwxyz" * 2
-        reqid_str = struct.pack(">H", request_id)
-        return b''.join([CMD_VER_STR, common.chr(cmd), reqid_str, data, _rand_data[:random.randint(0, len(_rand_data))], reqid_str])
-
     def _handel_protocol_error(self, client_address, ogn_data):
         #raise Exception('can not parse header')
         logging.warn("Protocol ERROR, UDP ogn data %s from %s:%d" % (binascii.hexlify(ogn_data), client_address[0], client_address[1]))
@@ -398,14 +363,8 @@ class UDPRelay(object):
         #logging.info("UDP data %s" % (binascii.hexlify(data),))
         if not self._is_local:
             data = pre_parse_header(data)
-
-            data = self._pre_parse_udp_header(data)
             if data is None:
                 return
-
-            if type(data) is tuple:
-                return
-                #return self._handle_tcp_over_udp(data, r_addr)
 
         try:
             header_result = parse_header(data)
@@ -450,14 +409,12 @@ class UDPRelay(object):
         if client_pair is None:
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:
-                    logging.debug('IP %s is in forbidden list, drop' %
-                                  common.to_str(sa[0]))
+                    logging.debug('IP %s is in forbidden list, drop' % common.to_str(sa[0]))
                     # drop
                     return
             if self._forbidden_portset:
                 if sa[1] in self._forbidden_portset:
-                    logging.debug('Port %d is in forbidden list, reject' %
-                                    sa[1])
+                    logging.debug('Port %d is in forbidden list, reject' % sa[1])
                     # drop
                     return
             client = socket.socket(af, socktype, proto)
@@ -469,7 +426,6 @@ class UDPRelay(object):
                 is_dns = True
             else:
                 pass
-                #logging.info("unknown data %s" % (binascii.hexlify(data),))
             if sa[1] == 53 and is_dns: #DNS
                 logging.debug("DNS query %s from %s:%d" % (common.to_str(sa[0]), r_addr[0], r_addr[1]))
                 self._cache_dns_client[key] = (client, uid)
@@ -504,7 +460,6 @@ class UDPRelay(object):
         if not data:
             return
         try:
-            #logging.info('UDP handle_server sendto %s:%d %d bytes' % (common.to_str(server_addr), server_port, len(data)))
             client.sendto(data, (server_addr, server_port))
             self.add_transfer_u(client_uid, len(data))
             if client_pair is None: # new request
@@ -513,6 +468,7 @@ class UDPRelay(object):
                         (common.to_str(server_addr), server_port, addr, port, user_id))
         except IOError as e:
             err = eventloop.errno_from_exception(e)
+            logging.warning('IOError sendto %s:%d by user %d' % (server_addr, server_port, user_id))
             if err in (errno.EINPROGRESS, errno.EAGAIN):
                 pass
             else:
