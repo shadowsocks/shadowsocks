@@ -1048,7 +1048,10 @@ class TCPRelayHandler(object):
                 self._loop.remove(sock)
             except Exception as e:
                 shell.print_exception(e)
-            del self._fd_to_handlers[sock.fileno()]
+            try:
+                del self._fd_to_handlers[sock.fileno()]
+            except Exception as e:
+                shell.print_exception(e)
             sock.close()
 
         return handle
@@ -1084,7 +1087,10 @@ class TCPRelayHandler(object):
                 self._loop.remove(self._remote_sock)
             except Exception as e:
                 shell.print_exception(e)
-            del self._fd_to_handlers[self._remote_sock.fileno()]
+            try:
+                del self._fd_to_handlers[self._remote_sock.fileno()]
+            except Exception as e:
+                shell.print_exception(e)
             self._remote_sock.close()
             self._remote_sock = None
         if self._remote_sock_v6:
@@ -1093,13 +1099,22 @@ class TCPRelayHandler(object):
                 self._loop.remove(self._remote_sock_v6)
             except Exception as e:
                 shell.print_exception(e)
-            del self._fd_to_handlers[self._remote_sock_v6.fileno()]
+            try:
+                del self._fd_to_handlers[self._remote_sock_v6.fileno()]
+            except Exception as e:
+                shell.print_exception(e)
             self._remote_sock_v6.close()
             self._remote_sock_v6 = None
         if self._local_sock:
             logging.debug('destroying local')
-            self._loop.remove(self._local_sock)
-            del self._fd_to_handlers[self._local_sock.fileno()]
+            try:
+                self._loop.remove(self._local_sock)
+            except Exception as e:
+                shell.print_exception(e)
+            try:
+                del self._fd_to_handlers[self._local_sock.fileno()]
+            except Exception as e:
+                shell.print_exception(e)
             self._local_sock.close()
             self._local_sock = None
         if self._obfs:
@@ -1365,6 +1380,11 @@ class TCPRelay(object):
                     handler.handle_event(sock, event)
                 else:
                     logging.warn('unknown fd')
+                    try:
+                        self._eventloop.remove(sock)
+                    except Exception as e:
+                        shell.print_exception(e)
+                    sock.close()
             else:
                 logging.warn('poll removed fd')
 
