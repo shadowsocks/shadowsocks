@@ -587,7 +587,7 @@ class TCPRelayHandler(object):
                     # just trim VER CMD RSV
                     data = data[3:]
                 else:
-                    logging.error('unknown command %d', cmd)
+                    logging.error('invalid command %d', cmd)
                     self.destroy()
                     return
 

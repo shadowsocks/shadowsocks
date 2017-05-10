@@ -364,7 +364,7 @@ class DNSResolver(object):
                 callback((hostname, ip), error)
             else:
                 callback((hostname, None),
-                         Exception('unknown hostname %s' % hostname))
+                         Exception('unable to parse hostname %s' % hostname))
         if hostname in self._hostname_to_cb:
             del self._hostname_to_cb[hostname]
         if hostname in self._hostname_status:
