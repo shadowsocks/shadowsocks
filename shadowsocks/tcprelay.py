@@ -1031,8 +1031,7 @@ class TCPRelayHandler(object):
         if self._user is not None and self._user not in self._server.server_users:
             self.destroy()
             return True
-        # order is important
-        if sock == self._remote_sock or sock == self._remote_sock_v6:
+        if fd == self._remote_sock_fd or fd == self._remotev6_sock_fd:
             if event & eventloop.POLL_ERR:
                 handle = True
                 self._on_remote_error()
@@ -1045,7 +1044,7 @@ class TCPRelayHandler(object):
             elif event & eventloop.POLL_OUT:
                 handle = True
                 self._on_remote_write()
-        elif sock == self._local_sock:
+        elif fd == self._local_sock_fd:
             if event & eventloop.POLL_ERR:
                 handle = True
                 self._on_local_error()
@@ -1204,6 +1203,7 @@ class TCPRelay(object):
                 self._config['fast_open'] = False
         server_socket.listen(config.get('max_connect', 1024))
         self._server_socket = server_socket
+        self._server_socket_fd = server_socket.fileno()
         self._stat_counter = stat_counter
         self._stat_callback = stat_callback
 
@@ -1420,7 +1420,7 @@ class TCPRelay(object):
     def handle_periodic(self):
         if self._closed:
             if self._server_socket:
-                self._eventloop.remove(self._server_socket)
+                self._eventloop.removefd(self._server_socket_fd)
                 self._server_socket.close()
                 self._server_socket = None
                 logging.info('closed TCP port %d', self._listen_port)
@@ -1434,7 +1434,7 @@ class TCPRelay(object):
         if not next_tick:
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
-                self._eventloop.remove(self._server_socket)
+                self._eventloop.removefd(self._server_socket_fd)
             self._server_socket.close()
             for handler in list(self._fd_to_handlers.values()):
                 handler.destroy()
