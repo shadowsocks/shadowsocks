@@ -249,8 +249,8 @@ def main():
 			'+2': 'tls1.2_ticket_auth_compatible',
 			'2': 'tls1.2_ticket_auth'}
 	fast_set_protocol = {'0': 'origin',
-			'a4': 'auth_sha1_v4',
-			'+a4': 'auth_sha1_v4_compatible',
+			's4': 'auth_sha1_v4',
+			'+s4': 'auth_sha1_v4_compatible',
 			'am': 'auth_aes128_md5',
 			'as': 'auth_aes128_sha1',
 			'ca': 'auth_chain_a',

@@ -1,3 +1,16 @@
+3.3.0 2017-05-11
+- connect_log include local addr & port
+- fix auth_chain_a UDP bug
+- add "additional_ports_only"
+- add interface legendsockssr
+- run with newest python version
+- parse comment in hosts
+- update mujson_mgr
+- add cymysql setup script
+- new speed tester
+- fix leaks
+- bugs fixed
+
 3.2.0 2017-04-27
 - add auth_chain_a
 - remove auth_aes128, auth_sha1, auth_sha1_v2, verify_simple, auth_simple, verify_sha1
