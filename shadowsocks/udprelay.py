@@ -142,7 +142,7 @@ class UDPAsyncDNSHandler(object):
             ip = result[1]
             if ip:
                 if self.call_back:
-                    self.call_back(*self.params, self.remote_addr, None, ip, True)
+                    self.call_back(self.remote_addr, None, ip, True, *self.params)
                     return
         logging.warning("can't resolve %s" % (self.remote_addr,))
 
@@ -409,9 +409,9 @@ class UDPRelay(object):
             handler = UDPAsyncDNSHandler((data, r_addr, uid, header_length))
             handler.resolve(self._dns_resolver, (server_addr, server_port), self._handle_server_dns_resolved)
         else:
-            self._handle_server_dns_resolved(data, r_addr, uid, header_length, (server_addr, server_port), None, server_addr, False)
+            self._handle_server_dns_resolved((server_addr, server_port), None, server_addr, False, data, r_addr, uid, header_length)
 
-    def _handle_server_dns_resolved(self, data, r_addr, uid, header_length, remote_addr, addrs, server_addr, dns_resolved):
+    def _handle_server_dns_resolved(self, remote_addr, addrs, server_addr, dns_resolved, data, r_addr, uid, header_length):
         try:
             server_port = remote_addr[1]
             if addrs is None:
