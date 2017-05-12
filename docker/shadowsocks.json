@@ -1,0 +1,5 @@
+{
+    "password":"Change Me!",
+    "timeout":120,
+    "method":"aes-256-cfb"
+}
