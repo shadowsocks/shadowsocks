@@ -23,7 +23,22 @@ Debian / Ubuntu:
     apt-get install python-pip
     pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
-CentOS:
+CentOS 5:
+
+    # install python26
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm
+    yum install -y python26
+    
+    # install setuptools
+    wget -c peak.telecommunity.com/dist/ez_setup.py -O - | python26
+    
+    # update /etc/pki/tls/certs/ca-bundle.crt
+    yum update -y openssl
+    
+    easy_install pip
+    pip install shadowsocks
+
+CentOS 6/7:
 
     yum install python-setuptools && easy_install pip
     pip install git+https://github.com/shadowsocks/shadowsocks.git@master
