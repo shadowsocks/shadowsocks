@@ -199,6 +199,8 @@ def check_config(config, is_local):
     if config.get('dns_server', None) is not None:
         if type(config['dns_server']) != list:
             config['dns_server'] = to_str(config['dns_server'])
+        else:
+            config['dns_server'] = [to_str(ds) for ds in config['dns_server']]
         logging.info('Specified DNS server: %s' % config['dns_server'])
 
     config['crypto_path'] = {'openssl': config['libopenssl'],
