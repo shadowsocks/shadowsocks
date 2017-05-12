@@ -93,6 +93,7 @@ class Manager(object):
         t.add_to_loop(self._loop)
         u.add_to_loop(self._loop)
         self._relays[port] = (t, u)
+        self._statistics[port] = 0
 
     def remove_port(self, config):
         port = int(config['server_port'])
@@ -103,6 +104,7 @@ class Manager(object):
             t.close(next_tick=False)
             u.close(next_tick=False)
             del self._relays[port]
+            del self._statistics[port]
         else:
             logging.error("server not exist at %s:%d" % (config['server'],
                                                          port))
@@ -127,7 +129,8 @@ class Manager(object):
                         self.remove_port(a_config)
                         self._send_control_data(b'ok')
                     elif command == 'ping':
-                        self._send_control_data(b'pong')
+                        # self._send_control_data(b'pong')
+                        self._send_stat_data()
                     else:
                         logging.error('unknown command %s', command)
 
@@ -153,6 +156,9 @@ class Manager(object):
         self._statistics[port] += data_len
 
     def handle_periodic(self):
+        pass
+
+    def _send_stat_data(self):
         r = {}
         i = 0
 
@@ -173,7 +179,7 @@ class Manager(object):
                 i = 0
         if len(r) > 0:
             send_data(r)
-        self._statistics.clear()
+        # self._statistics.clear()
 
     def _send_control_data(self, data):
         if not self._control_client_addr:
