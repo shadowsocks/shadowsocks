@@ -91,6 +91,8 @@ def find_library(possible_lib_names, search_symbol, library_name,
             patterns = [
                 '/usr/local/lib*/lib%s.*' % name,
                 '/usr/lib*/lib%s.*' % name,
+                'C:\\Program Files\\OpenSSL\\bin\\lib%s.*' % name,
+                'C:\\Program Files (x86)\\OpenSSL\\bin\\lib%s.*' % name,
                 'lib%s.*' % name,
                 '%s.dll' % name]
 
