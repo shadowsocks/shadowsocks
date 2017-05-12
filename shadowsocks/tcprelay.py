@@ -123,6 +123,29 @@ class SpeedTester(object):
             return self.sum_len >= self.max_speed
         return False
 
+class UDPAsyncDNSHandler(object):
+    def __init__(self, params):
+        self.params = params
+        self.remote_addr = None
+        self.call_back = None
+
+    def resolve(self, dns_resolver, remote_addr, call_back):
+        self.call_back = call_back
+        self.remote_addr = remote_addr
+        dns_resolver.resolve(remote_addr[0], self._handle_dns_resolved)
+
+    def _handle_dns_resolved(self, result, error):
+        if error:
+            logging.error("%s when resolve DNS" % (error,)) #drop
+            return
+        if result:
+            ip = result[1]
+            if ip:
+                if self.call_back:
+                    self.call_back(self.params, self.remote_addr, ip)
+                    return
+        logging.warning("can't resolve %s" % (self.remote_addr,))
+
 class TCPRelayHandler(object):
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
                  dns_resolver, is_local):
@@ -344,26 +367,12 @@ class TCPRelayHandler(object):
                     header_result = parse_header(data)
                     if header_result is None:
                         continue
-                    connecttype, dest_addr, dest_port, header_length = header_result
-                    addrs = socket.getaddrinfo(dest_addr, dest_port, 0,
-                            socket.SOCK_DGRAM, socket.SOL_UDP)
-                    if addrs:
-                        af, socktype, proto, canonname, server_addr = addrs[0]
-                        data = data[header_length:]
-                        if af == socket.AF_INET6:
-                            self._remote_sock_v6.sendto(data, (server_addr[0], dest_port))
-                            if self._udpv6_send_pack_id == 0:
-                                addr, port = self._remote_sock_v6.getsockname()[:2]
-                                common.connect_log('UDPv6 sendto %s:%d from %s:%d by user %d' %
-                                    (server_addr[0], dest_port, addr, port, self._user_id))
-                            self._udpv6_send_pack_id += 1
-                        else:
-                            sock.sendto(data, (server_addr[0], dest_port))
-                            if self._udp_send_pack_id == 0:
-                                addr, port = sock.getsockname()[:2]
-                                common.connect_log('UDP sendto %s:%d from %s:%d by user %d' %
-                                    (server_addr[0], dest_port, addr, port, self._user_id))
-                            self._udp_send_pack_id += 1
+                    connecttype, addrtype, dest_addr, dest_port, header_length = header_result
+                    if (addrtype & 7) == 3:
+                        handler = UDPAsyncDNSHandler(data[header_length:])
+                        handler.resolve(self._dns_resolver, (dest_addr, dest_port), self._handle_server_dns_resolved)
+                    else:
+                        return self._handle_server_dns_resolved(data[header_length:], (dest_addr, dest_port), dest_addr)
 
             except Exception as e:
                 #trace = traceback.format_exc()
@@ -425,6 +434,31 @@ class TCPRelayHandler(object):
             else:
                 logging.error('write_all_to_sock:unknown socket from %s:%d' % (self._client_address[0], self._client_address[1]))
         return True
+
+    def _handle_server_dns_resolved(self, data, remote_addr, server_addr):
+        try:
+            addrs = socket.getaddrinfo(server_addr, remote_addr[1], 0, socket.SOCK_DGRAM, socket.SOL_UDP)
+            if not addrs: # drop
+                return
+            af, socktype, proto, canonname, sa = addrs[0]
+            if af == socket.AF_INET6:
+                self._remote_sock_v6.sendto(data, (server_addr, remote_addr[1]))
+                if self._udpv6_send_pack_id == 0:
+                    addr, port = self._remote_sock_v6.getsockname()[:2]
+                    common.connect_log('UDPv6 sendto %s(%s):%d from %s:%d by user %d' %
+                        (common.to_str(remote_addr[0]), common.to_str(server_addr), remote_addr[1], addr, port, self._user_id))
+                self._udpv6_send_pack_id += 1
+            else:
+                self._remote_sock.sendto(data, (server_addr, remote_addr[1]))
+                if self._udp_send_pack_id == 0:
+                    addr, port = self._remote_sock.getsockname()[:2]
+                    common.connect_log('UDP sendto %s(%s):%d from %s:%d by user %d' %
+                        (common.to_str(remote_addr[0]), common.to_str(server_addr), remote_addr[1], addr, port, self._user_id))
+                self._udp_send_pack_id += 1
+            return True
+        except Exception as e:
+            shell.print_exception(e)
+            logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
 
     def _get_redirect_host(self, client_address, ogn_data):
         host_list = self._redir_list or ["*#0.0.0.0:0"]
@@ -601,7 +635,7 @@ class TCPRelayHandler(object):
                 header_result = parse_header(data)
                 if header_result is not None:
                     try:
-                        common.to_str(header_result[1])
+                        common.to_str(header_result[2])
                     except Exception as e:
                         header_result = None
                 if header_result is None:
@@ -613,7 +647,7 @@ class TCPRelayHandler(object):
                 server_info.buffer_size = self._recv_buffer_size
                 server_info = self._protocol.get_server_info()
                 server_info.buffer_size = self._recv_buffer_size
-            connecttype, remote_addr, remote_port, header_length = header_result
+            connecttype, addrtype, remote_addr, remote_port, header_length = header_result
             if connecttype != 0:
                 pass
                 #common.connect_log('UDP over TCP by user %d' %
@@ -771,7 +805,7 @@ class TCPRelayHandler(object):
                                     raise e
                             addr, port = self._remote_sock.getsockname()[:2]
                             common.connect_log('TCP connecting %s(%s):%d from %s:%d by user %d' %
-                                (self._remote_address[0], remote_addr, remote_port, addr, port, self._user_id))
+                                (common.to_str(self._remote_address[0]), common.to_str(remote_addr), remote_port, addr, port, self._user_id))
 
                             self._loop.add(remote_sock,
                                        eventloop.POLL_ERR | eventloop.POLL_OUT,

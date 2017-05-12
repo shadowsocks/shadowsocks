@@ -236,7 +236,7 @@ def parse_header(data):
                      'encryption method' % addrtype)
     if dest_addr is None:
         return None
-    return connecttype, to_bytes(dest_addr), dest_port, header_length
+    return connecttype, addrtype, to_bytes(dest_addr), dest_port, header_length
 
 
 class IPNetwork(object):
