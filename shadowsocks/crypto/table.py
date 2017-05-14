@@ -74,7 +74,7 @@ class NoneCipher(object):
 
 ciphers = {
     'none': (16, 0, NoneCipher),
-    'table': (0, 0, TableCipher)
+    'table': (16, 0, TableCipher)
 }
 
 
