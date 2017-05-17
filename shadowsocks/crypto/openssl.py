@@ -67,8 +67,6 @@ def load_openssl():
 
 def load_cipher(cipher_name):
     func_name = 'EVP_' + cipher_name.replace('-', '_')
-    if bytes != str:
-        func_name = str(func_name, 'utf-8')
     cipher = getattr(libcrypto, func_name, None)
     if cipher:
         cipher.restype = c_void_p
