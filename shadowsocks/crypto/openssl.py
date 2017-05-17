@@ -89,8 +89,7 @@ class OpenSSLCrypto(object):
         self._ctx = None
         if not loaded:
             load_openssl()
-        cipher_name = common.to_bytes(cipher_name)
-        cipher = libcrypto.EVP_get_cipherbyname(cipher_name)
+        cipher = libcrypto.EVP_get_cipherbyname(common.to_bytes(cipher_name))
         if not cipher:
             cipher = load_cipher(cipher_name)
         if not cipher:

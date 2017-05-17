@@ -111,12 +111,6 @@ def check_config(config, is_local):
     if config.get('server', '') in ['127.0.0.1', 'localhost']:
         logging.warning('warning: server set to listen on %s:%s, are you sure?' %
                      (to_str(config['server']), config['server_port']))
-    if (config.get('method', '') or '').lower() == 'table':
-        logging.warning('warning: table is not safe; please use a safer cipher, '
-                     'like AES-256-CFB')
-    if (config.get('method', '') or '').lower() == 'rc4':
-        logging.warning('warning: RC4 is not safe; please use a safer cipher, '
-                     'like AES-256-CFB')
     if config.get('timeout', 300) < 100:
         logging.warning('warning: your timeout %d seems too short' %
                      int(config.get('timeout')))
