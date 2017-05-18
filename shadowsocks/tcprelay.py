@@ -655,14 +655,6 @@ class TCPRelayHandler(object):
             else:
                 common.connect_log('TCP request %s:%d by user %d' %
                         (common.to_str(remote_addr), remote_port, self._user_id))
-                if (remote_addr == b'0.0.0.0' or remote_addr == b'255.0.0.255' or remote_addr == b'fe80::ffff') and remote_port == 80:
-                    backdata = b'HTTP/1.0 200 OK\r\nConnection: close\r\n\r\nShadowsocksR ' + common.to_bytes(version.version())
-                    backdata = self._protocol.server_pre_encrypt(backdata)
-                    backdata = self._encryptor.encrypt(backdata)
-                    backdata = self._obfs.server_encode(backdata)
-                    self._write_to_sock(backdata, self._local_sock)
-                    self.destroy()
-                    return
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
             # pause reading
