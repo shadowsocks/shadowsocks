@@ -656,7 +656,7 @@ class TCPRelayHandler(object):
                 common.connect_log('TCP request %s:%d by user %d' %
                         (common.to_str(remote_addr), remote_port, self._user_id))
                 if remote_addr == b'0.0.0.0' and remote_port == 80:
-                    backdata = b'HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n' + common.to_bytes(version.version())
+                    backdata = b'HTTP/1.0 200 OK\r\nConnection: close\r\n\r\nShadowsocksR ' + common.to_bytes(version.version())
                     backdata = self._protocol.server_pre_encrypt(backdata)
                     backdata = self._encryptor.encrypt(backdata)
                     backdata = self._obfs.server_encode(backdata)

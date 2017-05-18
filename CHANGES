@@ -1,3 +1,9 @@
+3.3.1 2017-05-18
+- fix stop script
+- Async DNS query under UDP
+- fix old version of OpenSSL
+- http reply
+
 3.3.0 2017-05-11
 - connect_log include local addr & port
 - fix auth_chain_a UDP bug
