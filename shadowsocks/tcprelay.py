@@ -29,7 +29,7 @@ import random
 import platform
 import threading
 
-from shadowsocks import encrypt, obfs, eventloop, shell, common, lru_cache
+from shadowsocks import encrypt, obfs, eventloop, shell, common, lru_cache, version
 from shadowsocks.common import pre_parse_header, parse_header
 
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
@@ -655,6 +655,14 @@ class TCPRelayHandler(object):
             else:
                 common.connect_log('TCP request %s:%d by user %d' %
                         (common.to_str(remote_addr), remote_port, self._user_id))
+                if remote_addr == b'0.0.0.0' and remote_port == 80:
+                    backdata = b'HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n' + common.to_bytes(version.version())
+                    backdata = self._protocol.server_pre_encrypt(backdata)
+                    backdata = self._encryptor.encrypt(backdata)
+                    backdata = self._obfs.server_encode(backdata)
+                    self._write_to_sock(backdata, self._local_sock)
+                    self.destroy()
+                    return
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
             # pause reading
