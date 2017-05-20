@@ -241,12 +241,13 @@ class tls_ticket_auth(plain.plain):
         if not match_begin(buf, b'\x16\x03\x01'):
             return self.decode_error_return(ogn_buf)
         buf = buf[3:]
-        if struct.unpack('>H', buf[:2])[0] > len(buf) - 2:
+        header_len = struct.unpack('>H', buf[:2])[0]
+        if header_len > len(buf) - 2:
             return (b'', False, False)
 
-        self.recv_buffer = self.recv_buffer[struct.unpack('>H', buf[:2])[0] + 5:]
+        self.recv_buffer = self.recv_buffer[header_len + 5:]
         self.handshake_status = 2
-        buf = buf[2:]
+        buf = buf[2:header_len + 2]
         if not match_begin(buf, b'\x01\x00'): #client hello
             logging.info("tls_auth not client hello message")
             return self.decode_error_return(ogn_buf)
