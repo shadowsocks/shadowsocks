@@ -164,7 +164,7 @@ class tls_ticket_auth(plain.plain):
     def server_encode(self, buf):
         if self.handshake_status == -1:
             return buf
-        if self.handshake_status == 8:
+        if (self.handshake_status & 8) == 8:
             ret = b''
             while len(buf) > 2048:
                 size = min(struct.unpack('>H', os.urandom(2))[0] % 4096 + 100, len(buf))
@@ -173,18 +173,20 @@ class tls_ticket_auth(plain.plain):
             if len(buf) > 0:
                 ret += b"\x17" + self.tls_version + struct.pack('>H', len(buf)) + buf
             return ret
-        self.handshake_status = 3
+        self.handshake_status |= 8
         data = self.tls_version + self.pack_auth_data(self.client_id) + b"\x20" + self.client_id + binascii.unhexlify(b"c02f000005ff01000100")
         data = b"\x02\x00" + struct.pack('>H', len(data)) + data #server hello
-        data = b"\x16\x03\x03" + struct.pack('>H', len(data)) + data
+        data = b"\x16" + self.tls_version + struct.pack('>H', len(data)) + data
         if random.randint(0, 8) < 1:
             ticket = os.urandom((struct.unpack('>H', os.urandom(2))[0] % 164) * 2 + 64)
-            ticket = struct.pack('>H', len(ticket) + 4) + b"\x04\x00" + struct.pack('>H', len(ticket))
+            ticket = struct.pack('>H', len(ticket) + 4) + b"\x04\x00" + struct.pack('>H', len(ticket)) + ticket
             data += b"\x16" + self.tls_version + ticket #New session ticket
         data += b"\x14" + self.tls_version + b"\x00\x01\x01" #ChangeCipherSpec
         finish_len = random.choice([32, 40])
         data += b"\x16" + self.tls_version + struct.pack('>H', finish_len) + os.urandom(finish_len - 10) #Finished
         data += hmac.new(self.server_info.key + self.client_id, data, hashlib.sha1).digest()[:10]
+        if buf:
+            data += self.server_encode(buf)
         return data
 
     def decode_error_return(self, buf):
@@ -198,7 +200,7 @@ class tls_ticket_auth(plain.plain):
         if self.handshake_status == -1:
             return (buf, True, False)
 
-        if self.handshake_status == 8:
+        if (self.handshake_status & 4) == 4:
             ret = b''
             self.recv_buffer += buf
             while len(self.recv_buffer) > 5:
@@ -212,11 +214,11 @@ class tls_ticket_auth(plain.plain):
                 self.recv_buffer = self.recv_buffer[size+5:]
             return (ret, True, False)
 
-        if self.handshake_status == 3:
+        if (self.handshake_status & 1) == 1:
             self.recv_buffer += buf
             buf = self.recv_buffer
             verify = buf
-            if len(buf) < 43:
+            if len(buf) < 11:
                 raise Exception('server_decode data error')
             if not match_begin(buf, b"\x14" + self.tls_version + b"\x00\x01\x01"): #ChangeCipherSpec
                 raise Exception('server_decode data error')
@@ -225,12 +227,14 @@ class tls_ticket_auth(plain.plain):
                 raise Exception('server_decode data error')
             verify_len = struct.unpack('>H', buf[3:5])[0] + 1 # 11 - 10
             if len(verify) < verify_len + 10:
-                raise Exception('server_decode data error')
+                return (b'', False, False)
             if hmac.new(self.server_info.key + self.client_id, verify[:verify_len], hashlib.sha1).digest()[:10] != verify[verify_len:verify_len+10]:
                 raise Exception('server_decode data error')
             self.recv_buffer = verify[verify_len + 10:]
-            self.handshake_status = 8
-            return self.server_decode(b'')
+            status = self.handshake_status
+            self.handshake_status |= 4
+            ret = self.server_decode(b'')
+            return ret;
 
         #raise Exception("handshake data = %s" % (binascii.hexlify(buf)))
         self.recv_buffer += buf
@@ -246,7 +250,7 @@ class tls_ticket_auth(plain.plain):
             return (b'', False, False)
 
         self.recv_buffer = self.recv_buffer[header_len + 5:]
-        self.handshake_status = 2
+        self.handshake_status = 1
         buf = buf[2:header_len + 2]
         if not match_begin(buf, b'\x01\x00'): #client hello
             logging.info("tls_auth not client hello message")
@@ -289,6 +293,9 @@ class tls_ticket_auth(plain.plain):
             return self.decode_error_return(ogn_buf)
         self.server_info.data.client_data.sweep()
         self.server_info.data.client_data[verifyid[:22]] = sessionid
+        if len(self.recv_buffer) >= 11:
+            ret = self.server_decode(b'')
+            return (ret[0], True, True)
         # (buffer_to_recv, is_need_decrypt, is_need_to_encode_and_send_back)
         return (b'', False, True)
 
