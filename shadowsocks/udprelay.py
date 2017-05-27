@@ -412,6 +412,7 @@ class UDPRelay(object):
             self._handle_server_dns_resolved((server_addr, server_port), None, server_addr, False, data, r_addr, uid, header_length)
 
     def _handle_server_dns_resolved(self, remote_addr, addrs, server_addr, dns_resolved, data, r_addr, uid, header_length):
+        user_id = self._listen_port
         try:
             server_port = remote_addr[1]
             if addrs is None:
@@ -457,9 +458,7 @@ class UDPRelay(object):
 
                 logging.debug('UDP port %5d sockets %d' % (self._listen_port, len(self._sockets)))
 
-                if uid is None:
-                    user_id = self._listen_port
-                else:
+                if uid is not None:
                     user_id = struct.unpack('<I', client_uid)[0]
             else:
                 client, client_uid = client_pair
