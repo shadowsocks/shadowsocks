@@ -176,7 +176,7 @@ class TCPRelayHandler(object):
         self._encrypt_correct = True
         self._obfs = obfs.obfs(config['obfs'])
         self._protocol = obfs.obfs(config['protocol'])
-        self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local)
+        self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local) + self._encryptor.iv_len()
         self._recv_buffer_size = BUF_SIZE - self._overhead
 
         server_info = obfs.server_info(server.obfs_data)
@@ -641,7 +641,7 @@ class TCPRelayHandler(object):
                 if header_result is None:
                     data = self._handel_protocol_error(self._client_address, ogn_data)
                     header_result = parse_header(data)
-                self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local)
+                self._overhead = self._obfs.get_overhead(self._is_local) + self._protocol.get_overhead(self._is_local) + self._encryptor.iv_len()
                 self._recv_buffer_size = BUF_SIZE - self._overhead
                 server_info = self._obfs.get_server_info()
                 server_info.buffer_size = self._recv_buffer_size
