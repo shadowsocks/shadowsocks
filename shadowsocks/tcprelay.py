@@ -832,15 +832,15 @@ class TCPRelayHandler(object):
         buffer_size = len(sock.recv(recv_buffer_size, socket.MSG_PEEK))
         if up:
             buffer_size = min(buffer_size, self._recv_u_max_size)
-            self._recv_u_max_size = min(self._recv_u_max_size + TCP_MSS, BUF_SIZE)
+            self._recv_u_max_size = min(self._recv_u_max_size + self._tcp_mss - self._overhead, BUF_SIZE)
         else:
             buffer_size = min(buffer_size, self._recv_d_max_size)
-            self._recv_d_max_size = min(self._recv_d_max_size + TCP_MSS, BUF_SIZE)
+            self._recv_d_max_size = min(self._recv_d_max_size + self._tcp_mss - self._overhead, BUF_SIZE)
         if buffer_size == recv_buffer_size:
             return buffer_size
-        s = buffer_size % self._tcp_mss + self._overhead
-        if s > self._tcp_mss:
-            return buffer_size - (s - self._tcp_mss)
+        frame_size = self._tcp_mss - self._overhead
+        if buffer_size > frame_size:
+            buffer_size = int(buffer_size / frame_size) * frame_size
         return buffer_size
 
     def _on_local_read(self):
@@ -1074,7 +1074,7 @@ class TCPRelayHandler(object):
                     handle = True
                     self._on_remote_read(sock == self._remote_sock)
                 else:
-                    self._recv_d_max_size = TCP_MSS
+                    self._recv_d_max_size = self._tcp_mss - self._overhead
             elif event & eventloop.POLL_OUT:
                 handle = True
                 self._on_remote_write()
@@ -1087,7 +1087,7 @@ class TCPRelayHandler(object):
                     handle = True
                     self._on_local_read()
                 else:
-                    self._recv_u_max_size = TCP_MSS
+                    self._recv_u_max_size = self._tcp_mss - self._overhead
             elif event & eventloop.POLL_OUT:
                 handle = True
                 self._on_local_write()
