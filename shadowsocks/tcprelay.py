@@ -123,29 +123,6 @@ class SpeedTester(object):
             return self.sum_len >= self.max_speed
         return False
 
-class UDPAsyncDNSHandler(object):
-    def __init__(self, params):
-        self.params = params
-        self.remote_addr = None
-        self.call_back = None
-
-    def resolve(self, dns_resolver, remote_addr, call_back):
-        self.call_back = call_back
-        self.remote_addr = remote_addr
-        dns_resolver.resolve(remote_addr[0], self._handle_dns_resolved)
-
-    def _handle_dns_resolved(self, result, error):
-        if error:
-            logging.error("%s when resolve DNS" % (error,)) #drop
-            return
-        if result:
-            ip = result[1]
-            if ip:
-                if self.call_back:
-                    self.call_back(self.params, self.remote_addr, ip)
-                    return
-        logging.warning("can't resolve %s" % (self.remote_addr,))
-
 class TCPRelayHandler(object):
     def __init__(self, server, fd_to_handlers, loop, local_sock, config,
                  dns_resolver, is_local):
@@ -365,8 +342,12 @@ class TCPRelayHandler(object):
                         continue
                     connecttype, addrtype, dest_addr, dest_port, header_length = header_result
                     if (addrtype & 7) == 3:
-                        handler = UDPAsyncDNSHandler(data[header_length:])
-                        handler.resolve(self._dns_resolver, (dest_addr, dest_port), self._handle_server_dns_resolved)
+                        af = common.is_ip(dest_addr)
+                        if af == False:
+                            handler = common.UDPAsyncDNSHandler(data[header_length:])
+                            handler.resolve(self._dns_resolver, (dest_addr, dest_port), self._handle_server_dns_resolved)
+                        else:
+                            return self._handle_server_dns_resolved(data[header_length:], (dest_addr, dest_port), dest_addr)
                     else:
                         return self._handle_server_dns_resolved(data[header_length:], (dest_addr, dest_port), dest_addr)
 

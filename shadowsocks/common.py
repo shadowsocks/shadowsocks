@@ -24,6 +24,8 @@ import logging
 import binascii
 import re
 
+from shadowsocks import lru_cache
+
 def compat_ord(s):
     if type(s) == int:
         return s
@@ -339,6 +341,35 @@ class PortRange(object):
 
     def __ne__(self, other):
         return self.range_str != other.range_str
+
+class UDPAsyncDNSHandler(object):
+    dns_cache = lru_cache.LRUCache(timeout=1800)
+    def __init__(self, params):
+        self.params = params
+        self.remote_addr = None
+        self.call_back = None
+
+    def resolve(self, dns_resolver, remote_addr, call_back):
+        if remote_addr in UDPAsyncDNSHandler.dns_cache:
+            if call_back:
+                call_back(remote_addr, None, UDPAsyncDNSHandler.dns_cache[remote_addr], True, *self.params)
+        else:
+            self.call_back = call_back
+            self.remote_addr = remote_addr
+            dns_resolver.resolve(remote_addr[0], self._handle_dns_resolved)
+            UDPAsyncDNSHandler.dns_cache.sweep()
+
+    def _handle_dns_resolved(self, result, error):
+        if error:
+            logging.error("%s when resolve DNS" % (error,)) #drop
+            return
+        if result:
+            ip = result[1]
+            if ip:
+                if self.call_back:
+                    self.call_back(self.remote_addr, None, ip, True, *self.params)
+                    return
+        logging.warning("can't resolve %s" % (self.remote_addr,))
 
 def test_inet_conv():
     ipv4 = b'8.8.4.4'
