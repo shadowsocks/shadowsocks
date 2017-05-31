@@ -297,6 +297,12 @@ class IPNetwork(object):
     def __cmp__(self, other):
         return cmp(self.addrs_str, other.addrs_str)
 
+    def __eq__(self, other):
+        return self.addrs_str == other.addrs_str
+
+    def __ne__(self, other):
+        return self.addrs_str != other.addrs_str
+
 class PortRange(object):
     def __init__(self, range_str):
         self.range_str = to_str(range_str)
@@ -327,6 +333,12 @@ class PortRange(object):
 
     def __cmp__(self, other):
         return cmp(self.range_str, other.range_str)
+
+    def __eq__(self, other):
+        return self.range_str == other.range_str
+
+    def __ne__(self, other):
+        return self.range_str != other.range_str
 
 def test_inet_conv():
     ipv4 = b'8.8.4.4'
