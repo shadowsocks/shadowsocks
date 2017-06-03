@@ -388,11 +388,13 @@ class UDPRelay(object):
                 handler = common.UDPAsyncDNSHandler((data, r_addr, uid, header_length))
                 handler.resolve(self._dns_resolver, (server_addr, server_port), self._handle_server_dns_resolved)
             else:
-                self._handle_server_dns_resolved((server_addr, server_port), server_addr, (data, r_addr, uid, header_length))
+                self._handle_server_dns_resolved("", (server_addr, server_port), server_addr, (data, r_addr, uid, header_length))
         else:
-            self._handle_server_dns_resolved((server_addr, server_port), server_addr, (data, r_addr, uid, header_length))
+            self._handle_server_dns_resolved("", (server_addr, server_port), server_addr, (data, r_addr, uid, header_length))
 
-    def _handle_server_dns_resolved(self, remote_addr, server_addr, params):
+    def _handle_server_dns_resolved(self, error, remote_addr, server_addr, params):
+        if error:
+            return
         data, r_addr, uid, header_length = params
         user_id = self._listen_port
         try:

@@ -352,7 +352,7 @@ class UDPAsyncDNSHandler(object):
     def resolve(self, dns_resolver, remote_addr, call_back):
         if remote_addr in UDPAsyncDNSHandler.dns_cache:
             if call_back:
-                call_back(remote_addr, UDPAsyncDNSHandler.dns_cache[remote_addr], self.params)
+                call_back("", remote_addr, UDPAsyncDNSHandler.dns_cache[remote_addr], self.params)
         else:
             self.call_back = call_back
             self.remote_addr = remote_addr
@@ -362,14 +362,13 @@ class UDPAsyncDNSHandler(object):
     def _handle_dns_resolved(self, result, error):
         if error:
             logging.error("%s when resolve DNS" % (error,)) #drop
-            return
+            return self.call_back(error, self.remote_addr, None, self.params)
         if result:
             ip = result[1]
             if ip:
-                if self.call_back:
-                    self.call_back(self.remote_addr, ip, self.params)
-                    return
+                return self.call_back("", self.remote_addr, ip, self.params)
         logging.warning("can't resolve %s" % (self.remote_addr,))
+        return self.call_back("fail to resolve", self.remote_addr, None, self.params)
 
 def test_inet_conv():
     ipv4 = b'8.8.4.4'
