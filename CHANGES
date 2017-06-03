@@ -1,3 +1,8 @@
+3.3.3 2017-06-03
+- add DNS cache
+- add tls1.2_ticket_fastauth
+- fix bugs
+
 3.3.2 2017-05-20
 - revert http reply
 - refine tls1.2_ticket_auth error detector
