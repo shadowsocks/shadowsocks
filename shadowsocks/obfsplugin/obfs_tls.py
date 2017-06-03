@@ -41,6 +41,8 @@ def create_tls_ticket_auth_obfs(method):
 obfs_map = {
         'tls1.2_ticket_auth': (create_tls_ticket_auth_obfs,),
         'tls1.2_ticket_auth_compatible': (create_tls_ticket_auth_obfs,),
+        'tls1.2_ticket_fastauth': (create_tls_ticket_auth_obfs,),
+        'tls1.2_ticket_fastauth_compatible': (create_tls_ticket_auth_obfs,),
 }
 
 def match_begin(str1, str2):
