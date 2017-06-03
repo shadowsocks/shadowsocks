@@ -352,7 +352,7 @@ class UDPAsyncDNSHandler(object):
     def resolve(self, dns_resolver, remote_addr, call_back):
         if remote_addr in UDPAsyncDNSHandler.dns_cache:
             if call_back:
-                call_back(remote_addr, None, UDPAsyncDNSHandler.dns_cache[remote_addr], True, *self.params)
+                call_back(remote_addr, UDPAsyncDNSHandler.dns_cache[remote_addr], self.params)
         else:
             self.call_back = call_back
             self.remote_addr = remote_addr
@@ -367,7 +367,7 @@ class UDPAsyncDNSHandler(object):
             ip = result[1]
             if ip:
                 if self.call_back:
-                    self.call_back(self.remote_addr, None, ip, True, *self.params)
+                    self.call_back(self.remote_addr, ip, self.params)
                     return
         logging.warning("can't resolve %s" % (self.remote_addr,))
 

@@ -347,9 +347,9 @@ class TCPRelayHandler(object):
                             handler = common.UDPAsyncDNSHandler(data[header_length:])
                             handler.resolve(self._dns_resolver, (dest_addr, dest_port), self._handle_server_dns_resolved)
                         else:
-                            return self._handle_server_dns_resolved(data[header_length:], (dest_addr, dest_port), dest_addr)
+                            return self._handle_server_dns_resolved((dest_addr, dest_port), dest_addr, data[header_length:])
                     else:
-                        return self._handle_server_dns_resolved(data[header_length:], (dest_addr, dest_port), dest_addr)
+                        return self._handle_server_dns_resolved((dest_addr, dest_port), dest_addr, data[header_length:])
 
             except Exception as e:
                 #trace = traceback.format_exc()
@@ -412,7 +412,7 @@ class TCPRelayHandler(object):
                 logging.error('write_all_to_sock:unknown socket from %s:%d' % (self._client_address[0], self._client_address[1]))
         return True
 
-    def _handle_server_dns_resolved(self, data, remote_addr, server_addr):
+    def _handle_server_dns_resolved(self, remote_addr, server_addr, data):
         try:
             addrs = socket.getaddrinfo(server_addr, remote_addr[1], 0, socket.SOCK_DGRAM, socket.SOL_UDP)
             if not addrs: # drop
