@@ -414,7 +414,6 @@ class TCPRelayHandler(object):
 
     def _handle_server_dns_resolved(self, error, remote_addr, server_addr, data):
         if error:
-            self.destroy()
             return
         try:
             addrs = socket.getaddrinfo(server_addr, remote_addr[1], 0, socket.SOCK_DGRAM, socket.SOL_UDP)
