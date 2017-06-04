@@ -239,7 +239,7 @@ General options:
 
 
 def main():
-	shortopts = 'adeclu:i:p:k:O:o:G:g:m:t:f:h'
+	shortopts = 'adeclu:i:p:k:O:o:G:g:m:t:f:hs:S:'
 	longopts = ['help']
 	action = None
 	user = {}
@@ -302,6 +302,10 @@ def main():
 				user['obfs_param'] = value
 			elif key == '-G':
 				user['protocol_param'] = value
+			elif key == '-s':
+				user['speed_limit_per_con'] = int(value)
+			elif key == '-S':
+				user['speed_limit_per_user'] = int(value)
 			elif key == '-m':
 				if value in fast_set_method:
 					user['method'] = fast_set_method[value]

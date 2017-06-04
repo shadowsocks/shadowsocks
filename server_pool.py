@@ -28,6 +28,7 @@ import time
 from shadowsocks import shell, eventloop, tcprelay, udprelay, asyncdns, common
 import threading
 import sys
+import traceback
 from socket import *
 from configloader import load_config, get_config
 
@@ -80,12 +81,10 @@ class ServerPool(object):
 			loop.run()
 		except (KeyboardInterrupt, IOError, OSError) as e:
 			logging.error(e)
-			import traceback
 			traceback.print_exc()
 			os.exit(0)
 		except Exception as e:
 			logging.error(e)
-			import traceback
 			traceback.print_exc()
 
 	def server_is_run(self, port):

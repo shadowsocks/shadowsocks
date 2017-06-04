@@ -273,6 +273,11 @@ class TCPRelayHandler(object):
     def _update_user(self, user):
         self._user = user
         self._user_id = struct.unpack('<I', user)[0]
+        if self._user in self._server.server_users_cfg:
+            cfg = self._server.server_users_cfg[self._user]
+            speed = cfg.get('speed_limit_per_con', 0)
+            self.speed_tester_u.update_limit(speed)
+            self.speed_tester_d.update_limit(speed)
 
     def _update_activity(self, data_len=0):
         # tell the TCP Relay we have activities recently
@@ -1168,6 +1173,7 @@ class TCPRelay(object):
         self.server_transfer_ul = 0
         self.server_transfer_dl = 0
         self.server_users = {}
+        self.server_users_cfg = {}
         self.server_user_transfer_ul = {}
         self.server_user_transfer_dl = {}
         self.mu = False
@@ -1258,9 +1264,9 @@ class TCPRelay(object):
                             self.del_user(uid)
                         else:
                             passwd = items[1]
-                            self.add_user(uid, passwd)
+                            self.add_user(uid, {'password':passwd})
 
-    def update_user(self, id, passwd):
+    def _update_user(self, id, passwd):
         uid = struct.pack('<I', id)
         self.add_user(uid, passwd)
 
@@ -1273,12 +1279,25 @@ class TCPRelay(object):
             uid = struct.pack('<I', id)
             self.add_user(uid, users[id])
 
-    def add_user(self, user, passwd): # user: binstr[4], passwd: str
-        self.server_users[user] = common.to_bytes(passwd)
+    def add_user(self, uid, cfg): # user: binstr[4], passwd: str
+        passwd = cfg['password']
+        self.server_users[uid] = common.to_bytes(passwd)
+        self.server_users_cfg[uid] = cfg
+        speed = cfg.get("speed_limit_per_user", 0)
+        if uid in self._speed_tester_u:
+            self._speed_tester_u[uid].update_limit(speed)
+        else:
+            self._speed_tester_u[uid] = SpeedTester(speed)
+        if uid in self._speed_tester_d:
+            self._speed_tester_d[uid].update_limit(speed)
+        else:
+            self._speed_tester_d[uid] = SpeedTester(speed)
 
-    def del_user(self, user):
+    def del_user(self, uid):
         if user in self.server_users:
-            del self.server_users[user]
+            del self.server_users[uid]
+        if user in self.server_users_cfg:
+            del self.server_users_cfg[uid]
 
     def add_transfer_u(self, user, transfer):
         if user is None:

@@ -249,9 +249,9 @@ class UDPRelay(object):
                             self.del_user(uid)
                         else:
                             passwd = items[1]
-                            self.add_user(uid, passwd)
+                            self.add_user(uid, {'password':passwd})
 
-    def update_user(self, id, passwd):
+    def _update_user(self, id, passwd):
         uid = struct.pack('<I', id)
         self.add_user(uid, passwd)
 
@@ -264,12 +264,13 @@ class UDPRelay(object):
             uid = struct.pack('<I', id)
             self.add_user(uid, users[id])
 
-    def add_user(self, user, passwd): # user: binstr[4], passwd: str
-        self.server_users[user] = common.to_bytes(passwd)
+    def add_user(self, uid, cfg): # user: binstr[4], passwd: str
+        passwd = cfg['password']
+        self.server_users[uid] = common.to_bytes(passwd)
 
-    def del_user(self, user):
-        if user in self.server_users:
-            del self.server_users[user]
+    def del_user(self, uid):
+        if uid in self.server_users:
+            del self.server_users[uid]
 
     def add_transfer_u(self, user, transfer):
         if user is None:

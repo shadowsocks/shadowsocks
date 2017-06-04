@@ -123,7 +123,7 @@ class TransferBase(object):
 				continue
 
 			if allow:
-				allow_users[port] = passwd
+				allow_users[port] = cfg
 				if 'protocol' in cfg and 'protocol_param' in cfg and common.to_str(cfg['protocol']) in obfs.mu_protocol():
 					if '#' in common.to_str(cfg['protocol_param']):
 						mu_servers[port] = passwd
