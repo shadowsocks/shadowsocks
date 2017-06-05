@@ -139,7 +139,7 @@ class TransferBase(object):
 				if not cfgchange and port in ServerPool.get_instance().tcp_ipv6_servers_pool:
 					relay = ServerPool.get_instance().tcp_ipv6_servers_pool[port]
 					for name in merge_config_keys:
-						if name in cfg and not self.cmp(cfg[name], relay._config[name]):
+						if (name in cfg) and ((name not in relay._config) or not self.cmp(cfg[name], relay._config[name])):
 							cfgchange = True
 							break
 
