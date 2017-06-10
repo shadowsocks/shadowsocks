@@ -29,3 +29,17 @@ htmlcov
 
 .DS_Store
 .idea
+tags
+
+#Emacs
+.#*
+venv/
+
+# VS-code
+.vscode/
+
+# Pycharm
+.idea
+
+#ss
+config.json

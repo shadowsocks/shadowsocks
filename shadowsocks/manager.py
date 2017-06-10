@@ -71,6 +71,7 @@ class Manager(object):
 
         port_password = config['port_password']
         del config['port_password']
+        config['crypto_path'] = config.get('crypto_path', dict())
         for port, password in port_password.items():
             a_config = config.copy()
             a_config['server_port'] = int(port)
@@ -202,7 +203,7 @@ def test():
     import time
     import threading
     import struct
-    from shadowsocks import encrypt
+    from shadowsocks import cryptor
 
     logging.basicConfig(level=5,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -252,7 +253,7 @@ def test():
 
     # test statistics for TCP
     header = common.pack_addr(b'google.com') + struct.pack('>H', 80)
-    data = encrypt.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb', 1,
+    data = cryptor.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb',
                                header + b'GET /\r\n\r\n')
     tcp_cli = socket.socket()
     tcp_cli.connect(('127.0.0.1', 7001))
@@ -270,7 +271,7 @@ def test():
 
     # test statistics for UDP
     header = common.pack_addr(b'127.0.0.1') + struct.pack('>H', 80)
-    data = encrypt.encrypt_all(b'foobar2', 'aes-256-cfb', 1,
+    data = cryptor.encrypt_all(b'foobar2', 'aes-256-cfb',
                                header + b'test')
     udp_cli = socket.socket(type=socket.SOCK_DGRAM)
     udp_cli.sendto(data, ('127.0.0.1', 8382))

@@ -68,7 +68,7 @@ import struct
 import errno
 import random
 
-from shadowsocks import encrypt, eventloop, lru_cache, common, shell
+from shadowsocks import cryptor, eventloop, lru_cache, common, shell
 from shadowsocks.common import parse_header, pack_addr, onetimeauth_verify, \
     onetimeauth_gen, ONETIMEAUTH_BYTES, ADDRTYPE_AUTH
 
@@ -82,6 +82,7 @@ def client_key(source_addr, server_af):
 
 
 class UDPRelay(object):
+
     def __init__(self, config, dns_resolver, is_local, stat_callback=None):
         self._config = config
         if is_local:
@@ -94,14 +95,15 @@ class UDPRelay(object):
             self._listen_port = config['server_port']
             self._remote_addr = None
             self._remote_port = None
+        self.tunnel_remote = config.get('tunnel_remote', "8.8.8.8")
+        self.tunnel_remote_port = config.get('tunnel_remote_port', 53)
+        self.tunnel_port = config.get('tunnel_port', 53)
+        self._is_tunnel = False
         self._dns_resolver = dns_resolver
         self._password = common.to_bytes(config['password'])
         self._method = config['method']
         self._timeout = config['timeout']
-        if 'one_time_auth' in config and config['one_time_auth']:
-            self._ota_enable = True
-        else:
-            self._ota_enable = False
+        self._ota_enable = config.get('one_time_auth', False)
         self._ota_enable_session = self._ota_enable
         self._is_local = is_local
         self._cache = lru_cache.LRUCache(timeout=config['timeout'],
@@ -112,10 +114,8 @@ class UDPRelay(object):
         self._eventloop = None
         self._closed = False
         self._sockets = set()
-        if 'forbidden_ip' in config:
-            self._forbidden_iplist = config['forbidden_ip']
-        else:
-            self._forbidden_iplist = None
+        self._forbidden_iplist = config.get('forbidden_ip')
+        self._crypto_path = config['crypto_path']
 
         addrs = socket.getaddrinfo(self._listen_addr, self._listen_port, 0,
                                    socket.SOCK_DGRAM, socket.SOL_UDP)
@@ -158,27 +158,37 @@ class UDPRelay(object):
         if self._stat_callback:
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
-            frag = common.ord(data[2])
-            if frag != 0:
-                logging.warn('UDP drop a message since frag is not 0')
-                return
+            if self._is_tunnel:
+                # add ss header to data
+                tunnel_remote = self.tunnel_remote
+                tunnel_remote_port = self.tunnel_remote_port
+                data = common.add_header(tunnel_remote,
+                                         tunnel_remote_port, data)
             else:
-                data = data[3:]
+                frag = common.ord(data[2])
+                if frag != 0:
+                    logging.warn('UDP drop a message since frag is not 0')
+                    return
+                else:
+                    data = data[3:]
         else:
-            data, key, iv = encrypt.dencrypt_all(self._password,
-                                                 self._method,
-                                                 data)
             # decrypt data
+            try:
+                data, key, iv = cryptor.decrypt_all(self._password,
+                                                    self._method,
+                                                    data, self._crypto_path)
+            except Exception:
+                logging.debug('UDP handle_server: decrypt data failed')
+                return
             if not data:
-                logging.debug(
-                    'UDP handle_server: data is empty after decrypt'
-                )
+                logging.debug('UDP handle_server: data is empty after decrypt')
                 return
         header_result = parse_header(data)
         if header_result is None:
             return
         addrtype, dest_addr, dest_port, header_length = header_result
-
+        logging.info("udp data to %s:%d from %s:%d"
+                     % (dest_addr, dest_port, r_addr[0], r_addr[1]))
         if self._is_local:
             server_addr, server_port = self._get_a_server()
         else:
@@ -228,11 +238,16 @@ class UDPRelay(object):
             self._eventloop.add(client, eventloop.POLL_IN, self)
 
         if self._is_local:
-            key, iv, m = encrypt.gen_key_iv(self._password, self._method)
+            key, iv, m = cryptor.gen_key_iv(self._password, self._method)
             # spec https://shadowsocks.org/en/spec/one-time-auth.html
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(key, iv, data)
-            data = encrypt.encrypt_all_m(key, iv, m, self._method, data)
+            try:
+                data = cryptor.encrypt_all_m(key, iv, m, self._method, data,
+                                             self._crypto_path)
+            except Exception:
+                logging.debug("UDP handle_server: encrypt data failed")
+                return
             if not data:
                 return
         else:
@@ -261,22 +276,38 @@ class UDPRelay(object):
                 # drop
                 return
             data = pack_addr(r_addr[0]) + struct.pack('>H', r_addr[1]) + data
-            response = encrypt.encrypt_all(self._password, self._method, 1,
-                                           data)
+            try:
+                response = cryptor.encrypt_all(self._password,
+                                               self._method, data,
+                                               self._crypto_path)
+            except Exception:
+                logging.debug("UDP handle_client: encrypt data failed")
+                return
             if not response:
                 return
         else:
-            data = encrypt.encrypt_all(self._password, self._method, 0,
-                                       data)
+            try:
+                data, key, iv = cryptor.decrypt_all(self._password,
+                                                    self._method, data,
+                                                    self._crypto_path)
+            except Exception:
+                logging.debug('UDP handle_client: decrypt data failed')
+                return
             if not data:
                 return
             header_result = parse_header(data)
             if header_result is None:
                 return
             addrtype, dest_addr, dest_port, header_length = header_result
-            response = b'\x00\x00\x00' + data
+            if self._is_tunnel:
+                # remove ss header
+                response = data[header_length:]
+            else:
+                response = b'\x00\x00\x00' + data
         client_addr = self._client_fd_to_server_addr.get(sock.fileno())
         if client_addr:
+            logging.debug("send udp response to %s:%d"
+                          % (client_addr[0], client_addr[1]))
             self._server_socket.sendto(response, client_addr)
         else:
             # this packet is from somewhere else we know
