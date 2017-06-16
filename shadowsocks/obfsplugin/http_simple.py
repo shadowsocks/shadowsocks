@@ -250,7 +250,7 @@ class http_post(http_simple):
             http_head += b"User-Agent: " + random.choice(self.user_agent) + b"\r\n"
             http_head += b"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Encoding: gzip, deflate\r\n"
             http_head += b"Content-Type: multipart/form-data; boundary=" + self.boundary() + b"\r\nDNT: 1\r\n"
-            http_head += "Connection: keep-alive\r\n\r\n"
+            http_head += b"Connection: keep-alive\r\n\r\n"
         self.has_sent_header = True
         return http_head + buf
 
