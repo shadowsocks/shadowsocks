@@ -219,7 +219,7 @@ class http_post(http_simple):
         super(http_post, self).__init__(method)
 
     def boundary(self):
-        return b''.join([random.choice(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") for i in range(32)])
+        return b''.join([chr(random.choice(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")) for i in range(32)])
 
     def client_encode(self, buf):
         if self.has_sent_header:
