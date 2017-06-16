@@ -2,9 +2,10 @@ FROM alpine
 
 ENV SERVER_ADDR 0.0.0.0
 ENV SERVER_PORT 51348
-ENV PASSWORD=
+ENV PASSWORD    psw
 ENV METHOD      aes-128-ctr
 ENV PROTOCOL    auth_aes128_md5
+ENV PROTOCOLPARAM   32
 ENV OBFS        tls1.2_ticket_auth_compatible
 ENV TIMEOUT     300
 ENV DNS_ADDR    8.8.8.8
@@ -20,13 +21,13 @@ RUN apk update \
 
 
 
-RUN wget --no-check-certificate https://github.com/breakwa11/shadowsocks/archive/manyuser.zip -O /tmp/manyuser.zip \
+RUN wget --no-check-certificate https://github.com/shadowsocksr/shadowsocksr/archive/manyuser.zip -O /tmp/manyuser.zip \
     && unzip -d /tmp /tmp/manyuser.zip \
-    && mv /tmp/shadowsocksr-manyuser/shadowsocks ~/shadowsocks \
+    && mv /tmp/shadowsocksr-manyuser ~/shadowsocksr \
     && rm -rf /tmp/*
 
 
-WORKDIR ~/shadowsocks
+WORKDIR ~/shadowsocksr/shadowsocks
 
 
-CMD python ~/shadowsocks/server.py -p $SERVER_PORT -k $PASSWORD -m $METHOD -O $PROTOCOL -o $OBFS
+CMD python ~/shadowsocksr/shadowsocks/server.py -p $SERVER_PORT -k $PASSWORD -m $METHOD -O $PROTOCOL -o $OBFS -G $PROTOCOLPARAM
