@@ -53,7 +53,7 @@ instead.
 
 ### Usage with Config File
 
-[Create configeration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
+[Create configuration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
 
 To start:
 
