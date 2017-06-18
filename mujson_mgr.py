@@ -214,11 +214,11 @@ def print_server_help():
 	print('''usage: python mujson_manage.py -a|-d|-e|-c|-l [OPTION]...
 
 Actions:
-  -a ADD               add/edit a user
-  -d DELETE            delete a user
-  -e EDIT              edit a user
-  -c CLEAR             set u/d to zero
-  -l LIST              display a user infomation or all users infomation
+  -a                   add/edit a user
+  -d                   delete a user
+  -e                   edit a user
+  -c                   set u&d to zero
+  -l                   display a user infomation or all users infomation
 
 Options:
   -u USER              the user name
@@ -232,6 +232,8 @@ Options:
   -t TRANSFER          max transfer for G bytes, default: 8388608 (8 PB or 8192 TB)
   -f FORBID            set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
   -i MUID              set sub id to display (only work with -l)
+  -s SPEED             set speed_limit_per_con
+  -S SPEED             set speed_limit_per_user
 
 General options:
   -h, --help           show this help message and exit
