@@ -1294,9 +1294,9 @@ class TCPRelay(object):
             self._speed_tester_d[uid] = SpeedTester(speed)
 
     def del_user(self, uid):
-        if user in self.server_users:
+        if uid in self.server_users:
             del self.server_users[uid]
-        if user in self.server_users_cfg:
+        if uid in self.server_users_cfg:
             del self.server_users_cfg[uid]
 
     def add_transfer_u(self, user, transfer):
