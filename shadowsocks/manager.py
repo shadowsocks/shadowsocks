@@ -45,6 +45,8 @@ class Manager(object):
         self._control_client_addr = None
         try:
             manager_address = config['manager_address']
+            if hasattr(manager_address, 'decode'):
+                manager_address = manager_address.decode('utf-8')
             if ':' in manager_address:
                 addr = manager_address.rsplit(':', 1)
                 addr = addr[0], int(addr[1])
