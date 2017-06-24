@@ -109,6 +109,14 @@ class Manager(object):
             logging.error("server not exist at %s:%d" % (config['server'],
                                                          port))
 
+    def list_port(self):
+        data_list = list(self._relays.keys())
+        # use compact JSON format (without space)
+        data = common.to_bytes(json.dumps(data_list,
+                                          separators=(',', ':')))
+        rv = b'ports: ' + data
+        return rv
+
     def handle_event(self, sock, fd, event):
         if sock == self._control_socket and event == eventloop.POLL_IN:
             data, self._control_client_addr = sock.recvfrom(BUF_SIZE)
@@ -128,6 +136,9 @@ class Manager(object):
                     elif command == 'remove':
                         self.remove_port(a_config)
                         self._send_control_data(b'ok')
+                    elif command == 'list':
+                        msg = self.list_port()
+                        self._send_control_data(msg)
                     elif command == 'ping':
                         self._send_control_data(b'pong')
                     else:
@@ -216,6 +227,7 @@ def test():
     def run_server():
         config = {
             'server': '127.0.0.1',
+            'server_port': 33379,
             'local_port': 1081,
             'port_password': {
                 '8381': 'foobar1',
@@ -238,13 +250,20 @@ def test():
     cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     cli.connect(('127.0.0.1', 6001))
 
-    # test add and remove
+    # test list, add and remove
     time.sleep(1)
     cli.send(b'add: {"server_port":7001, "password":"asdfadsfasdf"}')
     time.sleep(1)
     assert 7001 in manager._relays
     data, addr = cli.recvfrom(1506)
     assert b'ok' in data
+
+    cli.send(b'list')
+    time.sleep(1)
+    data, addr = cli.recvfrom(1506)
+    assert b'7001' in data
+    assert b'8381' in data
+    assert b'8382' in data
 
     cli.send(b'remove: {"server_port":8381}')
     time.sleep(1)
@@ -253,8 +272,15 @@ def test():
     assert b'ok' in data
     logging.info('add and remove test passed')
 
+    cli.send(b'list')
+    time.sleep(1)
+    data, addr = cli.recvfrom(1506)
+    assert b'7001' in data
+    assert b'8381' not in data
+    assert b'8382' in data
+
     # test statistics for TCP
-    header = common.pack_addr(b'google.com') + struct.pack('>H', 80)
+    header = common.pack_addr(b'baidu.com') + struct.pack('>H', 80)
     data = cryptor.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb',
                                header + b'GET /\r\n\r\n')
     tcp_cli = socket.socket()
