@@ -7,7 +7,7 @@ ip_count=`echo $ip_addr|grep -e "^[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+$" -c`
 if [[ $ip_count == 1 ]]; then
 	echo "server IP is "${ip_addr}
 	sed -i 's/SERVER_PUB_ADDR = .\+/SERVER_PUB_ADDR = '${ip_addr}'/g' userapiconfig.py
-	user_count=`python mujson_mgr.py -l|grep -c ""`
+	user_count=`python mujson_mgr.py -l|grep -c -e "[0-9]"`
 	if [[ $user_count == 0 ]]; then
 		port=`python -c 'import random;print(random.randint(10000, 65536))'`
 		python mujson_mgr.py -a -p ${port}
