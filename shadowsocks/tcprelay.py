@@ -138,6 +138,7 @@ class TCPRelayHandler(object):
         self._remote_udp = False
         self._config = config
         self._dns_resolver = dns_resolver
+        self._add_ref = 0
         if not self._create_encryptor(config):
             return
 
@@ -217,6 +218,7 @@ class TCPRelayHandler(object):
         self._update_activity()
         self._server.add_connection(1)
         self._server.stat_add(self._client_address[0], 1)
+        self._add_ref = 1
         self.speed_tester_u = SpeedTester(config.get("speed_limit_per_con", 0))
         self.speed_tester_d = SpeedTester(config.get("speed_limit_per_con", 0))
         self._recv_u_max_size = BUF_SIZE
@@ -1159,8 +1161,9 @@ class TCPRelayHandler(object):
         self._encryptor = None
         self._dns_resolver.remove_callback(self._handle_dns_resolved)
         self._server.remove_handler(self)
-        self._server.add_connection(-1)
-        self._server.stat_add(self._client_address[0], -1)
+        if self._add_ref > 0:
+            self._server.add_connection(-1)
+            self._server.stat_add(self._client_address[0], -1)
 
 class TCPRelay(object):
     def __init__(self, config, dns_resolver, is_local, stat_callback=None, stat_counter=None):
