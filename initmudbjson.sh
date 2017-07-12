@@ -6,7 +6,7 @@ ip_addr=`ifconfig -a|grep inet|grep -v inet6|grep -v "127.0.0."|grep -v -e "192\
 ip_count=`echo $ip_addr|grep -e "^[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+$" -c`
 
 if [[ $ip_count == 1 ]]; then
-	ip_addr=`ip a|grep inet|grep -v inet6|grep -v "127.0.0."|grep -v -e "192\.168\..[0-9]\+\.[0-9]\+"|grep -v -e "10\.[0-9]\+\.[0-9]\+\.[0-9]\+"|awk '{print $2}'"`
+	ip_addr=`ip a|grep inet|grep -v inet6|grep -v "127.0.0."|grep -v -e "192\.168\..[0-9]\+\.[0-9]\+"|grep -v -e "10\.[0-9]\+\.[0-9]\+\.[0-9]\+"|awk '{print $2}'`
 	ip_addr=${ip_addr%/*}
 	ip_count=`echo $ip_addr|grep -e "^[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+$" -c`
 fi
