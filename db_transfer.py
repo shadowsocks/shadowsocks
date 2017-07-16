@@ -122,12 +122,14 @@ class TransferBase(object):
 				logging.error('more than one user use the same port [%s]' % (port,))
 				continue
 
+			if 'protocol' in cfg and 'protocol_param' in cfg and common.to_str(cfg['protocol']) in obfs.mu_protocol():
+				if '#' in common.to_str(cfg['protocol_param']):
+					mu_servers[port] = passwd
+					allow = True
+
 			if allow:
-				allow_users[port] = cfg
-				if 'protocol' in cfg and 'protocol_param' in cfg and common.to_str(cfg['protocol']) in obfs.mu_protocol():
-					if '#' in common.to_str(cfg['protocol_param']):
-						mu_servers[port] = passwd
-						del allow_users[port]
+				if port not in mu_servers:
+					allow_users[port] = cfg
 
 				cfgchange = False
 				if port in ServerPool.get_instance().tcp_servers_pool:
