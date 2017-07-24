@@ -224,6 +224,7 @@ class BaseDataCryptor(object):
         return data
 
 class DefaultCryptor(BaseDataCryptor):
+    """ keep data length !!!"""
     @staticmethod
     def encrypt_ss_data(data):
         logging.debug("encrypt ss data:" + str([data]) + "|")
