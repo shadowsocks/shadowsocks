@@ -55,6 +55,7 @@ def print_exception(e):
     if verbose > 0:
         import traceback
         traceback.print_exc()
+        print(traceback.format_exc())
 
 
 def exception_handle(self_, err_msg=None, exit_code=None,

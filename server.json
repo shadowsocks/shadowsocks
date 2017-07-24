@@ -1,0 +1,8 @@
+{
+    "password": "ss@zhang?2017@ss",
+    "method": "aes-256-cfb",
+    "server_port": 2221,
+    "remarks": "",
+    "server": "127.0.0.1",
+    "verbose":1
+}

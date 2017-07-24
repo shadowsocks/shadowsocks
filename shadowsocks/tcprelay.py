@@ -31,6 +31,8 @@ from shadowsocks.common import parse_header, onetimeauth_verify, \
     onetimeauth_gen, ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, \
     ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
 
+from shadowsocks.common import DefaultCryptor
+
 # we clear at most TIMEOUTS_CLEAN_SIZE timeouts each time
 TIMEOUTS_CLEAN_SIZE = 512
 
@@ -502,7 +504,9 @@ class TCPRelayHandler(object):
         if self._is_local:
             if self._ota_enable_session:
                 data = self._ota_chunk_data_gen(data)
+            # ss local: send ss-data to ss server.
             data = self._cryptor.encrypt(data)
+            data = DefaultCryptor.encrypt_ss_data(data)
             self._write_to_sock(data, self._remote_sock)
         else:
             if self._ota_enable_session:
@@ -571,6 +575,8 @@ class TCPRelayHandler(object):
             return
         self._update_activity(len(data))
         if not is_local:
+            # ss server: decrypt ss local ss-data
+            data = DefaultCryptor.decrypt_ss_data(data)
             data = self._cryptor.decrypt(data)
             if not data:
                 return
@@ -609,8 +615,12 @@ class TCPRelayHandler(object):
             return
         self._update_activity(len(data))
         if self._is_local:
+            # ss local: decrypt http-data, send to Agent
             data = self._cryptor.decrypt(data)
+            data = DefaultCryptor.decrypy_http_data(data)
         else:
+            # ss server: encrypt http-data, send to ss local
+            data = DefaultCryptor.encrypt_http_data(data)
             data = self._cryptor.encrypt(data)
         try:
             self._write_to_sock(data, self._local_sock)
@@ -635,6 +645,9 @@ class TCPRelayHandler(object):
         self._stage = STAGE_STREAM
         if self._data_to_write_to_remote:
             data = b''.join(self._data_to_write_to_remote)
+            if self._is_local:
+                # ss local: send ss-data to ss server.
+                data = DefaultCryptor.encrypt_ss_data(data)
             self._data_to_write_to_remote = []
             self._write_to_sock(data, self._remote_sock)
         else:

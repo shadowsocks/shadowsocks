@@ -60,6 +60,11 @@ To start:
     ssserver -c /etc/shadowsocks.json
 
 
+### use you custom cryptor
+change common.py
+    clsss DefaultCryptor
+    encrypt_ss_data, decrypt_ss_data: encrypt/decrypt ss commands, ss local to ss server, ss command and http request
+    encrypt_http_data, decrypt_ss_data: encrypt/decrypt http data, ss server to ss local, http/https response
 Documentation
 -------------
 

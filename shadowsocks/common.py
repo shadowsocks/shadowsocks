@@ -206,6 +206,44 @@ def parse_header(data):
         return None
     return addrtype, to_bytes(dest_addr), dest_port, header_length
 
+class BaseDataCryptor(object):
+    @staticmethod
+    def encrypt_ss_data(data):
+        return data
+
+    @staticmethod
+    def decrypt_ss_data(data):
+        return data
+
+    @staticmethod
+    def encrypt_http_data(data):
+        return data
+
+    @staticmethod
+    def decrypy_http_data(data):
+        return data
+
+class DefaultCryptor(BaseDataCryptor):
+    @staticmethod
+    def encrypt_ss_data(data):
+        logging.debug("encrypt ss data:" + str([data]) + "|")
+        return data[::-1]
+
+    @staticmethod
+    def decrypt_ss_data(data):
+        logging.debug("try decrypt ss data:" + str([data]) + "|")
+        return data[::-1]
+
+    @staticmethod
+    def encrypt_http_data(data):
+        logging.debug("encrypt http data:" + str([data]) + "|")
+        return data[::-1]
+
+    @staticmethod
+    def decrypy_http_data(data):
+        logging.debug("try decrypt http data:" + str([data]) + "|")
+        return data[::-1]
+
 
 class IPNetwork(object):
     ADDRLENGTH = {socket.AF_INET: 32, socket.AF_INET6: 128, False: 0}
@@ -308,3 +346,4 @@ if __name__ == '__main__':
     test_parse_header()
     test_pack_header()
     test_ip_network()
+
