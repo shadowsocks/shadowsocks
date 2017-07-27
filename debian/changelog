@@ -1,3 +1,26 @@
+shadowsocks (2.9.0-2) unstable; urgency=medium
+
+  [ Shell.Xu ]
+  * Fix compatible issue (Closes: #845016)
+
+ -- Shell.Xu <shell909090@gmail.com>  Sun, 20 Nov 2016 14:33:31 +0800
+
+shadowsocks (2.9.0-1) unstable; urgency=medium
+
+  [ Shell Xu ]
+  * Upstream update (Closes: #824640)
+  * Remove reference not exists (Closes: #810688)
+
+  [ Thomas Goirand ]
+  * Added lsb-base as Depends:.
+  * Removed Pre-Depends: dpkg (>= 1.15.6~).
+  * Ran wrap-and-sort -t -a.
+  * Fixed VCS URLs to use https.
+  * Removed useless obsolete version of python-all build-depends.
+  * Fixed debian/copyright ordering.
+
+ -- Shell.Xu <shell909090@gmail.com>  Sat, 01 Oct 2016 16:14:47 +0800
+
 shadowsocks (2.1.0-1) unstable; urgency=low
 
   * Initial release (Closes: #758900)

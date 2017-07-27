@@ -42,13 +42,12 @@ def main():
                          'will be ignored')
     else:
         config['port_password'] = {}
-        server_port = config.get('server_port', None)
-        if server_port:
-            if type(server_port) == list:
-                for a_server_port in server_port:
-                    config['port_password'][a_server_port] = config['password']
-            else:
-                config['port_password'][str(server_port)] = config['password']
+        server_port = config['server_port']
+        if type(server_port) == list:
+            for a_server_port in server_port:
+                config['port_password'][a_server_port] = config['password']
+        else:
+            config['port_password'][str(server_port)] = config['password']
 
     if config.get('manager_address', 0):
         logging.info('entering manager mode')
@@ -59,9 +58,10 @@ def main():
     udp_servers = []
 
     if 'dns_server' in config:  # allow override settings in resolv.conf
-        dns_resolver = asyncdns.DNSResolver(config['dns_server'])
+        dns_resolver = asyncdns.DNSResolver(config['dns_server'],
+                                            config['prefer_ipv6'])
     else:
-        dns_resolver = asyncdns.DNSResolver()
+        dns_resolver = asyncdns.DNSResolver(prefer_ipv6=config['prefer_ipv6'])
 
     port_password = config['port_password']
     del config['port_password']

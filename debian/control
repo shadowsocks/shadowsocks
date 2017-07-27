@@ -2,16 +2,21 @@ Source: shadowsocks
 Section: python
 Priority: extra
 Maintainer: Shell.Xu <shell909090@gmail.com>
-Build-Depends: debhelper (>= 8), python-all (>= 2.6.6-3~), python-setuptools
-Standards-Version: 3.9.5
-Homepage: https://github.com/clowwindy/shadowsocks
-Vcs-Git: git://github.com/shell909090/shadowsocks.git
-Vcs-Browser: http://github.com/shell909090/shadowsocks
+Build-Depends: debhelper (>= 8),
+               python-all,
+               python-setuptools,
+Standards-Version: 3.9.8
+Homepage: https://github.com/shadowsocks/shadowsocks
+Vcs-Git: https://github.com/shell909090/shadowsocks.git
+Vcs-Browser: https://github.com/shell909090/shadowsocks
 
 Package: shadowsocks
 Architecture: all
-Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${misc:Depends}, ${python:Depends}, python-pkg-resources, python-m2crypto
+Depends: lsb-base (>= 3.0-6),
+         python-m2crypto,
+         python-pkg-resources,
+         ${misc:Depends},
+         ${python:Depends},
 Description: Fast tunnel proxy that helps you bypass firewalls
  A secure socks5 proxy, designed to protect your Internet traffic.
  .

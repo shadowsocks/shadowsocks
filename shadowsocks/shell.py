@@ -23,8 +23,12 @@ import json
 import sys
 import getopt
 import logging
+import traceback
+
+from functools import wraps
+
 from shadowsocks.common import to_bytes, to_str, IPNetwork
-from shadowsocks import encrypt
+from shadowsocks import cryptor
 
 
 VERBOSE_LEVEL = 5
@@ -53,6 +57,49 @@ def print_exception(e):
         traceback.print_exc()
 
 
+def exception_handle(self_, err_msg=None, exit_code=None,
+                     destroy=False, conn_err=False):
+    # self_: if function passes self as first arg
+
+    def process_exception(e, self=None):
+        print_exception(e)
+        if err_msg:
+            logging.error(err_msg)
+        if exit_code:
+            sys.exit(1)
+
+        if not self_:
+            return
+
+        if conn_err:
+            addr, port = self._client_address[0], self._client_address[1]
+            logging.error('%s when handling connection from %s:%d' %
+                          (e, addr, port))
+        if self._config['verbose']:
+            traceback.print_exc()
+        if destroy:
+            self.destroy()
+
+    def decorator(func):
+        if self_:
+            @wraps(func)
+            def wrapper(self, *args, **kwargs):
+                try:
+                    func(self, *args, **kwargs)
+                except Exception as e:
+                    process_exception(e, self)
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    func(*args, **kwargs)
+                except Exception as e:
+                    process_exception(e)
+
+        return wrapper
+    return decorator
+
+
 def print_shadowsocks():
     version = ''
     try:
@@ -78,6 +125,29 @@ def check_config(config, is_local):
         # no need to specify configuration for daemon stop
         return
 
+    if is_local:
+        if config.get('server', None) is None:
+            logging.error('server addr not specified')
+            print_local_help()
+            sys.exit(2)
+        else:
+            config['server'] = to_str(config['server'])
+
+        if config.get('tunnel_remote', None) is None:
+            logging.error('tunnel_remote addr not specified')
+            print_local_help()
+            sys.exit(2)
+        else:
+            config['tunnel_remote'] = to_str(config['tunnel_remote'])
+    else:
+        config['server'] = to_str(config.get('server', '0.0.0.0'))
+        try:
+            config['forbidden_ip'] = \
+                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
+        except Exception as e:
+            logging.error(e)
+            sys.exit(2)
+
     if is_local and not config.get('password', None):
         logging.error('password not specified')
         print_help(is_local)
@@ -93,8 +163,13 @@ def check_config(config, is_local):
     if 'local_port' in config:
         config['local_port'] = int(config['local_port'])
 
-    if config.get('server_port', None) and type(config['server_port']) != list:
+    if 'server_port' in config and type(config['server_port']) != list:
         config['server_port'] = int(config['server_port'])
+
+    if 'tunnel_remote_port' in config:
+        config['tunnel_remote_port'] = int(config['tunnel_remote_port'])
+    if 'tunnel_port' in config:
+        config['tunnel_port'] = int(config['tunnel_port'])
 
     if config.get('local_address', '') in [b'0.0.0.0']:
         logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
@@ -121,8 +196,19 @@ def check_config(config, is_local):
         if os.name != 'posix':
             logging.error('user can be used only on Unix')
             sys.exit(1)
+    if config.get('dns_server', None) is not None:
+        if type(config['dns_server']) != list:
+            config['dns_server'] = to_str(config['dns_server'])
+        else:
+            config['dns_server'] = [to_str(ds) for ds in config['dns_server']]
+        logging.info('Specified DNS server: %s' % config['dns_server'])
 
-    encrypt.try_cipher(config['password'], config['method'])
+    config['crypto_path'] = {'openssl': config['libopenssl'],
+                             'mbedtls': config['libmbedtls'],
+                             'sodium': config['libsodium']}
+
+    cryptor.try_cipher(config['password'], config['method'],
+                       config['crypto_path'])
 
 
 def get_config(is_local):
@@ -131,13 +217,14 @@ def get_config(is_local):
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
-        shortopts = 'hd:s:b:p:k:l:m:c:t:vq'
+        shortopts = 'hd:s:b:p:k:l:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'user=',
-                    'version']
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'version']
     else:
-        shortopts = 'hd:s:p:k:m:c:t:vq'
+        shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
-                    'forbidden-ip=', 'user=', 'manager-address=', 'version']
+                    'forbidden-ip=', 'user=', 'manager-address=', 'version',
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -175,14 +262,22 @@ def get_config(is_local):
                 v_count += 1
                 # '-vv' turns on more verbose mode
                 config['verbose'] = v_count
+            elif key == '-a':
+                config['one_time_auth'] = True
             elif key == '-t':
                 config['timeout'] = int(value)
             elif key == '--fast-open':
                 config['fast_open'] = True
+            elif key == '--libopenssl':
+                config['libopenssl'] = to_str(value)
+            elif key == '--libmbedtls':
+                config['libmbedtls'] = to_str(value)
+            elif key == '--libsodium':
+                config['libsodium'] = to_str(value)
             elif key == '--workers':
                 config['workers'] = int(value)
             elif key == '--manager-address':
-                config['manager_address'] = value
+                config['manager_address'] = to_str(value)
             elif key == '--user':
                 config['user'] = to_str(value)
             elif key == '--forbidden-ip':
@@ -205,6 +300,8 @@ def get_config(is_local):
             elif key == '-q':
                 v_count -= 1
                 config['verbose'] = v_count
+            elif key == '--prefer-ipv6':
+                config['prefer_ipv6'] = True
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
         print_help(is_local)
@@ -226,22 +323,17 @@ def get_config(is_local):
     config['verbose'] = config.get('verbose', False)
     config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
     config['local_port'] = config.get('local_port', 1080)
-    if is_local:
-        if config.get('server', None) is None:
-            logging.error('server addr not specified')
-            print_local_help()
-            sys.exit(2)
-        else:
-            config['server'] = to_str(config['server'])
-    else:
-        config['server'] = to_str(config.get('server', '0.0.0.0'))
-        try:
-            config['forbidden_ip'] = \
-                IPNetwork(config.get('forbidden_ip', '127.0.0.0/8,::1/128'))
-        except Exception as e:
-            logging.error(e)
-            sys.exit(2)
-    config['server_port'] = config.get('server_port', None)
+    config['one_time_auth'] = config.get('one_time_auth', False)
+    config['prefer_ipv6'] = config.get('prefer_ipv6', False)
+    config['server_port'] = config.get('server_port', 8388)
+    config['dns_server'] = config.get('dns_server', None)
+    config['libopenssl'] = config.get('libopenssl', None)
+    config['libmbedtls'] = config.get('libmbedtls', None)
+    config['libsodium'] = config.get('libsodium', None)
+
+    config['tunnel_remote'] = to_str(config.get('tunnel_remote', '8.8.8.8'))
+    config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
+    config['tunnel_port'] = config.get('tunnel_port', 53)
 
     logging.getLogger('').handlers = []
     logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
@@ -286,15 +378,40 @@ Proxy options:
   -l LOCAL_PORT          local port, default: 1080
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
+                         Sodium:
+                            chacha20-poly1305, chacha20-ietf-poly1305,
+                            xchacha20-ietf-poly1305,
+                            sodium:aes-256-gcm,
+                            salsa20, chacha20, chacha20-ietf.
+                         Sodium 1.0.12:
+                            xchacha20
+                         OpenSSL:
+                            aes-{128|192|256}-gcm, aes-{128|192|256}-cfb,
+                            aes-{128|192|256}-ofb, aes-{128|192|256}-ctr,
+                            camellia-{128|192|256}-cfb,
+                            bf-cfb, cast5-cfb, des-cfb, idea-cfb,
+                            rc2-cfb, seed-cfb,
+                            rc4, rc4-md5, table.
+                         OpenSSL 1.1:
+                            aes-{128|192|256}-ocb
+                         mbedTLS:
+                            mbedtls:aes-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-ctr,
+                            mbedtls:camellia-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-gcm
   -t TIMEOUT             timeout in seconds, default: 300
+  -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
+  --libopenssl=PATH      custom openssl crypto lib path
+  --libmbedtls=PATH      custom mbedtls crypto lib path
+  --libsodium=PATH       custom sodium crypto lib path
 
 General options:
   -h, --help             show this help message and exit
   -d start/stop/restart  daemon mode
-  --pid-file PID_FILE    pid file for daemon mode
-  --log-file LOG_FILE    log file for daemon mode
-  --user USER            username to run as
+  --pid-file=PID_FILE    pid file for daemon mode
+  --log-file=LOG_FILE    log file for daemon mode
+  --user=USER            username to run as
   -v, -vv                verbose mode
   -q, -qq                quiet mode, only show warnings/errors
   --version              show version information
@@ -315,11 +432,37 @@ Proxy options:
   -p SERVER_PORT         server port, default: 8388
   -k PASSWORD            password
   -m METHOD              encryption method, default: aes-256-cfb
+                         Sodium:
+                            chacha20-poly1305, chacha20-ietf-poly1305,
+                            xchacha20-ietf-poly1305,
+                            sodium:aes-256-gcm,
+                            salsa20, chacha20, chacha20-ietf.
+                         Sodium 1.0.12:
+                            xchacha20
+                         OpenSSL:
+                            aes-{128|192|256}-gcm, aes-{128|192|256}-cfb,
+                            aes-{128|192|256}-ofb, aes-{128|192|256}-ctr,
+                            camellia-{128|192|256}-cfb,
+                            bf-cfb, cast5-cfb, des-cfb, idea-cfb,
+                            rc2-cfb, seed-cfb,
+                            rc4, rc4-md5, table.
+                         OpenSSL 1.1:
+                            aes-{128|192|256}-ocb
+                         mbedTLS:
+                            mbedtls:aes-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-ctr,
+                            mbedtls:camellia-{128|192|256}-cfb128,
+                            mbedtls:aes-{128|192|256}-gcm
   -t TIMEOUT             timeout in seconds, default: 300
+  -a ONE_TIME_AUTH       one time auth
   --fast-open            use TCP_FASTOPEN, requires Linux 3.7+
-  --workers WORKERS      number of workers, available on Unix/Linux
-  --forbidden-ip IPLIST  comma seperated IP list forbidden to connect
-  --manager-address ADDR optional server manager UDP address, see wiki
+  --workers=WORKERS      number of workers, available on Unix/Linux
+  --forbidden-ip=IPLIST  comma seperated IP list forbidden to connect
+  --manager-address=ADDR optional server manager UDP address, see wiki
+  --prefer-ipv6          resolve ipv6 address first
+  --libopenssl=PATH      custom openssl crypto lib path
+  --libmbedtls=PATH      custom mbedtls crypto lib path
+  --libsodium=PATH       custom sodium crypto lib path
 
 General options:
   -h, --help             show this help message and exit

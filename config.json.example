@@ -1,0 +1,17 @@
+{
+    "server":"127.0.0.1",
+    "server_port":8388,
+    "local_port":1080,
+    "password":"password",
+    "timeout":600,
+    "method":"aes-256-cfb",
+    "local_address":"127.0.0.1",
+    "fast_open":false,
+    "tunnel_remote":"8.8.8.8",
+    "dns_server":["8.8.8.8", "8.8.4.4"],
+    "tunnel_remote_port":53,
+    "tunnel_port":53,
+    "libopenssl":"C:\\Program Files\\Git\\mingw64\\bin\\libeay32.dll",
+    "libsodium":"/usr/local/lib/libsodium.so",
+    "libmbedtls":"/usr/local/lib/libmbedcrypto.2.4.0.dylib"
+}

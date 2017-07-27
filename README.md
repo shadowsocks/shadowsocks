@@ -1,6 +1,9 @@
 shadowsocks
 ===========
 
+[![PyPI version]][PyPI]
+[![Build Status]][Travis CI]
+
 A fast tunnel proxy that helps you bypass firewalls.
 
 Features:
@@ -18,16 +21,16 @@ Server
 Debian / Ubuntu:
 
     apt-get install python-pip
-    pip install shadowsocks
+    pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
 CentOS:
 
     yum install python-setuptools && easy_install pip
-    pip install shadowsocks
+    pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
 Windows:
 
-See [Install Server on Windows]
+See [Install Shadowsocks Server on Windows](https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows).
 
 ### Usage
 
@@ -48,12 +51,33 @@ To check the log:
 Check all the options via `-h`. You can also use a [Configuration] file
 instead.
 
+### Usage with Config File
+
+[Create configeration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
+
+To start:
+
+    ssserver -c /etc/shadowsocks.json
+
+
 Documentation
 -------------
 
-You can find all the documentation in the [Wiki].
+You can find all the documentation in the [Wiki](https://github.com/shadowsocks/shadowsocks/wiki).
 
 License
 -------
 
 Apache License
+
+
+
+
+
+
+
+[Build Status]:      https://img.shields.io/travis/shadowsocks/shadowsocks/master.svg?style=flat
+[PyPI]:              https://pypi.python.org/pypi/shadowsocks
+[PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
+[Travis CI]:         https://travis-ci.org/shadowsocks/shadowsocks
+

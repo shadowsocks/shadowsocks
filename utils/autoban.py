@@ -38,7 +38,7 @@ if __name__ == '__main__':
     banned = set()
     for line in sys.stdin:
         if 'can not parse header when' in line:
-            ip = line.split()[-1].split(':')[0]
+            ip = line.split()[-1].split(':')[-2]
             if ip not in ips:
                 ips[ip] = 1
                 print(ip)
