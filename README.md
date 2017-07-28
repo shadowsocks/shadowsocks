@@ -20,7 +20,7 @@ Server
 
 Debian / Ubuntu:
 
-    apt-get install python-pip
+    apt-get install python-pip python-setuptools
     pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
 CentOS:
