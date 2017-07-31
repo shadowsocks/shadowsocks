@@ -270,6 +270,12 @@ class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
         self.cipher_ctx_init()
         return plaintext
 
+    def encrypt_once(self, data):
+        return self.aead_encrypt(data)
+
+    def decrypt_once(self, data):
+        return self.aead_decrypt(data)
+
 
 class OpenSSLStreamCrypto(OpenSSLCryptoBase):
     """

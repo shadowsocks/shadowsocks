@@ -308,6 +308,12 @@ class SodiumAeadCrypto(AeadCryptoBase):
         self.cipher_ctx_init()
         return buf.raw[:cipher_out_len.value]
 
+    def encrypt_once(self, data):
+        return self.aead_encrypt(data)
+
+    def decrypt_once(self, data):
+        return self.aead_decrypt(data)
+
 
 ciphers = {
     'salsa20': (32, 8, SodiumCrypto),
