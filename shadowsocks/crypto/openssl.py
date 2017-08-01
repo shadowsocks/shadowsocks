@@ -139,6 +139,7 @@ class OpenSSLCryptoBase(object):
         if self._ctx:
             ctx_cleanup(self._ctx)
             libcrypto.EVP_CIPHER_CTX_free(self._ctx)
+            self._ctx = None
 
 
 class OpenSSLAeadCrypto(OpenSSLCryptoBase, AeadCryptoBase):
