@@ -10,7 +10,7 @@ cache:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq build-essential dnsutils iproute nginx bc
-  - sudo dd if=/dev/urandom of=/usr/share/nginx/www/file bs=1M count=10
+  - sudo dd if=/dev/urandom of=/usr/share/nginx/html/file bs=1M count=10
   - sudo sh -c "echo '127.0.0.1    localhost' > /etc/hosts"
   - sudo service nginx restart
   - pip install pep8 pyflakes nose coverage PySocks
