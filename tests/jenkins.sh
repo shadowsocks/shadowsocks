@@ -102,11 +102,10 @@ fi
 run_test tests/test_udp_src.sh
 run_test tests/test_command.sh
 
-coverage combine && coverage report --include=shadowsocks/*
-rm -rf htmlcov
-rm -rf tmp
-coverage html --include=shadowsocks/*
-
-coverage report --include=shadowsocks/* | tail -n1 | rev | cut -d' ' -f 1 | rev > /tmp/shadowsocks-coverage
+# coverage combine && coverage report --include=shadowsocks/*
+# rm -rf htmlcov
+# rm -rf tmp
+# coverage html --include=shadowsocks/*
+# coverage report --include=shadowsocks/* | tail -n1 | rev | cut -d' ' -f 1 | rev > /tmp/shadowsocks-coverage
 
 exit $result

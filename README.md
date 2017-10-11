@@ -28,6 +28,10 @@ CentOS:
     yum install python-setuptools && easy_install pip
     pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
+Linux distributions with [snap](http://snapcraft.io/):
+
+    snap install shadowsocks
+
 Windows:
 
 See [Install Shadowsocks Server on Windows](https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows).
@@ -51,9 +55,14 @@ To check the log:
 Check all the options via `-h`. You can also use a [Configuration] file
 instead.
 
+If you installed the [snap](http://snapcraft.io/) package, you have to prefix the commands with `shadowsocks.`,
+like this:
+
+    shadowsocks.ssserver -p 443 -k password -m aes-256-cfb
+    
 ### Usage with Config File
 
-[Create configeration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
+[Create configuration file and run](https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File)
 
 To start:
 

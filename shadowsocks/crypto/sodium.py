@@ -192,10 +192,18 @@ class SodiumCrypto(object):
             raise Exception('Unknown cipher')
         # byte counter, not block counter
         self.counter = 0
-        self.encrypt = self.update
-        self.decrypt = self.update
-        self.encrypt_once = self.update
-        self.decrypt_once = self.update
+
+    def encrypt(self, data):
+        return self.update(data)
+
+    def decrypt(self, data):
+        return self.update(data)
+
+    def encrypt_once(self, data):
+        return self.update(data)
+
+    def decrypt_once(self, data):
+        return self.update(data)
 
     def update(self, data):
         global buf_size, buf
@@ -299,6 +307,12 @@ class SodiumAeadCrypto(AeadCryptoBase):
 
         self.cipher_ctx_init()
         return buf.raw[:cipher_out_len.value]
+
+    def encrypt_once(self, data):
+        return self.aead_encrypt(data)
+
+    def decrypt_once(self, data):
+        return self.aead_decrypt(data)
 
 
 ciphers = {

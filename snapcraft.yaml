@@ -1,0 +1,23 @@
+name: shadowsocks
+version: 2.9.1-1
+summary: A fast tunnel proxy that helps you bypass firewalls
+description: A fast tunnel proxy that helps you bypass firewalls
+confinement: strict
+grade: stable
+
+apps:
+  sslocal:
+    command: bin/sslocal
+    plugs: [network, network-bind]
+    aliases: [sslocal]
+
+  ssserver:
+    command: bin/ssserver
+    plugs: [network, network-bind]
+    aliases: [ssserver]
+
+parts:
+  shadowsocks:
+    plugin: python
+    python-version: python2
+    source: https://github.com/shadowsocks/shadowsocks/archive/2.9.1.tar.gz
