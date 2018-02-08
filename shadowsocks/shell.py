@@ -155,7 +155,7 @@ def check_config(config, is_local):
 
     if not is_local and not config.get('password', None) \
             and not config.get('port_password', None) \
-            and not config.get('manager_address'):
+            and not config.get('manager_address', None):
         logging.error('password or port_password not specified')
         print_help(is_local)
         sys.exit(2)
@@ -163,8 +163,8 @@ def check_config(config, is_local):
     if 'local_port' in config:
         config['local_port'] = int(config['local_port'])
 
-    if 'server_port' in config and type(config['server_port']) != list:
-        config['server_port'] = int(config['server_port'])
+    if not config.get('server_port',None) and not config.get('manager_address', None):
+        config['server_port'] = int(8388)
 
     if 'tunnel_remote_port' in config:
         config['tunnel_remote_port'] = int(config['tunnel_remote_port'])
@@ -325,7 +325,7 @@ def get_config(is_local):
     config['local_port'] = config.get('local_port', 1080)
     config['one_time_auth'] = config.get('one_time_auth', False)
     config['prefer_ipv6'] = config.get('prefer_ipv6', False)
-    config['server_port'] = config.get('server_port', 8388)
+    config['server_port'] = config.get('server_port', None)
     config['dns_server'] = config.get('dns_server', None)
     config['libopenssl'] = config.get('libopenssl', None)
     config['libmbedtls'] = config.get('libmbedtls', None)
