@@ -421,7 +421,7 @@ def run_aead_method(method, key_len=16):
     print(method, ': [payload][tag]', key_len)
     key_len = int(key_len)
     cipher = MbedTLSAeadCrypto(method, b'k' * key_len, b'i' * key_len, 1)
-    decipher = MbedTLSStreamCrypto(
+    decipher = MbedTLSAeadCrypto(
         method,
         b'k' * key_len, b'i' * key_len, 0
     )
@@ -434,7 +434,7 @@ def run_aead_method_chunk(method, key_len=16):
     print(method, ': chunk([size][tag][payload][tag]', key_len)
     key_len = int(key_len)
     cipher = MbedTLSAeadCrypto(method, b'k' * key_len, b'i' * key_len, 1)
-    decipher = MbedTLSStreamCrypto(
+    decipher = MbedTLSAeadCrypto(
         method,
         b'k' * key_len, b'i' * key_len, 0
     )
