@@ -59,7 +59,8 @@ if __name__ == '__main__':
         if ip not in banned and ips[ip] >= config.count:
             banned.add(ip)
             print('ban ip %s' % ip_str)
-            cmd = ['iptables', '-A', 'INPUT', '-s', ip_str, '-j', 'DROP', '-m', 'comment', '--comment', 'autoban']
+            cmd = ['iptables', '-A', 'INPUT', '-s', ip_str, '-j', 'DROP',
+                   '-m', 'comment', '--comment', 'autoban']
             print(' '.join(cmd), file=sys.stderr)
             sys.stderr.flush()
             subprocess.call(cmd)
