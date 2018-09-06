@@ -289,7 +289,7 @@ def test():
                                header + b'test')
     udp_cli = socket.socket(type=socket.SOCK_DGRAM)
     udp_cli.sendto(data, ('127.0.0.1', 8382))
-    tcp_cli.close()
+    udp_cli.close()
 
     data, addr = cli.recvfrom(1506)
     data = common.to_str(data)
