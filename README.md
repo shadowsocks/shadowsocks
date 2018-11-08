@@ -1,1 +1,1 @@
-Removed according to regulations.
+Removed according to regulations
