@@ -129,7 +129,7 @@ class Manager(object):
                     elif command == 'ping':
                         self._send_control_data(b'pong')
                     elif command == 'list':
-                        ports = map(lambda x : { 'server_port': x }, self._relays.keys())
+                        ports = map(lambda v : { 'server_port': v[0]._config['server_port'], 'password': v[0]._config['password'], 'method': v[0]._config['method'] }, self._relays.values())
                         self._send_control_data(json.dumps(ports))
                     else:
                         logging.error('unknown command %s', command)
