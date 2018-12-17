@@ -43,11 +43,11 @@ See [Install Shadowsocks Server on Windows](https://github.com/shadowsocks/shado
 
 ### Usage
 
-    ssserver -p 443 -k password -m aes-256-cfb
+    ssserver -p 443 -k password -m chacha20-ietf-poly1305
 
 To run in the background:
 
-    sudo ssserver -p 443 -k password -m aes-256-cfb --user nobody -d start
+    sudo ssserver -p 443 -k password -m chacha20-ietf-poly1305 --user nobody -d start
 
 To stop:
 
@@ -63,7 +63,7 @@ instead.
 If you installed the [snap](http://snapcraft.io/) package, you have to prefix the commands with `shadowsocks.`,
 like this:
 
-    shadowsocks.ssserver -p 443 -k password -m aes-256-cfb
+    shadowsocks.ssserver -p 443 -k password -m chacha20-ietf-poly1305
     
 ### Usage with Config File
 
