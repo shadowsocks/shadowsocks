@@ -187,8 +187,8 @@ class UDPRelay(object):
         if header_result is None:
             return
         addrtype, dest_addr, dest_port, header_length = header_result
-        logging.info("udp data to %s:%d from %s:%d"
-                     % (dest_addr, dest_port, r_addr[0], r_addr[1]))
+        logging.info("[%d] udp data to %s:%d from %s:%d"
+                     % (self._config['server_port'], dest_addr, dest_port, r_addr[0], r_addr[1]))
         if self._is_local:
             server_addr, server_port = self._get_a_server()
         else:
