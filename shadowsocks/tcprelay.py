@@ -519,8 +519,8 @@ class TCPRelayHandler(object):
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
         if socks_version != 5:
-            logging.warning('unsupported SOCKS protocol version ' +
-                            str(socks_version))
+            logging.warning('unsupported SOCKS protocol version {}'
+                            .format(socks_version))
             raise BadSocksHeader
         if nmethods < 1 or len(data) != nmethods + 2:
             logging.warning('NMETHODS and number of METHODS mismatch')
