@@ -23,7 +23,8 @@ import socket
 import struct
 import re
 import logging
-
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from shadowsocks import common, lru_cache, eventloop, shell
 
 
