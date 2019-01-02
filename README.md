@@ -28,6 +28,11 @@ CentOS:
     yum install python-setuptools && easy_install pip
     pip install git+https://github.com/shadowsocks/shadowsocks.git@master
 
+For CentOS 7, if you need AEAD ciphers, you need install libsodium
+```
+dnf install libsodium python34-pip
+pip3 install  git+https://github.com/shadowsocks/shadowsocks.git@master
+```
 Linux distributions with [snap](http://snapcraft.io/):
 
     snap install shadowsocks

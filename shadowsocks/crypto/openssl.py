@@ -346,6 +346,8 @@ def run_method(method):
 
 def run_aead_method(method, key_len=16):
 
+    if not loaded:
+        load_openssl(None)
     print(method, ': [payload][tag]', key_len)
     cipher = libcrypto.EVP_get_cipherbyname(common.to_bytes(method))
     if not cipher:
@@ -362,6 +364,8 @@ def run_aead_method(method, key_len=16):
 
 def run_aead_method_chunk(method, key_len=16):
 
+    if not loaded:
+        load_openssl(None)
     print(method, ': chunk([size][tag][payload][tag]', key_len)
     cipher = libcrypto.EVP_get_cipherbyname(common.to_bytes(method))
     if not cipher:

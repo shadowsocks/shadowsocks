@@ -24,9 +24,17 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import os
 import sys
+import socket
 import argparse
+import subprocess
+
+
+def inet_pton(str_ip):
+    try:
+        return socket.inet_pton(socket.AF_INET, str_ip)
+    except socket.error:
+        return None
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='See README')
@@ -37,17 +45,22 @@ if __name__ == '__main__':
     ips = {}
     banned = set()
     for line in sys.stdin:
-        if 'can not parse header when' in line:
-            ip = line.split()[-1].split(':')[-2]
-            if ip not in ips:
-                ips[ip] = 1
-                print(ip)
-                sys.stdout.flush()
-            else:
-                ips[ip] += 1
-            if ip not in banned and ips[ip] >= config.count:
-                banned.add(ip)
-                cmd = 'iptables -A INPUT -s %s -j DROP' % ip
-                print(cmd, file=sys.stderr)
-                sys.stderr.flush()
-                os.system(cmd)
+        if 'can not parse header when' not in line:
+            continue
+        ip_str = line.split()[-1].rsplit(':', 1)[0]
+        ip = inet_pton(ip_str)
+        if ip is None:
+            continue
+        if ip not in ips:
+            ips[ip] = 1
+            sys.stdout.flush()
+        else:
+            ips[ip] += 1
+        if ip not in banned and ips[ip] >= config.count:
+            banned.add(ip)
+            print('ban ip %s' % ip_str)
+            cmd = ['iptables', '-A', 'INPUT', '-s', ip_str, '-j', 'DROP',
+                   '-m', 'comment', '--comment', 'autoban']
+            print(' '.join(cmd), file=sys.stderr)
+            sys.stderr.flush()
+            subprocess.call(cmd)
