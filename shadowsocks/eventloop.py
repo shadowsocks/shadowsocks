@@ -25,6 +25,7 @@ import os
 import time
 import socket
 import select
+import traceback
 import errno
 import logging
 from collections import defaultdict
@@ -204,7 +205,6 @@ class EventLoop(object):
                     logging.debug('poll:%s', e)
                 else:
                     logging.error('poll:%s', e)
-                    import traceback
                     traceback.print_exc()
                     continue
 

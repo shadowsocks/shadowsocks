@@ -29,7 +29,7 @@ from shadowsocks import common, lru_cache, eventloop, shell
 
 CACHE_SWEEP_INTERVAL = 30
 
-VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+VALID_HOSTNAME = re.compile(br"(?!-)[A-Z\d\-_]{1,63}(?<!-)$", re.IGNORECASE)
 
 common.patch_socket()
 
@@ -276,15 +276,18 @@ class DNSResolver(object):
                 content = f.readlines()
                 for line in content:
                     line = line.strip()
-                    if line:
-                        if line.startswith(b'nameserver'):
-                            parts = line.split()
-                            if len(parts) >= 2:
-                                server = parts[1]
-                                if common.is_ip(server) == socket.AF_INET:
-                                    if type(server) != str:
-                                        server = server.decode('utf8')
-                                    self._servers.append(server)
+                    if not (line and line.startswith(b'nameserver')):
+                        continue
+
+                    parts = line.split()
+                    if len(parts) < 2:
+                        continue
+
+                    server = parts[1]
+                    if common.is_ip(server) == socket.AF_INET:
+                        if type(server) != str:
+                            server = server.decode('utf8')
+                        self._servers.append(server)
         except IOError:
             pass
         if not self._servers:
@@ -299,13 +302,17 @@ class DNSResolver(object):
                 for line in f.readlines():
                     line = line.strip()
                     parts = line.split()
-                    if len(parts) >= 2:
-                        ip = parts[0]
-                        if common.is_ip(ip):
-                            for i in range(1, len(parts)):
-                                hostname = parts[i]
-                                if hostname:
-                                    self._hosts[hostname] = ip
+                    if len(parts) < 2:
+                        continue
+
+                    ip = parts[0]
+                    if not common.is_ip(ip):
+                        continue
+
+                    for i in range(1, len(parts)):
+                        hostname = parts[i]
+                        if hostname:
+                            self._hosts[hostname] = ip
         except IOError:
             self._hosts['localhost'] = '127.0.0.1'
 

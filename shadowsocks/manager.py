@@ -18,6 +18,8 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
+import os
+import atexit
 import errno
 import traceback
 import socket
@@ -35,6 +37,9 @@ STAT_SEND_LIMIT = 50
 class Manager(object):
 
     def __init__(self, config):
+        atexit.register(self.cleanup)
+        self._is_unix = False
+        self._mngr_address = None
         self._config = config
         self._relays = {}  # (tcprelay, udprelay)
         self._loop = eventloop.EventLoop()
@@ -57,6 +62,8 @@ class Manager(object):
             else:
                 addr = manager_address
                 family = socket.AF_UNIX
+                self._is_unix = True
+                self._mngr_address = manager_address
             self._control_socket = socket.socket(family,
                                                  socket.SOCK_DGRAM)
             self._control_socket.bind(addr)
@@ -71,11 +78,19 @@ class Manager(object):
 
         port_password = config['port_password']
         del config['port_password']
+        config['crypto_path'] = config.get('crypto_path', dict())
         for port, password in port_password.items():
             a_config = config.copy()
             a_config['server_port'] = int(port)
             a_config['password'] = password
             self.add_port(a_config)
+
+    def cleanup(self):
+        if self._is_unix:
+            try:
+                os.unlink(self._mngr_address)
+            except:
+                pass
 
     def add_port(self, config):
         port = int(config['server_port'])
@@ -141,6 +156,8 @@ class Manager(object):
         command, config_json = parts
         try:
             config = shell.parse_json_in_str(config_json)
+            if 'method' in config:
+                config['method'] = common.to_str(config['method'])
             return command, config
         except Exception as e:
             logging.error(e)
@@ -173,18 +190,20 @@ class Manager(object):
         self._statistics.clear()
 
     def _send_control_data(self, data):
-        if self._control_client_addr:
-            try:
-                self._control_socket.sendto(data, self._control_client_addr)
-            except (socket.error, OSError, IOError) as e:
-                error_no = eventloop.errno_from_exception(e)
-                if error_no in (errno.EAGAIN, errno.EINPROGRESS,
-                                errno.EWOULDBLOCK):
-                    return
-                else:
-                    shell.print_exception(e)
-                    if self._config['verbose']:
-                        traceback.print_exc()
+        if not self._control_client_addr:
+            return
+
+        try:
+            self._control_socket.sendto(data, self._control_client_addr)
+        except (socket.error, OSError, IOError) as e:
+            error_no = eventloop.errno_from_exception(e)
+            if error_no in (errno.EAGAIN, errno.EINPROGRESS,
+                            errno.EWOULDBLOCK):
+                return
+            else:
+                shell.print_exception(e)
+                if self._config['verbose']:
+                    traceback.print_exc()
 
     def run(self):
         self._loop.run()
@@ -198,7 +217,7 @@ def test():
     import time
     import threading
     import struct
-    from shadowsocks import encrypt
+    from shadowsocks import cryptor
 
     logging.basicConfig(level=5,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -248,7 +267,7 @@ def test():
 
     # test statistics for TCP
     header = common.pack_addr(b'google.com') + struct.pack('>H', 80)
-    data = encrypt.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb', 1,
+    data = cryptor.encrypt_all(b'asdfadsfasdf', 'aes-256-cfb',
                                header + b'GET /\r\n\r\n')
     tcp_cli = socket.socket()
     tcp_cli.connect(('127.0.0.1', 7001))
@@ -266,7 +285,7 @@ def test():
 
     # test statistics for UDP
     header = common.pack_addr(b'127.0.0.1') + struct.pack('>H', 80)
-    data = encrypt.encrypt_all(b'foobar2', 'aes-256-cfb', 1,
+    data = cryptor.encrypt_all(b'foobar2', 'aes-256-cfb',
                                header + b'test')
     udp_cli = socket.socket(type=socket.SOCK_DGRAM)
     udp_cli.sendto(data, ('127.0.0.1', 8382))
