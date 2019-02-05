@@ -154,7 +154,7 @@ class UDPRelay(object):
         key = None
         iv = None
         if not data:
-            logging.debug('UDP handle_server: data is empty')
+            logging.debug('[%d] UDP handle_server: data is empty' % self._config["server_port"])
         if self._stat_callback:
             self._stat_callback(self._listen_port, len(data))
         if self._is_local:
@@ -167,7 +167,7 @@ class UDPRelay(object):
             else:
                 frag = common.ord(data[2])
                 if frag != 0:
-                    logging.warn('UDP drop a message since frag is not 0')
+                    logging.warn('[%d] UDP drop a message since frag is not 0' % self._config["server_port"])
                     return
                 else:
                     data = data[3:]
@@ -178,10 +178,10 @@ class UDPRelay(object):
                                                     self._method,
                                                     data, self._crypto_path)
             except Exception:
-                logging.debug('UDP handle_server: decrypt data failed')
+                logging.debug('[%d] UDP handle_server: decrypt data failed' % self._config["server_port"])
                 return
             if not data:
-                logging.debug('UDP handle_server: data is empty after decrypt')
+                logging.debug('[%d] UDP handle_server: data is empty after decrypt' % self._config["server_port"])
                 return
         header_result = parse_header(data)
         if header_result is None:
