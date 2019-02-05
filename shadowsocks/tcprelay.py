@@ -332,7 +332,7 @@ class TCPRelayHandler(object):
                     return
         header_result = parse_header(data)
         if header_result is None:
-            raise Exception('can not parse header')
+            raise Exception('[%d] can not parse header' % self._config["server_port"])
         addrtype, remote_addr, remote_port, header_length = header_result
         logging.info('connecting %s:%d from %s:%d' %
                      (common.to_str(remote_addr), remote_port,
