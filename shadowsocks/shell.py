@@ -224,7 +224,8 @@ def get_config(is_local):
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version',
-                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6']
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6',
+                    'bind-address=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -302,6 +303,8 @@ def get_config(is_local):
                 config['verbose'] = v_count
             elif key == '--prefer-ipv6':
                 config['prefer_ipv6'] = True
+            elif key == '--bind-address':
+                config['bind_address'] = to_str(value)
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
         print_help(is_local)
@@ -330,6 +333,7 @@ def get_config(is_local):
     config['libopenssl'] = config.get('libopenssl', None)
     config['libmbedtls'] = config.get('libmbedtls', None)
     config['libsodium'] = config.get('libsodium', None)
+    config['bind_address'] = config.get('bind_address', None)
 
     config['tunnel_remote'] = to_str(config.get('tunnel_remote', '8.8.8.8'))
     config['tunnel_remote_port'] = config.get('tunnel_remote_port', 53)
@@ -463,6 +467,7 @@ Proxy options:
   --libopenssl=PATH      custom openssl crypto lib path
   --libmbedtls=PATH      custom mbedtls crypto lib path
   --libsodium=PATH       custom sodium crypto lib path
+  --bind-address=ADDR    bind IP to send data
 
 General options:
   -h, --help             show this help message and exit

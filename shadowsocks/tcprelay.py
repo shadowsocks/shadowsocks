@@ -406,6 +406,9 @@ class TCPRelayHandler(object):
         self._fd_to_handlers[remote_sock.fileno()] = self
         remote_sock.setblocking(False)
         remote_sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+
+        if not self._is_local and self._config.get('bind_address'):
+            remote_sock.bind((self._config['bind_address'], 0))
         return remote_sock
 
     @shell.exception_handle(self_=True)
