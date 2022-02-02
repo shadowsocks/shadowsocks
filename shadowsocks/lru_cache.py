@@ -31,7 +31,7 @@ import time
 #       as sweep() causes long pause
 
 
-class LRUCache(collections.MutableMapping):
+class LRUCache(collections.abc.MutableMapping):
     """This class is not thread safe"""
 
     def __init__(self, timeout=60, close_callback=None, *args, **kwargs):
