@@ -93,7 +93,7 @@ def inet_pton(family, addr):
         if '.' in addr:  # a v4 addr
             v4addr = addr[addr.rindex(':') + 1:]
             v4addr = socket.inet_aton(v4addr)
-            v4addr = map(lambda x: ('%02X' % ord(x)), v4addr)
+            v4addr = list(map(lambda x: ('%02X' % ord(x)), v4addr))
             v4addr.insert(2, ':')
             newaddr = addr[:addr.rindex(':') + 1] + ''.join(v4addr)
             return inet_pton(family, newaddr)
